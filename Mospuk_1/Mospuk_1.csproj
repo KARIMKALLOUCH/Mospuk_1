@@ -160,6 +160,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AddCompany.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AddCompany.Designer.cs">
+      <DependentUpon>AddCompany.cs</DependentUpon>
+    </Compile>
     <Compile Include="AddFile.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -194,6 +200,9 @@
     <Compile Include="MySqlDatabase.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="AddCompany.resx">
+      <DependentUpon>AddCompany.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="AddFile.resx">
       <DependentUpon>AddFile.cs</DependentUpon>
     </EmbeddedResource>

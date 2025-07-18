@@ -1,0 +1,14 @@
+
+
+
+CREATE TABLE projects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_client VARCHAR(100) NOT NULL,
+    reception_date DATE NOT NULL,
+    reception_time VARCHAR(5) NOT NULL,
+    delivery_days TINYINT NOT NULL,
+    delivery_date DATE NOT NULL,
+    hours_spent TINYINT DEFAULT 24,
+    project_order INT NOT NULL,
+    folder_name VARCHAR(255) NOT NULL
+);

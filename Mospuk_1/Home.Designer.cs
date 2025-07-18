@@ -42,8 +42,7 @@
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle9 = new System.Windows.Forms.DataGridViewCellStyle();
             this.tabPane1 = new DevExpress.XtraBars.Navigation.TabPane();
             this.tabNavClient = new DevExpress.XtraBars.Navigation.TabNavigationPage();
-            this.btnClientsAdd = new Guna.UI2.WinForms.Guna2Button();
-            this.btnSearchClients = new Guna.UI2.WinForms.Guna2Button();
+            this.btnCompanyAdd = new Guna.UI2.WinForms.Guna2Button();
             this.txtSearchClients = new Guna.UI2.WinForms.Guna2TextBox();
             this.lblClientCnt = new DevExpress.XtraEditors.LabelControl();
             this.DGVClients = new Guna.UI2.WinForms.Guna2DataGridView();
@@ -83,6 +82,21 @@
             this.lblFactureCnt = new DevExpress.XtraEditors.LabelControl();
             this.DGVFacture = new Guna.UI2.WinForms.Guna2DataGridView();
             this.tabNavParametres = new DevExpress.XtraBars.Navigation.TabNavigationPage();
+            this.xtraTabControl5 = new DevExpress.XtraTab.XtraTabControl();
+            this.xtraTabPage9 = new DevExpress.XtraTab.XtraTabPage();
+            this.xtraTabPage10 = new DevExpress.XtraTab.XtraTabPage();
+            this.xtraTabControl4 = new DevExpress.XtraTab.XtraTabControl();
+            this.xtraTabPage7 = new DevExpress.XtraTab.XtraTabPage();
+            this.xtraTabPage8 = new DevExpress.XtraTab.XtraTabPage();
+            this.xtraTabControl3 = new DevExpress.XtraTab.XtraTabControl();
+            this.xtraTabPage5 = new DevExpress.XtraTab.XtraTabPage();
+            this.xtraTabPage6 = new DevExpress.XtraTab.XtraTabPage();
+            this.xtraTabControl2 = new DevExpress.XtraTab.XtraTabControl();
+            this.xtraTabPage3 = new DevExpress.XtraTab.XtraTabPage();
+            this.xtraTabPage4 = new DevExpress.XtraTab.XtraTabPage();
+            this.xtraTabControl1 = new DevExpress.XtraTab.XtraTabControl();
+            this.xtraTabPage1 = new DevExpress.XtraTab.XtraTabPage();
+            this.xtraTabPage2 = new DevExpress.XtraTab.XtraTabPage();
             this.tabNavHistorique = new DevExpress.XtraBars.Navigation.TabNavigationPage();
             this.tabNavChange = new DevExpress.XtraBars.Navigation.TabNavigationPage();
             this.btnAdd = new Guna.UI2.WinForms.Guna2Button();
@@ -111,6 +125,17 @@
             ((System.ComponentModel.ISupportInitialize)(this.guna2PictureBox5)).BeginInit();
             this.tabNavDocuments.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.DGVFacture)).BeginInit();
+            this.tabNavParametres.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl5)).BeginInit();
+            this.xtraTabControl5.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl4)).BeginInit();
+            this.xtraTabControl4.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl3)).BeginInit();
+            this.xtraTabControl3.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl2)).BeginInit();
+            this.xtraTabControl2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl1)).BeginInit();
+            this.xtraTabControl1.SuspendLayout();
             this.tabNavChange.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.DGVChanges)).BeginInit();
             this.SuspendLayout();
@@ -143,49 +168,30 @@
             // tabNavClient
             // 
             this.tabNavClient.Caption = "Clients";
-            this.tabNavClient.Controls.Add(this.btnClientsAdd);
-            this.tabNavClient.Controls.Add(this.btnSearchClients);
+            this.tabNavClient.Controls.Add(this.btnCompanyAdd);
             this.tabNavClient.Controls.Add(this.txtSearchClients);
             this.tabNavClient.Controls.Add(this.lblClientCnt);
             this.tabNavClient.Controls.Add(this.DGVClients);
-            this.tabNavClient.ImageOptions.Image = ((System.Drawing.Image)(resources.GetObject("tabNavClient.ImageOptions.Image")));
+            this.tabNavClient.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("tabNavClient.ImageOptions.SvgImage")));
             this.tabNavClient.Name = "tabNavClient";
-            this.tabNavClient.PageText = "Clients";
-            this.tabNavClient.PageVisible = false;
-            this.tabNavClient.Size = new System.Drawing.Size(1008, 729);
+            this.tabNavClient.PageText = "Company";
+            this.tabNavClient.Size = new System.Drawing.Size(1242, 703);
             // 
-            // btnClientsAdd
+            // btnCompanyAdd
             // 
-            this.btnClientsAdd.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
-            this.btnClientsAdd.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
-            this.btnClientsAdd.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
-            this.btnClientsAdd.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
-            this.btnClientsAdd.FillColor = System.Drawing.Color.White;
-            this.btnClientsAdd.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.btnClientsAdd.ForeColor = System.Drawing.Color.Black;
-            this.btnClientsAdd.ImageAlign = System.Windows.Forms.HorizontalAlignment.Left;
-            this.btnClientsAdd.Location = new System.Drawing.Point(3, 14);
-            this.btnClientsAdd.Name = "btnClientsAdd";
-            this.btnClientsAdd.Size = new System.Drawing.Size(140, 38);
-            this.btnClientsAdd.TabIndex = 20;
-            this.btnClientsAdd.Text = "   Ajouter    إضافة";
-            // 
-            // btnSearchClients
-            // 
-            this.btnSearchClients.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnSearchClients.Animated = true;
-            this.btnSearchClients.BackColor = System.Drawing.Color.Transparent;
-            this.btnSearchClients.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
-            this.btnSearchClients.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
-            this.btnSearchClients.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
-            this.btnSearchClients.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
-            this.btnSearchClients.FillColor = System.Drawing.Color.White;
-            this.btnSearchClients.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.btnSearchClients.ForeColor = System.Drawing.Color.White;
-            this.btnSearchClients.Location = new System.Drawing.Point(962, 14);
-            this.btnSearchClients.Name = "btnSearchClients";
-            this.btnSearchClients.Size = new System.Drawing.Size(41, 38);
-            this.btnSearchClients.TabIndex = 19;
+            this.btnCompanyAdd.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
+            this.btnCompanyAdd.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
+            this.btnCompanyAdd.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
+            this.btnCompanyAdd.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
+            this.btnCompanyAdd.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.btnCompanyAdd.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.btnCompanyAdd.ForeColor = System.Drawing.Color.White;
+            this.btnCompanyAdd.Image = ((System.Drawing.Image)(resources.GetObject("btnCompanyAdd.Image")));
+            this.btnCompanyAdd.Location = new System.Drawing.Point(7, 14);
+            this.btnCompanyAdd.Name = "btnCompanyAdd";
+            this.btnCompanyAdd.Size = new System.Drawing.Size(140, 38);
+            this.btnCompanyAdd.TabIndex = 22;
+            this.btnCompanyAdd.Text = "Add";
             // 
             // txtSearchClients
             // 
@@ -200,20 +206,21 @@
             this.txtSearchClients.FocusedState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
             this.txtSearchClients.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.txtSearchClients.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
-            this.txtSearchClients.Location = new System.Drawing.Point(731, 14);
+            this.txtSearchClients.IconRight = ((System.Drawing.Image)(resources.GetObject("txtSearchClients.IconRight")));
+            this.txtSearchClients.Location = new System.Drawing.Point(950, 14);
             this.txtSearchClients.Name = "txtSearchClients";
-            this.txtSearchClients.PlaceholderText = "Recherche...";
+            this.txtSearchClients.PlaceholderText = "Search...";
             this.txtSearchClients.SelectedText = "";
-            this.txtSearchClients.Size = new System.Drawing.Size(233, 38);
+            this.txtSearchClients.Size = new System.Drawing.Size(289, 38);
             this.txtSearchClients.TabIndex = 18;
             // 
             // lblClientCnt
             // 
             this.lblClientCnt.Location = new System.Drawing.Point(7, 56);
             this.lblClientCnt.Name = "lblClientCnt";
-            this.lblClientCnt.Size = new System.Drawing.Size(51, 13);
+            this.lblClientCnt.Size = new System.Drawing.Size(64, 13);
             this.lblClientCnt.TabIndex = 8;
-            this.lblClientCnt.Text = "Clients: XX";
+            this.lblClientCnt.Text = "Company: XX";
             // 
             // DGVClients
             // 
@@ -249,7 +256,7 @@
             this.DGVClients.ReadOnly = true;
             this.DGVClients.RowHeadersVisible = false;
             this.DGVClients.RowTemplate.Height = 27;
-            this.DGVClients.Size = new System.Drawing.Size(1002, 651);
+            this.DGVClients.Size = new System.Drawing.Size(1236, 625);
             this.DGVClients.TabIndex = 6;
             this.DGVClients.ThemeStyle.AlternatingRowsStyle.BackColor = System.Drawing.Color.White;
             this.DGVClients.ThemeStyle.AlternatingRowsStyle.Font = null;
@@ -670,7 +677,7 @@
             this.tabNavDocuments.Name = "tabNavDocuments";
             this.tabNavDocuments.PageText = "Documents";
             this.tabNavDocuments.PageVisible = false;
-            this.tabNavDocuments.Size = new System.Drawing.Size(1008, 729);
+            this.tabNavDocuments.Size = new System.Drawing.Size(1242, 746);
             // 
             // btnSearchFactures
             // 
@@ -684,7 +691,7 @@
             this.btnSearchFactures.FillColor = System.Drawing.Color.White;
             this.btnSearchFactures.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.btnSearchFactures.ForeColor = System.Drawing.Color.White;
-            this.btnSearchFactures.Location = new System.Drawing.Point(955, 15);
+            this.btnSearchFactures.Location = new System.Drawing.Point(1189, 15);
             this.btnSearchFactures.Name = "btnSearchFactures";
             this.btnSearchFactures.Size = new System.Drawing.Size(41, 38);
             this.btnSearchFactures.TabIndex = 23;
@@ -702,7 +709,7 @@
             this.txtSearchFactures.FocusedState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
             this.txtSearchFactures.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.txtSearchFactures.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
-            this.txtSearchFactures.Location = new System.Drawing.Point(724, 15);
+            this.txtSearchFactures.Location = new System.Drawing.Point(958, 15);
             this.txtSearchFactures.Name = "txtSearchFactures";
             this.txtSearchFactures.PlaceholderText = "Recherche...";
             this.txtSearchFactures.SelectedText = "";
@@ -767,7 +774,7 @@
             this.DGVFacture.ReadOnly = true;
             this.DGVFacture.RowHeadersVisible = false;
             this.DGVFacture.RowTemplate.Height = 27;
-            this.DGVFacture.Size = new System.Drawing.Size(984, 639);
+            this.DGVFacture.Size = new System.Drawing.Size(1218, 656);
             this.DGVFacture.TabIndex = 12;
             this.DGVFacture.ThemeStyle.AlternatingRowsStyle.BackColor = System.Drawing.Color.White;
             this.DGVFacture.ThemeStyle.AlternatingRowsStyle.Font = null;
@@ -794,10 +801,130 @@
             // tabNavParametres
             // 
             this.tabNavParametres.Caption = "Paramètres";
+            this.tabNavParametres.Controls.Add(this.xtraTabControl5);
+            this.tabNavParametres.Controls.Add(this.xtraTabControl4);
+            this.tabNavParametres.Controls.Add(this.xtraTabControl3);
+            this.tabNavParametres.Controls.Add(this.xtraTabControl2);
+            this.tabNavParametres.Controls.Add(this.xtraTabControl1);
             this.tabNavParametres.ImageOptions.Image = ((System.Drawing.Image)(resources.GetObject("tabNavParametres.ImageOptions.Image")));
             this.tabNavParametres.Name = "tabNavParametres";
             this.tabNavParametres.PageText = "Settings";
             this.tabNavParametres.Size = new System.Drawing.Size(1242, 703);
+            // 
+            // xtraTabControl5
+            // 
+            this.xtraTabControl5.Location = new System.Drawing.Point(807, 96);
+            this.xtraTabControl5.Name = "xtraTabControl5";
+            this.xtraTabControl5.SelectedTabPage = this.xtraTabPage9;
+            this.xtraTabControl5.Size = new System.Drawing.Size(300, 300);
+            this.xtraTabControl5.TabIndex = 4;
+            this.xtraTabControl5.TabPages.AddRange(new DevExpress.XtraTab.XtraTabPage[] {
+            this.xtraTabPage9,
+            this.xtraTabPage10});
+            // 
+            // xtraTabPage9
+            // 
+            this.xtraTabPage9.Name = "xtraTabPage9";
+            this.xtraTabPage9.Size = new System.Drawing.Size(298, 275);
+            this.xtraTabPage9.Text = "xtraTabPage9";
+            // 
+            // xtraTabPage10
+            // 
+            this.xtraTabPage10.Name = "xtraTabPage10";
+            this.xtraTabPage10.Size = new System.Drawing.Size(298, 275);
+            this.xtraTabPage10.Text = "xtraTabPage10";
+            // 
+            // xtraTabControl4
+            // 
+            this.xtraTabControl4.Location = new System.Drawing.Point(808, 249);
+            this.xtraTabControl4.Name = "xtraTabControl4";
+            this.xtraTabControl4.SelectedTabPage = this.xtraTabPage7;
+            this.xtraTabControl4.Size = new System.Drawing.Size(300, 300);
+            this.xtraTabControl4.TabIndex = 3;
+            this.xtraTabControl4.TabPages.AddRange(new DevExpress.XtraTab.XtraTabPage[] {
+            this.xtraTabPage7,
+            this.xtraTabPage8});
+            // 
+            // xtraTabPage7
+            // 
+            this.xtraTabPage7.Name = "xtraTabPage7";
+            this.xtraTabPage7.Size = new System.Drawing.Size(298, 275);
+            this.xtraTabPage7.Text = "xtraTabPage7";
+            // 
+            // xtraTabPage8
+            // 
+            this.xtraTabPage8.Name = "xtraTabPage8";
+            this.xtraTabPage8.Size = new System.Drawing.Size(298, 275);
+            this.xtraTabPage8.Text = "xtraTabPage8";
+            // 
+            // xtraTabControl3
+            // 
+            this.xtraTabControl3.Location = new System.Drawing.Point(979, 162);
+            this.xtraTabControl3.Name = "xtraTabControl3";
+            this.xtraTabControl3.SelectedTabPage = this.xtraTabPage5;
+            this.xtraTabControl3.Size = new System.Drawing.Size(122, 272);
+            this.xtraTabControl3.TabIndex = 2;
+            this.xtraTabControl3.TabPages.AddRange(new DevExpress.XtraTab.XtraTabPage[] {
+            this.xtraTabPage5,
+            this.xtraTabPage6});
+            // 
+            // xtraTabPage5
+            // 
+            this.xtraTabPage5.Name = "xtraTabPage5";
+            this.xtraTabPage5.Size = new System.Drawing.Size(120, 247);
+            this.xtraTabPage5.Text = "xtraTabPage5";
+            // 
+            // xtraTabPage6
+            // 
+            this.xtraTabPage6.Name = "xtraTabPage6";
+            this.xtraTabPage6.Size = new System.Drawing.Size(120, 247);
+            this.xtraTabPage6.Text = "xtraTabPage6";
+            // 
+            // xtraTabControl2
+            // 
+            this.xtraTabControl2.Location = new System.Drawing.Point(402, 135);
+            this.xtraTabControl2.Name = "xtraTabControl2";
+            this.xtraTabControl2.SelectedTabPage = this.xtraTabPage3;
+            this.xtraTabControl2.Size = new System.Drawing.Size(300, 300);
+            this.xtraTabControl2.TabIndex = 1;
+            this.xtraTabControl2.TabPages.AddRange(new DevExpress.XtraTab.XtraTabPage[] {
+            this.xtraTabPage3,
+            this.xtraTabPage4});
+            // 
+            // xtraTabPage3
+            // 
+            this.xtraTabPage3.Name = "xtraTabPage3";
+            this.xtraTabPage3.Size = new System.Drawing.Size(298, 275);
+            this.xtraTabPage3.Text = "xtraTabPage3";
+            // 
+            // xtraTabPage4
+            // 
+            this.xtraTabPage4.Name = "xtraTabPage4";
+            this.xtraTabPage4.Size = new System.Drawing.Size(298, 275);
+            this.xtraTabPage4.Text = "xtraTabPage4";
+            // 
+            // xtraTabControl1
+            // 
+            this.xtraTabControl1.Location = new System.Drawing.Point(0, 0);
+            this.xtraTabControl1.Name = "xtraTabControl1";
+            this.xtraTabControl1.SelectedTabPage = this.xtraTabPage1;
+            this.xtraTabControl1.Size = new System.Drawing.Size(300, 300);
+            this.xtraTabControl1.TabIndex = 0;
+            this.xtraTabControl1.TabPages.AddRange(new DevExpress.XtraTab.XtraTabPage[] {
+            this.xtraTabPage1,
+            this.xtraTabPage2});
+            // 
+            // xtraTabPage1
+            // 
+            this.xtraTabPage1.Name = "xtraTabPage1";
+            this.xtraTabPage1.Size = new System.Drawing.Size(298, 275);
+            this.xtraTabPage1.Text = "xtraTabPage1";
+            // 
+            // xtraTabPage2
+            // 
+            this.xtraTabPage2.Name = "xtraTabPage2";
+            this.xtraTabPage2.Size = new System.Drawing.Size(298, 275);
+            this.xtraTabPage2.Text = "xtraTabPage2";
             // 
             // tabNavHistorique
             // 
@@ -806,7 +933,7 @@
             this.tabNavHistorique.Name = "tabNavHistorique";
             this.tabNavHistorique.PageText = "Historique";
             this.tabNavHistorique.PageVisible = false;
-            this.tabNavHistorique.Size = new System.Drawing.Size(1008, 729);
+            this.tabNavHistorique.Size = new System.Drawing.Size(1242, 746);
             // 
             // tabNavChange
             // 
@@ -877,6 +1004,8 @@
             this.DGVChanges.Name = "DGVChanges";
             this.DGVChanges.ReadOnly = true;
             this.DGVChanges.RowHeadersVisible = false;
+            this.DGVChanges.RowTemplate.DefaultCellStyle.BackColor = System.Drawing.Color.White;
+            this.DGVChanges.RowTemplate.DefaultCellStyle.SelectionBackColor = System.Drawing.Color.White;
             this.DGVChanges.RowTemplate.Height = 27;
             this.DGVChanges.Size = new System.Drawing.Size(1236, 670);
             this.DGVChanges.TabIndex = 9;
@@ -894,12 +1023,12 @@
             this.DGVChanges.ThemeStyle.HeaderStyle.HeaightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
             this.DGVChanges.ThemeStyle.HeaderStyle.Height = 25;
             this.DGVChanges.ThemeStyle.ReadOnly = true;
-            this.DGVChanges.ThemeStyle.RowsStyle.BackColor = System.Drawing.Color.White;
+            this.DGVChanges.ThemeStyle.RowsStyle.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
             this.DGVChanges.ThemeStyle.RowsStyle.BorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.SingleHorizontal;
             this.DGVChanges.ThemeStyle.RowsStyle.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.DGVChanges.ThemeStyle.RowsStyle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(69)))), ((int)(((byte)(94)))));
             this.DGVChanges.ThemeStyle.RowsStyle.Height = 27;
-            this.DGVChanges.ThemeStyle.RowsStyle.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(231)))), ((int)(((byte)(229)))), ((int)(((byte)(255)))));
+            this.DGVChanges.ThemeStyle.RowsStyle.SelectionBackColor = System.Drawing.Color.White;
             this.DGVChanges.ThemeStyle.RowsStyle.SelectionForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(69)))), ((int)(((byte)(94)))));
             // 
             // Home
@@ -942,6 +1071,17 @@
             this.tabNavDocuments.ResumeLayout(false);
             this.tabNavDocuments.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.DGVFacture)).EndInit();
+            this.tabNavParametres.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl5)).EndInit();
+            this.xtraTabControl5.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl4)).EndInit();
+            this.xtraTabControl4.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl3)).EndInit();
+            this.xtraTabControl3.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl2)).EndInit();
+            this.xtraTabControl2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl1)).EndInit();
+            this.xtraTabControl1.ResumeLayout(false);
             this.tabNavChange.ResumeLayout(false);
             this.tabNavChange.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.DGVChanges)).EndInit();
@@ -953,8 +1093,6 @@
 
         private DevExpress.XtraBars.Navigation.TabPane tabPane1;
         private DevExpress.XtraBars.Navigation.TabNavigationPage tabNavClient;
-        private Guna.UI2.WinForms.Guna2Button btnClientsAdd;
-        private Guna.UI2.WinForms.Guna2Button btnSearchClients;
         private Guna.UI2.WinForms.Guna2TextBox txtSearchClients;
         private DevExpress.XtraEditors.LabelControl lblClientCnt;
         private Guna.UI2.WinForms.Guna2DataGridView DGVClients;
@@ -976,7 +1114,6 @@
         private DevExpress.XtraBars.Navigation.TabNavigationPage tabNavChange;
         private Guna.UI2.WinForms.Guna2Button btnAdd;
         private DevExpress.XtraEditors.LabelControl lblChangesCnt;
-        private Guna.UI2.WinForms.Guna2DataGridView DGVChanges;
         private DevExpress.XtraEditors.LabelControl lblVentMontant;
         private DevExpress.XtraEditors.LabelControl labelControl1;
         private Guna.UI2.WinForms.Guna2PictureBox guna2PictureBox1;
@@ -999,5 +1136,22 @@
         private Guna.UI2.WinForms.Guna2PictureBox guna2PictureBox5;
         private DevExpress.XtraEditors.LabelControl labelControl9;
         private Guna.UI2.WinForms.Guna2DateTimePicker from_date;
+        private Guna.UI2.WinForms.Guna2Button btnCompanyAdd;
+        private DevExpress.XtraTab.XtraTabControl xtraTabControl5;
+        private DevExpress.XtraTab.XtraTabPage xtraTabPage9;
+        private DevExpress.XtraTab.XtraTabPage xtraTabPage10;
+        private DevExpress.XtraTab.XtraTabControl xtraTabControl4;
+        private DevExpress.XtraTab.XtraTabPage xtraTabPage7;
+        private DevExpress.XtraTab.XtraTabPage xtraTabPage8;
+        private DevExpress.XtraTab.XtraTabControl xtraTabControl3;
+        private DevExpress.XtraTab.XtraTabPage xtraTabPage5;
+        private DevExpress.XtraTab.XtraTabPage xtraTabPage6;
+        private DevExpress.XtraTab.XtraTabControl xtraTabControl2;
+        private DevExpress.XtraTab.XtraTabPage xtraTabPage3;
+        private DevExpress.XtraTab.XtraTabPage xtraTabPage4;
+        private DevExpress.XtraTab.XtraTabControl xtraTabControl1;
+        private DevExpress.XtraTab.XtraTabPage xtraTabPage1;
+        private DevExpress.XtraTab.XtraTabPage xtraTabPage2;
+        private Guna.UI2.WinForms.Guna2DataGridView DGVChanges;
     }
 }

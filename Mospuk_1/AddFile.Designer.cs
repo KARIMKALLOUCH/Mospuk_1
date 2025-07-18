@@ -29,29 +29,11 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AddFile));
-            this.btnUplaod = new Guna.UI2.WinForms.Guna2Button();
             this.panel1 = new System.Windows.Forms.Panel();
             this.image1 = new Guna.UI2.WinForms.Guna2PictureBox();
+            this.btnUplaod = new Guna.UI2.WinForms.Guna2Button();
             ((System.ComponentModel.ISupportInitialize)(this.image1)).BeginInit();
             this.SuspendLayout();
-            // 
-            // btnUplaod
-            // 
-            this.btnUplaod.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnUplaod.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
-            this.btnUplaod.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
-            this.btnUplaod.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
-            this.btnUplaod.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
-            this.btnUplaod.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
-            this.btnUplaod.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.btnUplaod.ForeColor = System.Drawing.Color.White;
-            this.btnUplaod.Image = ((System.Drawing.Image)(resources.GetObject("btnUplaod.Image")));
-            this.btnUplaod.Location = new System.Drawing.Point(1090, 705);
-            this.btnUplaod.Name = "btnUplaod";
-            this.btnUplaod.Size = new System.Drawing.Size(140, 38);
-            this.btnUplaod.TabIndex = 22;
-            this.btnUplaod.Text = "Add";
-            this.btnUplaod.Click += new System.EventHandler(this.btnUplaod_Click);
             // 
             // panel1
             // 
@@ -75,6 +57,24 @@
             this.image1.Click += new System.EventHandler(this.image1_Click);
             this.image1.DragDrop += new System.Windows.Forms.DragEventHandler(this.image1_DragDrop);
             this.image1.DragEnter += new System.Windows.Forms.DragEventHandler(this.image1_DragEnter);
+            // 
+            // btnUplaod
+            // 
+            this.btnUplaod.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnUplaod.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
+            this.btnUplaod.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
+            this.btnUplaod.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
+            this.btnUplaod.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
+            this.btnUplaod.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.btnUplaod.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.btnUplaod.ForeColor = System.Drawing.Color.White;
+            this.btnUplaod.Image = ((System.Drawing.Image)(resources.GetObject("btnUplaod.Image")));
+            this.btnUplaod.Location = new System.Drawing.Point(1090, 705);
+            this.btnUplaod.Name = "btnUplaod";
+            this.btnUplaod.Size = new System.Drawing.Size(140, 38);
+            this.btnUplaod.TabIndex = 22;
+            this.btnUplaod.Text = "Add";
+            this.btnUplaod.Click += new System.EventHandler(this.btnUplaod_Click);
             // 
             // AddFile
             // 
