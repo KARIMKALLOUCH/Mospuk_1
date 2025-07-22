@@ -108,7 +108,8 @@
             this.Company_Client.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
             this.Company_Client.ItemHeight = 30;
             this.Company_Client.Items.AddRange(new object[] {
-            "karim"});
+            "ndr",
+            "bnc"});
             this.Company_Client.Location = new System.Drawing.Point(12, 52);
             this.Company_Client.Name = "Company_Client";
             this.Company_Client.Size = new System.Drawing.Size(210, 36);

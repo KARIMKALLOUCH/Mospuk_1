@@ -52,7 +52,7 @@
             this.btn_edit_emplye.FillColor = System.Drawing.Color.White;
             this.btn_edit_emplye.Font = new System.Drawing.Font("Tahoma", 9.75F);
             this.btn_edit_emplye.ForeColor = System.Drawing.Color.Black;
-            this.btn_edit_emplye.Location = new System.Drawing.Point(353, 211);
+            this.btn_edit_emplye.Location = new System.Drawing.Point(353, 238);
             this.btn_edit_emplye.Name = "btn_edit_emplye";
             this.btn_edit_emplye.Size = new System.Drawing.Size(253, 43);
             this.btn_edit_emplye.TabIndex = 141;

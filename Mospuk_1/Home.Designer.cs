@@ -40,6 +40,9 @@
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle7 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle8 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle9 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle10 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle11 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle12 = new System.Windows.Forms.DataGridViewCellStyle();
             this.tabPane1 = new DevExpress.XtraBars.Navigation.TabPane();
             this.tabNavClient = new DevExpress.XtraBars.Navigation.TabNavigationPage();
             this.btnCompanyAdd = new Guna.UI2.WinForms.Guna2Button();
@@ -82,26 +85,43 @@
             this.lblFactureCnt = new DevExpress.XtraEditors.LabelControl();
             this.DGVFacture = new Guna.UI2.WinForms.Guna2DataGridView();
             this.tabNavParametres = new DevExpress.XtraBars.Navigation.TabNavigationPage();
-            this.xtraTabControl5 = new DevExpress.XtraTab.XtraTabControl();
-            this.xtraTabPage9 = new DevExpress.XtraTab.XtraTabPage();
-            this.xtraTabPage10 = new DevExpress.XtraTab.XtraTabPage();
-            this.xtraTabControl4 = new DevExpress.XtraTab.XtraTabControl();
-            this.xtraTabPage7 = new DevExpress.XtraTab.XtraTabPage();
-            this.xtraTabPage8 = new DevExpress.XtraTab.XtraTabPage();
-            this.xtraTabControl3 = new DevExpress.XtraTab.XtraTabControl();
-            this.xtraTabPage5 = new DevExpress.XtraTab.XtraTabPage();
-            this.xtraTabPage6 = new DevExpress.XtraTab.XtraTabPage();
-            this.xtraTabControl2 = new DevExpress.XtraTab.XtraTabControl();
-            this.xtraTabPage3 = new DevExpress.XtraTab.XtraTabPage();
-            this.xtraTabPage4 = new DevExpress.XtraTab.XtraTabPage();
-            this.xtraTabControl1 = new DevExpress.XtraTab.XtraTabControl();
-            this.xtraTabPage1 = new DevExpress.XtraTab.XtraTabPage();
-            this.xtraTabPage2 = new DevExpress.XtraTab.XtraTabPage();
-            this.tabNavHistorique = new DevExpress.XtraBars.Navigation.TabNavigationPage();
+            this.guna2Button3 = new Guna.UI2.WinForms.Guna2Button();
+            this.guna2Button2 = new Guna.UI2.WinForms.Guna2Button();
+            this.guna2Button1 = new Guna.UI2.WinForms.Guna2Button();
+            this.btnClientAdd = new Guna.UI2.WinForms.Guna2Button();
+            this.navigationFrame1 = new DevExpress.XtraBars.Navigation.NavigationFrame();
+            this.navigationPage1 = new DevExpress.XtraBars.Navigation.NavigationPage();
+            this.btnDeleteClient = new Guna.UI2.WinForms.Guna2Button();
+            this.navigationPage2 = new DevExpress.XtraBars.Navigation.NavigationPage();
+            this.txtsearch = new Guna.UI2.WinForms.Guna2TextBox();
+            this.guna2Panel1 = new Guna.UI2.WinForms.Guna2Panel();
+            this.txtnotes = new Guna.UI2.WinForms.Guna2TextBox();
+            this.labelControl11 = new DevExpress.XtraEditors.LabelControl();
+            this.txtfirstname = new Guna.UI2.WinForms.Guna2TextBox();
+            this.labelControl10 = new DevExpress.XtraEditors.LabelControl();
+            this.txtlastname = new Guna.UI2.WinForms.Guna2TextBox();
+            this.labelControl12 = new DevExpress.XtraEditors.LabelControl();
+            this.labelControl15 = new DevExpress.XtraEditors.LabelControl();
+            this.txtcode = new Guna.UI2.WinForms.Guna2TextBox();
+            this.txtaddress = new Guna.UI2.WinForms.Guna2TextBox();
+            this.labelControl13 = new DevExpress.XtraEditors.LabelControl();
+            this.labelControl16 = new DevExpress.XtraEditors.LabelControl();
+            this.txtphone = new Guna.UI2.WinForms.Guna2TextBox();
+            this.txtemail = new Guna.UI2.WinForms.Guna2TextBox();
+            this.labelControl29 = new DevExpress.XtraEditors.LabelControl();
+            this.btnEditClient = new Guna.UI2.WinForms.Guna2Button();
+            this.btnAddClient = new Guna.UI2.WinForms.Guna2Button();
+            this.DTGVClient = new Guna.UI2.WinForms.Guna2DataGridView();
+            this.CntMenuStrip = new Guna.UI2.WinForms.Guna2ContextMenuStrip();
+            this.infoToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.supprimerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.btnUserAdd = new Guna.UI2.WinForms.Guna2Button();
             this.tabNavChange = new DevExpress.XtraBars.Navigation.TabNavigationPage();
             this.btnAdd = new Guna.UI2.WinForms.Guna2Button();
             this.lblChangesCnt = new DevExpress.XtraEditors.LabelControl();
             this.DGVChanges = new Guna.UI2.WinForms.Guna2DataGridView();
+            this.tabNavHistorique = new DevExpress.XtraBars.Navigation.TabNavigationPage();
+            this.guna2Button4 = new Guna.UI2.WinForms.Guna2Button();
             ((System.ComponentModel.ISupportInitialize)(this.tabPane1)).BeginInit();
             this.tabPane1.SuspendLayout();
             this.tabNavClient.SuspendLayout();
@@ -126,16 +146,13 @@
             this.tabNavDocuments.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.DGVFacture)).BeginInit();
             this.tabNavParametres.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl5)).BeginInit();
-            this.xtraTabControl5.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl4)).BeginInit();
-            this.xtraTabControl4.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl3)).BeginInit();
-            this.xtraTabControl3.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl2)).BeginInit();
-            this.xtraTabControl2.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl1)).BeginInit();
-            this.xtraTabControl1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.navigationFrame1)).BeginInit();
+            this.navigationFrame1.SuspendLayout();
+            this.navigationPage1.SuspendLayout();
+            this.navigationPage2.SuspendLayout();
+            this.guna2Panel1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.DTGVClient)).BeginInit();
+            this.CntMenuStrip.SuspendLayout();
             this.tabNavChange.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.DGVChanges)).BeginInit();
             this.SuspendLayout();
@@ -146,8 +163,8 @@
             this.tabPane1.Controls.Add(this.tabNavResume);
             this.tabPane1.Controls.Add(this.tabNavDocuments);
             this.tabPane1.Controls.Add(this.tabNavParametres);
-            this.tabPane1.Controls.Add(this.tabNavHistorique);
             this.tabPane1.Controls.Add(this.tabNavChange);
+            this.tabPane1.Controls.Add(this.tabNavHistorique);
             this.tabPane1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabPane1.Location = new System.Drawing.Point(0, 0);
             this.tabPane1.Name = "tabPane1";
@@ -159,9 +176,9 @@
             this.tabNavDocuments,
             this.tabNavHistorique,
             this.tabNavParametres});
-            this.tabPane1.RegularSize = new System.Drawing.Size(1242, 746);
+            this.tabPane1.RegularSize = new System.Drawing.Size(1366, 746);
             this.tabPane1.SelectedPage = this.tabNavResume;
-            this.tabPane1.Size = new System.Drawing.Size(1242, 746);
+            this.tabPane1.Size = new System.Drawing.Size(1366, 746);
             this.tabPane1.TabIndex = 1;
             this.tabPane1.Text = "tabPaneHome";
             // 
@@ -175,7 +192,8 @@
             this.tabNavClient.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("tabNavClient.ImageOptions.SvgImage")));
             this.tabNavClient.Name = "tabNavClient";
             this.tabNavClient.PageText = "Company";
-            this.tabNavClient.Size = new System.Drawing.Size(1242, 703);
+            this.tabNavClient.PageVisible = false;
+            this.tabNavClient.Size = new System.Drawing.Size(1366, 746);
             // 
             // btnCompanyAdd
             // 
@@ -192,6 +210,7 @@
             this.btnCompanyAdd.Size = new System.Drawing.Size(140, 38);
             this.btnCompanyAdd.TabIndex = 22;
             this.btnCompanyAdd.Text = "Add";
+            this.btnCompanyAdd.Click += new System.EventHandler(this.btnCompanyAdd_Click);
             // 
             // txtSearchClients
             // 
@@ -207,7 +226,7 @@
             this.txtSearchClients.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.txtSearchClients.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
             this.txtSearchClients.IconRight = ((System.Drawing.Image)(resources.GetObject("txtSearchClients.IconRight")));
-            this.txtSearchClients.Location = new System.Drawing.Point(950, 14);
+            this.txtSearchClients.Location = new System.Drawing.Point(1074, 14);
             this.txtSearchClients.Name = "txtSearchClients";
             this.txtSearchClients.PlaceholderText = "Search...";
             this.txtSearchClients.SelectedText = "";
@@ -256,7 +275,7 @@
             this.DGVClients.ReadOnly = true;
             this.DGVClients.RowHeadersVisible = false;
             this.DGVClients.RowTemplate.Height = 27;
-            this.DGVClients.Size = new System.Drawing.Size(1236, 625);
+            this.DGVClients.Size = new System.Drawing.Size(1360, 625);
             this.DGVClients.TabIndex = 6;
             this.DGVClients.ThemeStyle.AlternatingRowsStyle.BackColor = System.Drawing.Color.White;
             this.DGVClients.ThemeStyle.AlternatingRowsStyle.Font = null;
@@ -287,7 +306,7 @@
             this.tabNavResume.ImageOptions.Image = ((System.Drawing.Image)(resources.GetObject("tabNavResume.ImageOptions.Image")));
             this.tabNavResume.Name = "tabNavResume";
             this.tabNavResume.PageText = "Dashboard";
-            this.tabNavResume.Size = new System.Drawing.Size(1242, 703);
+            this.tabNavResume.Size = new System.Drawing.Size(1366, 703);
             // 
             // tableLayoutPanel1
             // 
@@ -311,7 +330,7 @@
             this.tableLayoutPanel1.RowCount = 2;
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 100F));
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(1213, 670);
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(1337, 670);
             this.tableLayoutPanel1.TabIndex = 9;
             // 
             // panelControl1
@@ -326,7 +345,7 @@
             this.panelControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panelControl1.Location = new System.Drawing.Point(3, 103);
             this.panelControl1.Name = "panelControl1";
-            this.panelControl1.Size = new System.Drawing.Size(1207, 564);
+            this.panelControl1.Size = new System.Drawing.Size(1331, 564);
             this.panelControl1.TabIndex = 11;
             // 
             // from_date
@@ -413,7 +432,7 @@
             series1.SeriesID = 0;
             this.chartControl1.SeriesSerializable = new DevExpress.XtraCharts.Series[] {
         series1};
-            this.chartControl1.Size = new System.Drawing.Size(1202, 472);
+            this.chartControl1.Size = new System.Drawing.Size(1326, 472);
             this.chartControl1.TabIndex = 0;
             // 
             // panel1
@@ -426,7 +445,7 @@
             this.panel1.Location = new System.Drawing.Point(3, 3);
             this.panel1.Margin = new System.Windows.Forms.Padding(3, 3, 10, 3);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(229, 94);
+            this.panel1.Size = new System.Drawing.Size(254, 94);
             this.panel1.TabIndex = 1;
             // 
             // guna2PictureBox1
@@ -435,7 +454,7 @@
             this.guna2PictureBox1.FillColor = System.Drawing.Color.Transparent;
             this.guna2PictureBox1.Image = ((System.Drawing.Image)(resources.GetObject("guna2PictureBox1.Image")));
             this.guna2PictureBox1.ImageRotate = 0F;
-            this.guna2PictureBox1.Location = new System.Drawing.Point(172, 15);
+            this.guna2PictureBox1.Location = new System.Drawing.Point(197, 15);
             this.guna2PictureBox1.Name = "guna2PictureBox1";
             this.guna2PictureBox1.Size = new System.Drawing.Size(54, 62);
             this.guna2PictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -473,10 +492,10 @@
             this.panel2.Controls.Add(this.labelControl2);
             this.panel2.Controls.Add(this.guna2PictureBox2);
             this.panel2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel2.Location = new System.Drawing.Point(245, 3);
+            this.panel2.Location = new System.Drawing.Point(270, 3);
             this.panel2.Margin = new System.Windows.Forms.Padding(3, 3, 10, 3);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(229, 94);
+            this.panel2.Size = new System.Drawing.Size(254, 94);
             this.panel2.TabIndex = 2;
             // 
             // labelControl3
@@ -509,7 +528,7 @@
             this.guna2PictureBox2.FillColor = System.Drawing.Color.Transparent;
             this.guna2PictureBox2.Image = global::Mospuk_1.Properties.Resources.activeprject;
             this.guna2PictureBox2.ImageRotate = 0F;
-            this.guna2PictureBox2.Location = new System.Drawing.Point(172, 15);
+            this.guna2PictureBox2.Location = new System.Drawing.Point(197, 15);
             this.guna2PictureBox2.Name = "guna2PictureBox2";
             this.guna2PictureBox2.Size = new System.Drawing.Size(54, 62);
             this.guna2PictureBox2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -523,10 +542,10 @@
             this.panel4.Controls.Add(this.labelControl4);
             this.panel4.Controls.Add(this.guna2PictureBox3);
             this.panel4.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel4.Location = new System.Drawing.Point(487, 3);
+            this.panel4.Location = new System.Drawing.Point(537, 3);
             this.panel4.Margin = new System.Windows.Forms.Padding(3, 3, 10, 3);
             this.panel4.Name = "panel4";
-            this.panel4.Size = new System.Drawing.Size(229, 94);
+            this.panel4.Size = new System.Drawing.Size(254, 94);
             this.panel4.TabIndex = 3;
             // 
             // labelControl5
@@ -559,7 +578,7 @@
             this.guna2PictureBox3.FillColor = System.Drawing.Color.Transparent;
             this.guna2PictureBox3.Image = global::Mospuk_1.Properties.Resources.late;
             this.guna2PictureBox3.ImageRotate = 0F;
-            this.guna2PictureBox3.Location = new System.Drawing.Point(172, 15);
+            this.guna2PictureBox3.Location = new System.Drawing.Point(197, 15);
             this.guna2PictureBox3.Name = "guna2PictureBox3";
             this.guna2PictureBox3.Size = new System.Drawing.Size(54, 62);
             this.guna2PictureBox3.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -573,10 +592,10 @@
             this.panel3.Controls.Add(this.labelControl6);
             this.panel3.Controls.Add(this.guna2PictureBox4);
             this.panel3.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel3.Location = new System.Drawing.Point(729, 3);
+            this.panel3.Location = new System.Drawing.Point(804, 3);
             this.panel3.Margin = new System.Windows.Forms.Padding(3, 3, 10, 3);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(229, 94);
+            this.panel3.Size = new System.Drawing.Size(254, 94);
             this.panel3.TabIndex = 4;
             // 
             // labelControl8
@@ -609,7 +628,7 @@
             this.guna2PictureBox4.FillColor = System.Drawing.Color.Transparent;
             this.guna2PictureBox4.Image = global::Mospuk_1.Properties.Resources.late;
             this.guna2PictureBox4.ImageRotate = 0F;
-            this.guna2PictureBox4.Location = new System.Drawing.Point(172, 15);
+            this.guna2PictureBox4.Location = new System.Drawing.Point(197, 15);
             this.guna2PictureBox4.Name = "guna2PictureBox4";
             this.guna2PictureBox4.Size = new System.Drawing.Size(54, 62);
             this.guna2PictureBox4.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -623,9 +642,9 @@
             this.panel5.Controls.Add(this.labelControl7);
             this.panel5.Controls.Add(this.guna2PictureBox5);
             this.panel5.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel5.Location = new System.Drawing.Point(971, 3);
+            this.panel5.Location = new System.Drawing.Point(1071, 3);
             this.panel5.Name = "panel5";
-            this.panel5.Size = new System.Drawing.Size(239, 94);
+            this.panel5.Size = new System.Drawing.Size(263, 94);
             this.panel5.TabIndex = 5;
             // 
             // labelControl9
@@ -658,7 +677,7 @@
             this.guna2PictureBox5.FillColor = System.Drawing.Color.Transparent;
             this.guna2PictureBox5.Image = global::Mospuk_1.Properties.Resources.check;
             this.guna2PictureBox5.ImageRotate = 0F;
-            this.guna2PictureBox5.Location = new System.Drawing.Point(180, 15);
+            this.guna2PictureBox5.Location = new System.Drawing.Point(204, 15);
             this.guna2PictureBox5.Name = "guna2PictureBox5";
             this.guna2PictureBox5.Size = new System.Drawing.Size(54, 62);
             this.guna2PictureBox5.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -677,7 +696,7 @@
             this.tabNavDocuments.Name = "tabNavDocuments";
             this.tabNavDocuments.PageText = "Documents";
             this.tabNavDocuments.PageVisible = false;
-            this.tabNavDocuments.Size = new System.Drawing.Size(1242, 746);
+            this.tabNavDocuments.Size = new System.Drawing.Size(1366, 746);
             // 
             // btnSearchFactures
             // 
@@ -691,7 +710,7 @@
             this.btnSearchFactures.FillColor = System.Drawing.Color.White;
             this.btnSearchFactures.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.btnSearchFactures.ForeColor = System.Drawing.Color.White;
-            this.btnSearchFactures.Location = new System.Drawing.Point(1189, 15);
+            this.btnSearchFactures.Location = new System.Drawing.Point(1313, 15);
             this.btnSearchFactures.Name = "btnSearchFactures";
             this.btnSearchFactures.Size = new System.Drawing.Size(41, 38);
             this.btnSearchFactures.TabIndex = 23;
@@ -709,7 +728,7 @@
             this.txtSearchFactures.FocusedState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
             this.txtSearchFactures.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.txtSearchFactures.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
-            this.txtSearchFactures.Location = new System.Drawing.Point(958, 15);
+            this.txtSearchFactures.Location = new System.Drawing.Point(1082, 15);
             this.txtSearchFactures.Name = "txtSearchFactures";
             this.txtSearchFactures.PlaceholderText = "Recherche...";
             this.txtSearchFactures.SelectedText = "";
@@ -774,7 +793,7 @@
             this.DGVFacture.ReadOnly = true;
             this.DGVFacture.RowHeadersVisible = false;
             this.DGVFacture.RowTemplate.Height = 27;
-            this.DGVFacture.Size = new System.Drawing.Size(1218, 656);
+            this.DGVFacture.Size = new System.Drawing.Size(1342, 656);
             this.DGVFacture.TabIndex = 12;
             this.DGVFacture.ThemeStyle.AlternatingRowsStyle.BackColor = System.Drawing.Color.White;
             this.DGVFacture.ThemeStyle.AlternatingRowsStyle.Font = null;
@@ -801,139 +820,557 @@
             // tabNavParametres
             // 
             this.tabNavParametres.Caption = "Paramètres";
-            this.tabNavParametres.Controls.Add(this.xtraTabControl5);
-            this.tabNavParametres.Controls.Add(this.xtraTabControl4);
-            this.tabNavParametres.Controls.Add(this.xtraTabControl3);
-            this.tabNavParametres.Controls.Add(this.xtraTabControl2);
-            this.tabNavParametres.Controls.Add(this.xtraTabControl1);
+            this.tabNavParametres.Controls.Add(this.guna2Button3);
+            this.tabNavParametres.Controls.Add(this.guna2Button2);
+            this.tabNavParametres.Controls.Add(this.guna2Button1);
+            this.tabNavParametres.Controls.Add(this.btnClientAdd);
+            this.tabNavParametres.Controls.Add(this.navigationFrame1);
+            this.tabNavParametres.Controls.Add(this.btnUserAdd);
             this.tabNavParametres.ImageOptions.Image = ((System.Drawing.Image)(resources.GetObject("tabNavParametres.ImageOptions.Image")));
             this.tabNavParametres.Name = "tabNavParametres";
             this.tabNavParametres.PageText = "Settings";
-            this.tabNavParametres.Size = new System.Drawing.Size(1242, 703);
+            this.tabNavParametres.Size = new System.Drawing.Size(1366, 703);
             // 
-            // xtraTabControl5
+            // guna2Button3
             // 
-            this.xtraTabControl5.Location = new System.Drawing.Point(807, 96);
-            this.xtraTabControl5.Name = "xtraTabControl5";
-            this.xtraTabControl5.SelectedTabPage = this.xtraTabPage9;
-            this.xtraTabControl5.Size = new System.Drawing.Size(300, 300);
-            this.xtraTabControl5.TabIndex = 4;
-            this.xtraTabControl5.TabPages.AddRange(new DevExpress.XtraTab.XtraTabPage[] {
-            this.xtraTabPage9,
-            this.xtraTabPage10});
+            this.guna2Button3.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
+            this.guna2Button3.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
+            this.guna2Button3.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
+            this.guna2Button3.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
+            this.guna2Button3.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.guna2Button3.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.guna2Button3.ForeColor = System.Drawing.Color.White;
+            this.guna2Button3.Location = new System.Drawing.Point(12, 226);
+            this.guna2Button3.Name = "guna2Button3";
+            this.guna2Button3.Size = new System.Drawing.Size(205, 51);
+            this.guna2Button3.TabIndex = 6;
+            this.guna2Button3.Text = "File type";
             // 
-            // xtraTabPage9
+            // guna2Button2
             // 
-            this.xtraTabPage9.Name = "xtraTabPage9";
-            this.xtraTabPage9.Size = new System.Drawing.Size(298, 275);
-            this.xtraTabPage9.Text = "xtraTabPage9";
+            this.guna2Button2.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
+            this.guna2Button2.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
+            this.guna2Button2.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
+            this.guna2Button2.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
+            this.guna2Button2.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.guna2Button2.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.guna2Button2.ForeColor = System.Drawing.Color.White;
+            this.guna2Button2.Location = new System.Drawing.Point(12, 301);
+            this.guna2Button2.Name = "guna2Button2";
+            this.guna2Button2.Size = new System.Drawing.Size(205, 51);
+            this.guna2Button2.TabIndex = 5;
+            this.guna2Button2.Text = "Backup";
             // 
-            // xtraTabPage10
+            // guna2Button1
             // 
-            this.xtraTabPage10.Name = "xtraTabPage10";
-            this.xtraTabPage10.Size = new System.Drawing.Size(298, 275);
-            this.xtraTabPage10.Text = "xtraTabPage10";
+            this.guna2Button1.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
+            this.guna2Button1.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
+            this.guna2Button1.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
+            this.guna2Button1.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
+            this.guna2Button1.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.guna2Button1.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.guna2Button1.ForeColor = System.Drawing.Color.White;
+            this.guna2Button1.Location = new System.Drawing.Point(12, 152);
+            this.guna2Button1.Name = "guna2Button1";
+            this.guna2Button1.Size = new System.Drawing.Size(205, 51);
+            this.guna2Button1.TabIndex = 4;
+            this.guna2Button1.Text = "Company";
             // 
-            // xtraTabControl4
+            // btnClientAdd
             // 
-            this.xtraTabControl4.Location = new System.Drawing.Point(808, 249);
-            this.xtraTabControl4.Name = "xtraTabControl4";
-            this.xtraTabControl4.SelectedTabPage = this.xtraTabPage7;
-            this.xtraTabControl4.Size = new System.Drawing.Size(300, 300);
-            this.xtraTabControl4.TabIndex = 3;
-            this.xtraTabControl4.TabPages.AddRange(new DevExpress.XtraTab.XtraTabPage[] {
-            this.xtraTabPage7,
-            this.xtraTabPage8});
+            this.btnClientAdd.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
+            this.btnClientAdd.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
+            this.btnClientAdd.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
+            this.btnClientAdd.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
+            this.btnClientAdd.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.btnClientAdd.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.btnClientAdd.ForeColor = System.Drawing.Color.White;
+            this.btnClientAdd.Location = new System.Drawing.Point(12, 81);
+            this.btnClientAdd.Name = "btnClientAdd";
+            this.btnClientAdd.Size = new System.Drawing.Size(205, 51);
+            this.btnClientAdd.TabIndex = 3;
+            this.btnClientAdd.Text = "Client";
+            this.btnClientAdd.Click += new System.EventHandler(this.btnClientAdd_Click);
             // 
-            // xtraTabPage7
+            // navigationFrame1
             // 
-            this.xtraTabPage7.Name = "xtraTabPage7";
-            this.xtraTabPage7.Size = new System.Drawing.Size(298, 275);
-            this.xtraTabPage7.Text = "xtraTabPage7";
+            this.navigationFrame1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.navigationFrame1.Controls.Add(this.navigationPage1);
+            this.navigationFrame1.Controls.Add(this.navigationPage2);
+            this.navigationFrame1.Location = new System.Drawing.Point(223, 0);
+            this.navigationFrame1.Name = "navigationFrame1";
+            this.navigationFrame1.Pages.AddRange(new DevExpress.XtraBars.Navigation.NavigationPageBase[] {
+            this.navigationPage1,
+            this.navigationPage2});
+            this.navigationFrame1.SelectedPage = this.navigationPage1;
+            this.navigationFrame1.Size = new System.Drawing.Size(1143, 703);
+            this.navigationFrame1.TabIndex = 2;
+            this.navigationFrame1.Text = "navigationFrame1";
+            this.navigationFrame1.TransitionType = DevExpress.Utils.Animation.Transitions.Push;
             // 
-            // xtraTabPage8
+            // navigationPage1
             // 
-            this.xtraTabPage8.Name = "xtraTabPage8";
-            this.xtraTabPage8.Size = new System.Drawing.Size(298, 275);
-            this.xtraTabPage8.Text = "xtraTabPage8";
+            this.navigationPage1.Appearance.BackColor = System.Drawing.SystemColors.Control;
+            this.navigationPage1.Appearance.Options.UseBackColor = true;
+            this.navigationPage1.Controls.Add(this.guna2Button4);
+            this.navigationPage1.Controls.Add(this.btnDeleteClient);
+            this.navigationPage1.Name = "navigationPage1";
+            this.navigationPage1.Size = new System.Drawing.Size(1143, 703);
             // 
-            // xtraTabControl3
+            // btnDeleteClient
             // 
-            this.xtraTabControl3.Location = new System.Drawing.Point(979, 162);
-            this.xtraTabControl3.Name = "xtraTabControl3";
-            this.xtraTabControl3.SelectedTabPage = this.xtraTabPage5;
-            this.xtraTabControl3.Size = new System.Drawing.Size(122, 272);
-            this.xtraTabControl3.TabIndex = 2;
-            this.xtraTabControl3.TabPages.AddRange(new DevExpress.XtraTab.XtraTabPage[] {
-            this.xtraTabPage5,
-            this.xtraTabPage6});
+            this.btnDeleteClient.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnDeleteClient.BorderRadius = 5;
+            this.btnDeleteClient.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
+            this.btnDeleteClient.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
+            this.btnDeleteClient.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
+            this.btnDeleteClient.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
+            this.btnDeleteClient.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.btnDeleteClient.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.btnDeleteClient.ForeColor = System.Drawing.Color.White;
+            this.btnDeleteClient.Image = global::Mospuk_1.Properties.Resources.icons8_delete_60;
+            this.btnDeleteClient.Location = new System.Drawing.Point(501, 332);
+            this.btnDeleteClient.Name = "btnDeleteClient";
+            this.btnDeleteClient.Size = new System.Drawing.Size(140, 38);
+            this.btnDeleteClient.TabIndex = 162;
+            this.btnDeleteClient.Text = "Delete";
             // 
-            // xtraTabPage5
+            // navigationPage2
             // 
-            this.xtraTabPage5.Name = "xtraTabPage5";
-            this.xtraTabPage5.Size = new System.Drawing.Size(120, 247);
-            this.xtraTabPage5.Text = "xtraTabPage5";
+            this.navigationPage2.Caption = "navigationPage2";
+            this.navigationPage2.Controls.Add(this.txtsearch);
+            this.navigationPage2.Controls.Add(this.guna2Panel1);
+            this.navigationPage2.Controls.Add(this.btnEditClient);
+            this.navigationPage2.Controls.Add(this.btnAddClient);
+            this.navigationPage2.Controls.Add(this.DTGVClient);
+            this.navigationPage2.Name = "navigationPage2";
+            this.navigationPage2.Size = new System.Drawing.Size(1143, 703);
             // 
-            // xtraTabPage6
+            // txtsearch
             // 
-            this.xtraTabPage6.Name = "xtraTabPage6";
-            this.xtraTabPage6.Size = new System.Drawing.Size(120, 247);
-            this.xtraTabPage6.Text = "xtraTabPage6";
+            this.txtsearch.BorderRadius = 6;
+            this.txtsearch.Cursor = System.Windows.Forms.Cursors.IBeam;
+            this.txtsearch.DefaultText = "";
+            this.txtsearch.DisabledState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(208)))), ((int)(((byte)(208)))), ((int)(((byte)(208)))));
+            this.txtsearch.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(226)))), ((int)(((byte)(226)))), ((int)(((byte)(226)))));
+            this.txtsearch.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.txtsearch.DisabledState.PlaceholderForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.txtsearch.FocusedState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
+            this.txtsearch.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.txtsearch.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
+            this.txtsearch.IconLeft = ((System.Drawing.Image)(resources.GetObject("txtsearch.IconLeft")));
+            this.txtsearch.IconLeftSize = new System.Drawing.Size(15, 15);
+            this.txtsearch.Location = new System.Drawing.Point(30, 222);
+            this.txtsearch.Name = "txtsearch";
+            this.txtsearch.PlaceholderText = "Search...";
+            this.txtsearch.SelectedText = "";
+            this.txtsearch.Size = new System.Drawing.Size(242, 42);
+            this.txtsearch.TabIndex = 158;
             // 
-            // xtraTabControl2
+            // guna2Panel1
             // 
-            this.xtraTabControl2.Location = new System.Drawing.Point(402, 135);
-            this.xtraTabControl2.Name = "xtraTabControl2";
-            this.xtraTabControl2.SelectedTabPage = this.xtraTabPage3;
-            this.xtraTabControl2.Size = new System.Drawing.Size(300, 300);
-            this.xtraTabControl2.TabIndex = 1;
-            this.xtraTabControl2.TabPages.AddRange(new DevExpress.XtraTab.XtraTabPage[] {
-            this.xtraTabPage3,
-            this.xtraTabPage4});
+            this.guna2Panel1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.guna2Panel1.Controls.Add(this.txtnotes);
+            this.guna2Panel1.Controls.Add(this.labelControl11);
+            this.guna2Panel1.Controls.Add(this.txtfirstname);
+            this.guna2Panel1.Controls.Add(this.labelControl10);
+            this.guna2Panel1.Controls.Add(this.txtlastname);
+            this.guna2Panel1.Controls.Add(this.labelControl12);
+            this.guna2Panel1.Controls.Add(this.labelControl15);
+            this.guna2Panel1.Controls.Add(this.txtcode);
+            this.guna2Panel1.Controls.Add(this.txtaddress);
+            this.guna2Panel1.Controls.Add(this.labelControl13);
+            this.guna2Panel1.Controls.Add(this.labelControl16);
+            this.guna2Panel1.Controls.Add(this.txtphone);
+            this.guna2Panel1.Controls.Add(this.txtemail);
+            this.guna2Panel1.Controls.Add(this.labelControl29);
+            this.guna2Panel1.Location = new System.Drawing.Point(30, 3);
+            this.guna2Panel1.Name = "guna2Panel1";
+            this.guna2Panel1.Size = new System.Drawing.Size(1090, 196);
+            this.guna2Panel1.TabIndex = 162;
             // 
-            // xtraTabPage3
+            // txtnotes
             // 
-            this.xtraTabPage3.Name = "xtraTabPage3";
-            this.xtraTabPage3.Size = new System.Drawing.Size(298, 275);
-            this.xtraTabPage3.Text = "xtraTabPage3";
+            this.txtnotes.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtnotes.Cursor = System.Windows.Forms.Cursors.IBeam;
+            this.txtnotes.DefaultText = "";
+            this.txtnotes.DisabledState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(208)))), ((int)(((byte)(208)))), ((int)(((byte)(208)))));
+            this.txtnotes.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(226)))), ((int)(((byte)(226)))), ((int)(((byte)(226)))));
+            this.txtnotes.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.txtnotes.DisabledState.PlaceholderForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.txtnotes.FocusedState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
+            this.txtnotes.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.txtnotes.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
+            this.txtnotes.IconLeftSize = new System.Drawing.Size(15, 15);
+            this.txtnotes.Location = new System.Drawing.Point(827, 33);
+            this.txtnotes.Multiline = true;
+            this.txtnotes.Name = "txtnotes";
+            this.txtnotes.PlaceholderText = "Write your notes here";
+            this.txtnotes.SelectedText = "";
+            this.txtnotes.Size = new System.Drawing.Size(247, 122);
+            this.txtnotes.TabIndex = 157;
             // 
-            // xtraTabPage4
+            // labelControl11
             // 
-            this.xtraTabPage4.Name = "xtraTabPage4";
-            this.xtraTabPage4.Size = new System.Drawing.Size(298, 275);
-            this.xtraTabPage4.Text = "xtraTabPage4";
+            this.labelControl11.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.labelControl11.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelControl11.Appearance.Options.UseFont = true;
+            this.labelControl11.Location = new System.Drawing.Point(5, 9);
+            this.labelControl11.Name = "labelControl11";
+            this.labelControl11.Size = new System.Drawing.Size(96, 18);
+            this.labelControl11.TabIndex = 119;
+            this.labelControl11.Text = "First Name:\t";
+            this.labelControl11.Click += new System.EventHandler(this.labelControl11_Click);
             // 
-            // xtraTabControl1
+            // txtfirstname
             // 
-            this.xtraTabControl1.Location = new System.Drawing.Point(0, 0);
-            this.xtraTabControl1.Name = "xtraTabControl1";
-            this.xtraTabControl1.SelectedTabPage = this.xtraTabPage1;
-            this.xtraTabControl1.Size = new System.Drawing.Size(300, 300);
-            this.xtraTabControl1.TabIndex = 0;
-            this.xtraTabControl1.TabPages.AddRange(new DevExpress.XtraTab.XtraTabPage[] {
-            this.xtraTabPage1,
-            this.xtraTabPage2});
+            this.txtfirstname.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.txtfirstname.Cursor = System.Windows.Forms.Cursors.IBeam;
+            this.txtfirstname.DefaultText = "";
+            this.txtfirstname.DisabledState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(208)))), ((int)(((byte)(208)))), ((int)(((byte)(208)))));
+            this.txtfirstname.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(226)))), ((int)(((byte)(226)))), ((int)(((byte)(226)))));
+            this.txtfirstname.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.txtfirstname.DisabledState.PlaceholderForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.txtfirstname.FocusedState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
+            this.txtfirstname.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.txtfirstname.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
+            this.txtfirstname.IconLeftSize = new System.Drawing.Size(15, 15);
+            this.txtfirstname.Location = new System.Drawing.Point(5, 33);
+            this.txtfirstname.Name = "txtfirstname";
+            this.txtfirstname.PlaceholderText = "Enter the first name";
+            this.txtfirstname.SelectedText = "";
+            this.txtfirstname.Size = new System.Drawing.Size(237, 42);
+            this.txtfirstname.TabIndex = 120;
             // 
-            // xtraTabPage1
+            // labelControl10
             // 
-            this.xtraTabPage1.Name = "xtraTabPage1";
-            this.xtraTabPage1.Size = new System.Drawing.Size(298, 275);
-            this.xtraTabPage1.Text = "xtraTabPage1";
+            this.labelControl10.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.labelControl10.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelControl10.Appearance.Options.UseFont = true;
+            this.labelControl10.Location = new System.Drawing.Point(270, 9);
+            this.labelControl10.Name = "labelControl10";
+            this.labelControl10.Size = new System.Drawing.Size(116, 18);
+            this.labelControl10.TabIndex = 146;
+            this.labelControl10.Text = "Last Name:\t\t";
             // 
-            // xtraTabPage2
+            // txtlastname
             // 
-            this.xtraTabPage2.Name = "xtraTabPage2";
-            this.xtraTabPage2.Size = new System.Drawing.Size(298, 275);
-            this.xtraTabPage2.Text = "xtraTabPage2";
+            this.txtlastname.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.txtlastname.Cursor = System.Windows.Forms.Cursors.IBeam;
+            this.txtlastname.DefaultText = "";
+            this.txtlastname.DisabledState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(208)))), ((int)(((byte)(208)))), ((int)(((byte)(208)))));
+            this.txtlastname.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(226)))), ((int)(((byte)(226)))), ((int)(((byte)(226)))));
+            this.txtlastname.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.txtlastname.DisabledState.PlaceholderForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.txtlastname.FocusedState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
+            this.txtlastname.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.txtlastname.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
+            this.txtlastname.IconLeftSize = new System.Drawing.Size(15, 15);
+            this.txtlastname.Location = new System.Drawing.Point(270, 33);
+            this.txtlastname.Name = "txtlastname";
+            this.txtlastname.PlaceholderText = "Enter the last name\n";
+            this.txtlastname.SelectedText = "";
+            this.txtlastname.Size = new System.Drawing.Size(237, 42);
+            this.txtlastname.TabIndex = 147;
             // 
-            // tabNavHistorique
+            // labelControl12
             // 
-            this.tabNavHistorique.Caption = "Historique";
-            this.tabNavHistorique.ImageOptions.Image = ((System.Drawing.Image)(resources.GetObject("tabNavHistorique.ImageOptions.Image")));
-            this.tabNavHistorique.Name = "tabNavHistorique";
-            this.tabNavHistorique.PageText = "Historique";
-            this.tabNavHistorique.PageVisible = false;
-            this.tabNavHistorique.Size = new System.Drawing.Size(1242, 746);
+            this.labelControl12.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.labelControl12.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelControl12.Appearance.Options.UseFont = true;
+            this.labelControl12.Location = new System.Drawing.Point(554, 9);
+            this.labelControl12.Name = "labelControl12";
+            this.labelControl12.Size = new System.Drawing.Size(100, 18);
+            this.labelControl12.TabIndex = 148;
+            this.labelControl12.Text = " Client code:\t";
+            // 
+            // labelControl15
+            // 
+            this.labelControl15.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.labelControl15.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelControl15.Appearance.Options.UseFont = true;
+            this.labelControl15.Location = new System.Drawing.Point(827, 9);
+            this.labelControl15.Name = "labelControl15";
+            this.labelControl15.Size = new System.Drawing.Size(63, 18);
+            this.labelControl15.TabIndex = 156;
+            this.labelControl15.Text = "Notes:\t";
+            // 
+            // txtcode
+            // 
+            this.txtcode.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.txtcode.Cursor = System.Windows.Forms.Cursors.IBeam;
+            this.txtcode.DefaultText = "";
+            this.txtcode.DisabledState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(208)))), ((int)(((byte)(208)))), ((int)(((byte)(208)))));
+            this.txtcode.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(226)))), ((int)(((byte)(226)))), ((int)(((byte)(226)))));
+            this.txtcode.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.txtcode.DisabledState.PlaceholderForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.txtcode.FocusedState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
+            this.txtcode.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.txtcode.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
+            this.txtcode.IconLeftSize = new System.Drawing.Size(15, 15);
+            this.txtcode.Location = new System.Drawing.Point(557, 33);
+            this.txtcode.Name = "txtcode";
+            this.txtcode.PlaceholderText = "Enter the client code";
+            this.txtcode.SelectedText = "";
+            this.txtcode.Size = new System.Drawing.Size(237, 42);
+            this.txtcode.TabIndex = 149;
+            // 
+            // txtaddress
+            // 
+            this.txtaddress.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.txtaddress.Cursor = System.Windows.Forms.Cursors.IBeam;
+            this.txtaddress.DefaultText = "";
+            this.txtaddress.DisabledState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(208)))), ((int)(((byte)(208)))), ((int)(((byte)(208)))));
+            this.txtaddress.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(226)))), ((int)(((byte)(226)))), ((int)(((byte)(226)))));
+            this.txtaddress.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.txtaddress.DisabledState.PlaceholderForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.txtaddress.FocusedState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
+            this.txtaddress.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.txtaddress.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
+            this.txtaddress.IconLeftSize = new System.Drawing.Size(15, 15);
+            this.txtaddress.Location = new System.Drawing.Point(557, 113);
+            this.txtaddress.Name = "txtaddress";
+            this.txtaddress.PlaceholderText = "Enter the address\n\n";
+            this.txtaddress.SelectedText = "";
+            this.txtaddress.Size = new System.Drawing.Size(237, 42);
+            this.txtaddress.TabIndex = 155;
+            // 
+            // labelControl13
+            // 
+            this.labelControl13.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.labelControl13.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelControl13.Appearance.Options.UseFont = true;
+            this.labelControl13.Location = new System.Drawing.Point(270, 89);
+            this.labelControl13.Name = "labelControl13";
+            this.labelControl13.Size = new System.Drawing.Size(65, 18);
+            this.labelControl13.TabIndex = 150;
+            this.labelControl13.Text = "Phone:\t";
+            // 
+            // labelControl16
+            // 
+            this.labelControl16.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.labelControl16.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelControl16.Appearance.Options.UseFont = true;
+            this.labelControl16.Location = new System.Drawing.Point(557, 89);
+            this.labelControl16.Name = "labelControl16";
+            this.labelControl16.Size = new System.Drawing.Size(97, 18);
+            this.labelControl16.TabIndex = 154;
+            this.labelControl16.Text = "Address:\t\t";
+            // 
+            // txtphone
+            // 
+            this.txtphone.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.txtphone.Cursor = System.Windows.Forms.Cursors.IBeam;
+            this.txtphone.DefaultText = "";
+            this.txtphone.DisabledState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(208)))), ((int)(((byte)(208)))), ((int)(((byte)(208)))));
+            this.txtphone.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(226)))), ((int)(((byte)(226)))), ((int)(((byte)(226)))));
+            this.txtphone.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.txtphone.DisabledState.PlaceholderForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.txtphone.FocusedState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
+            this.txtphone.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.txtphone.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
+            this.txtphone.IconLeftSize = new System.Drawing.Size(15, 15);
+            this.txtphone.Location = new System.Drawing.Point(270, 113);
+            this.txtphone.Name = "txtphone";
+            this.txtphone.PlaceholderText = "Enter the phone number\n";
+            this.txtphone.SelectedText = "";
+            this.txtphone.Size = new System.Drawing.Size(237, 42);
+            this.txtphone.TabIndex = 151;
+            // 
+            // txtemail
+            // 
+            this.txtemail.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.txtemail.Cursor = System.Windows.Forms.Cursors.IBeam;
+            this.txtemail.DefaultText = "";
+            this.txtemail.DisabledState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(208)))), ((int)(((byte)(208)))), ((int)(((byte)(208)))));
+            this.txtemail.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(226)))), ((int)(((byte)(226)))), ((int)(((byte)(226)))));
+            this.txtemail.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.txtemail.DisabledState.PlaceholderForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.txtemail.FocusedState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
+            this.txtemail.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.txtemail.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
+            this.txtemail.IconLeftSize = new System.Drawing.Size(15, 15);
+            this.txtemail.Location = new System.Drawing.Point(5, 113);
+            this.txtemail.Name = "txtemail";
+            this.txtemail.PlaceholderText = "Enter the email address\n ";
+            this.txtemail.SelectedText = "";
+            this.txtemail.Size = new System.Drawing.Size(237, 42);
+            this.txtemail.TabIndex = 153;
+            // 
+            // labelControl29
+            // 
+            this.labelControl29.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.labelControl29.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelControl29.Appearance.Options.UseFont = true;
+            this.labelControl29.Location = new System.Drawing.Point(8, 89);
+            this.labelControl29.Name = "labelControl29";
+            this.labelControl29.Size = new System.Drawing.Size(58, 18);
+            this.labelControl29.TabIndex = 152;
+            this.labelControl29.Text = "Email:\t";
+            // 
+            // btnEditClient
+            // 
+            this.btnEditClient.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnEditClient.BorderRadius = 5;
+            this.btnEditClient.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
+            this.btnEditClient.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
+            this.btnEditClient.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
+            this.btnEditClient.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
+            this.btnEditClient.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.btnEditClient.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.btnEditClient.ForeColor = System.Drawing.Color.White;
+            this.btnEditClient.Image = global::Mospuk_1.Properties.Resources.icons8_edit_64;
+            this.btnEditClient.Location = new System.Drawing.Point(801, 226);
+            this.btnEditClient.Name = "btnEditClient";
+            this.btnEditClient.Size = new System.Drawing.Size(140, 38);
+            this.btnEditClient.TabIndex = 160;
+            this.btnEditClient.Text = "Edit";
+            this.btnEditClient.Click += new System.EventHandler(this.btnEditClient_Click);
+            // 
+            // btnAddClient
+            // 
+            this.btnAddClient.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnAddClient.BorderRadius = 5;
+            this.btnAddClient.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
+            this.btnAddClient.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
+            this.btnAddClient.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
+            this.btnAddClient.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
+            this.btnAddClient.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.btnAddClient.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.btnAddClient.ForeColor = System.Drawing.Color.White;
+            this.btnAddClient.Image = ((System.Drawing.Image)(resources.GetObject("btnAddClient.Image")));
+            this.btnAddClient.Location = new System.Drawing.Point(964, 226);
+            this.btnAddClient.Name = "btnAddClient";
+            this.btnAddClient.Size = new System.Drawing.Size(140, 38);
+            this.btnAddClient.TabIndex = 159;
+            this.btnAddClient.Text = "Add";
+            this.btnAddClient.Click += new System.EventHandler(this.btnAddClient_Click);
+            // 
+            // DTGVClient
+            // 
+            this.DTGVClient.AllowUserToAddRows = false;
+            this.DTGVClient.AllowUserToDeleteRows = false;
+            dataGridViewCellStyle7.BackColor = System.Drawing.Color.White;
+            this.DTGVClient.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle7;
+            this.DTGVClient.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.DTGVClient.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            dataGridViewCellStyle8.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle8.BackColor = System.Drawing.Color.MediumSeaGreen;
+            dataGridViewCellStyle8.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle8.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle8.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            dataGridViewCellStyle8.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle8.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.DTGVClient.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle8;
+            this.DTGVClient.ColumnHeadersHeight = 25;
+            this.DTGVClient.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
+            this.DTGVClient.ContextMenuStrip = this.CntMenuStrip;
+            dataGridViewCellStyle9.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle9.BackColor = System.Drawing.Color.White;
+            dataGridViewCellStyle9.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle9.ForeColor = System.Drawing.SystemColors.ControlText;
+            dataGridViewCellStyle9.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(231)))), ((int)(((byte)(229)))), ((int)(((byte)(255)))));
+            dataGridViewCellStyle9.SelectionForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(69)))), ((int)(((byte)(94)))));
+            dataGridViewCellStyle9.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.DTGVClient.DefaultCellStyle = dataGridViewCellStyle9;
+            this.DTGVClient.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(231)))), ((int)(((byte)(229)))), ((int)(((byte)(255)))));
+            this.DTGVClient.Location = new System.Drawing.Point(30, 289);
+            this.DTGVClient.Name = "DTGVClient";
+            this.DTGVClient.ReadOnly = true;
+            this.DTGVClient.RowHeadersVisible = false;
+            this.DTGVClient.RowTemplate.DefaultCellStyle.BackColor = System.Drawing.Color.White;
+            this.DTGVClient.RowTemplate.DefaultCellStyle.SelectionBackColor = System.Drawing.Color.White;
+            this.DTGVClient.RowTemplate.Height = 27;
+            this.DTGVClient.Size = new System.Drawing.Size(1074, 414);
+            this.DTGVClient.TabIndex = 158;
+            this.DTGVClient.ThemeStyle.AlternatingRowsStyle.BackColor = System.Drawing.Color.White;
+            this.DTGVClient.ThemeStyle.AlternatingRowsStyle.Font = null;
+            this.DTGVClient.ThemeStyle.AlternatingRowsStyle.ForeColor = System.Drawing.Color.Empty;
+            this.DTGVClient.ThemeStyle.AlternatingRowsStyle.SelectionBackColor = System.Drawing.Color.Empty;
+            this.DTGVClient.ThemeStyle.AlternatingRowsStyle.SelectionForeColor = System.Drawing.Color.Empty;
+            this.DTGVClient.ThemeStyle.BackColor = System.Drawing.Color.White;
+            this.DTGVClient.ThemeStyle.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(231)))), ((int)(((byte)(229)))), ((int)(((byte)(255)))));
+            this.DTGVClient.ThemeStyle.HeaderStyle.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(100)))), ((int)(((byte)(88)))), ((int)(((byte)(255)))));
+            this.DTGVClient.ThemeStyle.HeaderStyle.BorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.None;
+            this.DTGVClient.ThemeStyle.HeaderStyle.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.DTGVClient.ThemeStyle.HeaderStyle.ForeColor = System.Drawing.Color.White;
+            this.DTGVClient.ThemeStyle.HeaderStyle.HeaightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
+            this.DTGVClient.ThemeStyle.HeaderStyle.Height = 25;
+            this.DTGVClient.ThemeStyle.ReadOnly = true;
+            this.DTGVClient.ThemeStyle.RowsStyle.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.DTGVClient.ThemeStyle.RowsStyle.BorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.SingleHorizontal;
+            this.DTGVClient.ThemeStyle.RowsStyle.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.DTGVClient.ThemeStyle.RowsStyle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(69)))), ((int)(((byte)(94)))));
+            this.DTGVClient.ThemeStyle.RowsStyle.Height = 27;
+            this.DTGVClient.ThemeStyle.RowsStyle.SelectionBackColor = System.Drawing.Color.White;
+            this.DTGVClient.ThemeStyle.RowsStyle.SelectionForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(69)))), ((int)(((byte)(94)))));
+            this.DTGVClient.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.DTGVClient_CellDoubleClick);
+            // 
+            // CntMenuStrip
+            // 
+            this.CntMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.infoToolStripMenuItem,
+            this.supprimerToolStripMenuItem});
+            this.CntMenuStrip.Name = "CntMenuStrip";
+            this.CntMenuStrip.RenderStyle.ArrowColor = System.Drawing.Color.Khaki;
+            this.CntMenuStrip.RenderStyle.BorderColor = System.Drawing.Color.Gainsboro;
+            this.CntMenuStrip.RenderStyle.ColorTable = null;
+            this.CntMenuStrip.RenderStyle.RoundedEdges = true;
+            this.CntMenuStrip.RenderStyle.SelectionArrowColor = System.Drawing.Color.White;
+            this.CntMenuStrip.RenderStyle.SelectionBackColor = System.Drawing.Color.Gold;
+            this.CntMenuStrip.RenderStyle.SelectionForeColor = System.Drawing.Color.Black;
+            this.CntMenuStrip.RenderStyle.SeparatorColor = System.Drawing.Color.Gainsboro;
+            this.CntMenuStrip.RenderStyle.TextRenderingHint = System.Drawing.Text.TextRenderingHint.SystemDefault;
+            this.CntMenuStrip.Size = new System.Drawing.Size(108, 48);
+            // 
+            // infoToolStripMenuItem
+            // 
+            this.infoToolStripMenuItem.Name = "infoToolStripMenuItem";
+            this.infoToolStripMenuItem.Size = new System.Drawing.Size(107, 22);
+            this.infoToolStripMenuItem.Text = "Info";
+            // 
+            // supprimerToolStripMenuItem
+            // 
+            this.supprimerToolStripMenuItem.Name = "supprimerToolStripMenuItem";
+            this.supprimerToolStripMenuItem.Size = new System.Drawing.Size(107, 22);
+            this.supprimerToolStripMenuItem.Text = "Delete";
+            // 
+            // btnUserAdd
+            // 
+            this.btnUserAdd.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
+            this.btnUserAdd.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
+            this.btnUserAdd.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
+            this.btnUserAdd.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
+            this.btnUserAdd.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.btnUserAdd.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.btnUserAdd.ForeColor = System.Drawing.Color.White;
+            this.btnUserAdd.Location = new System.Drawing.Point(12, 12);
+            this.btnUserAdd.Name = "btnUserAdd";
+            this.btnUserAdd.Size = new System.Drawing.Size(205, 51);
+            this.btnUserAdd.TabIndex = 1;
+            this.btnUserAdd.Text = "Users";
+            this.btnUserAdd.Click += new System.EventHandler(this.btnUserAdd_Click);
             // 
             // tabNavChange
             // 
@@ -944,7 +1381,7 @@
             this.tabNavChange.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("tabNavChange.ImageOptions.SvgImage")));
             this.tabNavChange.Name = "tabNavChange";
             this.tabNavChange.PageText = "Project";
-            this.tabNavChange.Size = new System.Drawing.Size(1242, 703);
+            this.tabNavChange.Size = new System.Drawing.Size(1366, 703);
             // 
             // btnAdd
             // 
@@ -975,30 +1412,30 @@
             // 
             this.DGVChanges.AllowUserToAddRows = false;
             this.DGVChanges.AllowUserToDeleteRows = false;
-            dataGridViewCellStyle7.BackColor = System.Drawing.Color.White;
-            this.DGVChanges.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle7;
+            dataGridViewCellStyle10.BackColor = System.Drawing.Color.White;
+            this.DGVChanges.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle10;
             this.DGVChanges.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.DGVChanges.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            dataGridViewCellStyle8.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle8.BackColor = System.Drawing.Color.Gold;
-            dataGridViewCellStyle8.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle8.ForeColor = System.Drawing.Color.Black;
-            dataGridViewCellStyle8.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle8.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle8.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.DGVChanges.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle8;
+            dataGridViewCellStyle11.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle11.BackColor = System.Drawing.Color.Gold;
+            dataGridViewCellStyle11.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle11.ForeColor = System.Drawing.Color.Black;
+            dataGridViewCellStyle11.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle11.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle11.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.DGVChanges.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle11;
             this.DGVChanges.ColumnHeadersHeight = 25;
             this.DGVChanges.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
-            dataGridViewCellStyle9.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle9.BackColor = System.Drawing.Color.White;
-            dataGridViewCellStyle9.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle9.ForeColor = System.Drawing.SystemColors.ControlText;
-            dataGridViewCellStyle9.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(231)))), ((int)(((byte)(229)))), ((int)(((byte)(255)))));
-            dataGridViewCellStyle9.SelectionForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(69)))), ((int)(((byte)(94)))));
-            dataGridViewCellStyle9.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.DGVChanges.DefaultCellStyle = dataGridViewCellStyle9;
+            dataGridViewCellStyle12.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle12.BackColor = System.Drawing.Color.White;
+            dataGridViewCellStyle12.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle12.ForeColor = System.Drawing.SystemColors.ControlText;
+            dataGridViewCellStyle12.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(231)))), ((int)(((byte)(229)))), ((int)(((byte)(255)))));
+            dataGridViewCellStyle12.SelectionForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(69)))), ((int)(((byte)(94)))));
+            dataGridViewCellStyle12.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.DGVChanges.DefaultCellStyle = dataGridViewCellStyle12;
             this.DGVChanges.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(231)))), ((int)(((byte)(229)))), ((int)(((byte)(255)))));
             this.DGVChanges.Location = new System.Drawing.Point(3, 73);
             this.DGVChanges.Name = "DGVChanges";
@@ -1007,7 +1444,7 @@
             this.DGVChanges.RowTemplate.DefaultCellStyle.BackColor = System.Drawing.Color.White;
             this.DGVChanges.RowTemplate.DefaultCellStyle.SelectionBackColor = System.Drawing.Color.White;
             this.DGVChanges.RowTemplate.Height = 27;
-            this.DGVChanges.Size = new System.Drawing.Size(1236, 670);
+            this.DGVChanges.Size = new System.Drawing.Size(1360, 627);
             this.DGVChanges.TabIndex = 9;
             this.DGVChanges.ThemeStyle.AlternatingRowsStyle.BackColor = System.Drawing.Color.White;
             this.DGVChanges.ThemeStyle.AlternatingRowsStyle.Font = null;
@@ -1031,12 +1468,40 @@
             this.DGVChanges.ThemeStyle.RowsStyle.SelectionBackColor = System.Drawing.Color.White;
             this.DGVChanges.ThemeStyle.RowsStyle.SelectionForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(69)))), ((int)(((byte)(94)))));
             // 
+            // tabNavHistorique
+            // 
+            this.tabNavHistorique.Caption = "Historique";
+            this.tabNavHistorique.ImageOptions.Image = ((System.Drawing.Image)(resources.GetObject("tabNavHistorique.ImageOptions.Image")));
+            this.tabNavHistorique.Name = "tabNavHistorique";
+            this.tabNavHistorique.PageText = "Historique";
+            this.tabNavHistorique.PageVisible = false;
+            this.tabNavHistorique.Size = new System.Drawing.Size(1366, 703);
+            // 
+            // guna2Button4
+            // 
+            this.guna2Button4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.guna2Button4.BorderRadius = 5;
+            this.guna2Button4.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
+            this.guna2Button4.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
+            this.guna2Button4.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
+            this.guna2Button4.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
+            this.guna2Button4.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.guna2Button4.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.guna2Button4.ForeColor = System.Drawing.Color.White;
+            this.guna2Button4.Image = global::Mospuk_1.Properties.Resources.icons8_delete_60;
+            this.guna2Button4.Location = new System.Drawing.Point(464, 437);
+            this.guna2Button4.Name = "guna2Button4";
+            this.guna2Button4.Size = new System.Drawing.Size(140, 38);
+            this.guna2Button4.TabIndex = 163;
+            this.guna2Button4.Text = "Delete";
+            // 
             // Home
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1242, 746);
+            this.ClientSize = new System.Drawing.Size(1366, 746);
             this.Controls.Add(this.tabPane1);
+            this.IsMdiContainer = true;
             this.Name = "Home";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Home";
@@ -1072,16 +1537,14 @@
             this.tabNavDocuments.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.DGVFacture)).EndInit();
             this.tabNavParametres.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl5)).EndInit();
-            this.xtraTabControl5.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl4)).EndInit();
-            this.xtraTabControl4.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl3)).EndInit();
-            this.xtraTabControl3.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl2)).EndInit();
-            this.xtraTabControl2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.xtraTabControl1)).EndInit();
-            this.xtraTabControl1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.navigationFrame1)).EndInit();
+            this.navigationFrame1.ResumeLayout(false);
+            this.navigationPage1.ResumeLayout(false);
+            this.navigationPage2.ResumeLayout(false);
+            this.guna2Panel1.ResumeLayout(false);
+            this.guna2Panel1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.DTGVClient)).EndInit();
+            this.CntMenuStrip.ResumeLayout(false);
             this.tabNavChange.ResumeLayout(false);
             this.tabNavChange.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.DGVChanges)).EndInit();
@@ -1137,21 +1600,38 @@
         private DevExpress.XtraEditors.LabelControl labelControl9;
         private Guna.UI2.WinForms.Guna2DateTimePicker from_date;
         private Guna.UI2.WinForms.Guna2Button btnCompanyAdd;
-        private DevExpress.XtraTab.XtraTabControl xtraTabControl5;
-        private DevExpress.XtraTab.XtraTabPage xtraTabPage9;
-        private DevExpress.XtraTab.XtraTabPage xtraTabPage10;
-        private DevExpress.XtraTab.XtraTabControl xtraTabControl4;
-        private DevExpress.XtraTab.XtraTabPage xtraTabPage7;
-        private DevExpress.XtraTab.XtraTabPage xtraTabPage8;
-        private DevExpress.XtraTab.XtraTabControl xtraTabControl3;
-        private DevExpress.XtraTab.XtraTabPage xtraTabPage5;
-        private DevExpress.XtraTab.XtraTabPage xtraTabPage6;
-        private DevExpress.XtraTab.XtraTabControl xtraTabControl2;
-        private DevExpress.XtraTab.XtraTabPage xtraTabPage3;
-        private DevExpress.XtraTab.XtraTabPage xtraTabPage4;
-        private DevExpress.XtraTab.XtraTabControl xtraTabControl1;
-        private DevExpress.XtraTab.XtraTabPage xtraTabPage1;
-        private DevExpress.XtraTab.XtraTabPage xtraTabPage2;
         private Guna.UI2.WinForms.Guna2DataGridView DGVChanges;
+        private Guna.UI2.WinForms.Guna2Button btnUserAdd;
+        private Guna.UI2.WinForms.Guna2Button btnClientAdd;
+        private DevExpress.XtraBars.Navigation.NavigationFrame navigationFrame1;
+        private DevExpress.XtraBars.Navigation.NavigationPage navigationPage1;
+        private DevExpress.XtraBars.Navigation.NavigationPage navigationPage2;
+        private Guna.UI2.WinForms.Guna2Button guna2Button1;
+        private Guna.UI2.WinForms.Guna2Button guna2Button2;
+        private Guna.UI2.WinForms.Guna2TextBox txtfirstname;
+        private DevExpress.XtraEditors.LabelControl labelControl11;
+        private Guna.UI2.WinForms.Guna2TextBox txtphone;
+        private DevExpress.XtraEditors.LabelControl labelControl13;
+        private Guna.UI2.WinForms.Guna2TextBox txtcode;
+        private DevExpress.XtraEditors.LabelControl labelControl12;
+        private Guna.UI2.WinForms.Guna2TextBox txtlastname;
+        private DevExpress.XtraEditors.LabelControl labelControl10;
+        private Guna.UI2.WinForms.Guna2TextBox txtnotes;
+        private DevExpress.XtraEditors.LabelControl labelControl15;
+        private Guna.UI2.WinForms.Guna2TextBox txtaddress;
+        private DevExpress.XtraEditors.LabelControl labelControl16;
+        private Guna.UI2.WinForms.Guna2TextBox txtemail;
+        private DevExpress.XtraEditors.LabelControl labelControl29;
+        private Guna.UI2.WinForms.Guna2DataGridView DTGVClient;
+        private Guna.UI2.WinForms.Guna2Button btnAddClient;
+        private Guna.UI2.WinForms.Guna2Button btnEditClient;
+        private Guna.UI2.WinForms.Guna2Panel guna2Panel1;
+        private Guna.UI2.WinForms.Guna2TextBox txtsearch;
+        private Guna.UI2.WinForms.Guna2Button guna2Button3;
+        private Guna.UI2.WinForms.Guna2ContextMenuStrip CntMenuStrip;
+        private System.Windows.Forms.ToolStripMenuItem infoToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem supprimerToolStripMenuItem;
+        private Guna.UI2.WinForms.Guna2Button btnDeleteClient;
+        private Guna.UI2.WinForms.Guna2Button guna2Button4;
     }
 }
