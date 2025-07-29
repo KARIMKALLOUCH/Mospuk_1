@@ -47,10 +47,8 @@
             this.labelControl5 = new DevExpress.XtraEditors.LabelControl();
             this.labelControl6 = new DevExpress.XtraEditors.LabelControl();
             this.labelControl7 = new DevExpress.XtraEditors.LabelControl();
-            this.btnadd1 = new Guna.UI2.WinForms.Guna2Button();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.flowLayoutPanel2 = new System.Windows.Forms.FlowLayoutPanel();
-            this.btnadd2 = new Guna.UI2.WinForms.Guna2Button();
             this.labelControl9 = new DevExpress.XtraEditors.LabelControl();
             this.panelDocx = new Guna.UI2.WinForms.Guna2Panel();
             this.btnAddWord = new Guna.UI2.WinForms.Guna2Button();
@@ -316,23 +314,6 @@
             this.labelControl7.TabIndex = 162;
             this.labelControl7.Text = "Select Translation";
             // 
-            // btnadd1
-            // 
-            this.btnadd1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnadd1.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
-            this.btnadd1.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
-            this.btnadd1.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
-            this.btnadd1.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
-            this.btnadd1.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
-            this.btnadd1.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.btnadd1.ForeColor = System.Drawing.Color.White;
-            this.btnadd1.Location = new System.Drawing.Point(916, 252);
-            this.btnadd1.Name = "btnadd1";
-            this.btnadd1.Size = new System.Drawing.Size(37, 31);
-            this.btnadd1.TabIndex = 165;
-            this.btnadd1.Text = "+";
-            this.btnadd1.Click += new System.EventHandler(this.btnadd1_Click);
-            // 
             // flowLayoutPanel1
             // 
             this.flowLayoutPanel1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
@@ -357,23 +338,6 @@
             this.flowLayoutPanel2.Size = new System.Drawing.Size(572, 168);
             this.flowLayoutPanel2.TabIndex = 167;
             this.flowLayoutPanel2.Paint += new System.Windows.Forms.PaintEventHandler(this.flowLayoutPanel2_Paint);
-            // 
-            // btnadd2
-            // 
-            this.btnadd2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnadd2.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
-            this.btnadd2.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
-            this.btnadd2.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
-            this.btnadd2.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
-            this.btnadd2.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
-            this.btnadd2.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.btnadd2.ForeColor = System.Drawing.Color.White;
-            this.btnadd2.Location = new System.Drawing.Point(550, 511);
-            this.btnadd2.Name = "btnadd2";
-            this.btnadd2.Size = new System.Drawing.Size(37, 31);
-            this.btnadd2.TabIndex = 168;
-            this.btnadd2.Text = "+";
-            this.btnadd2.Click += new System.EventHandler(this.btnadd2_Click);
             // 
             // labelControl9
             // 
@@ -433,9 +397,7 @@
             this.Controls.Add(this.panelDocx);
             this.Controls.Add(this.labelControl9);
             this.Controls.Add(this.flowLayoutPanel2);
-            this.Controls.Add(this.btnadd2);
             this.Controls.Add(this.flowLayoutPanel1);
-            this.Controls.Add(this.btnadd1);
             this.Controls.Add(this.labelControl7);
             this.Controls.Add(this.labelControl6);
             this.Controls.Add(this.labelControl5);
@@ -484,10 +446,8 @@
         private DevExpress.XtraEditors.LabelControl labelControl5;
         private DevExpress.XtraEditors.LabelControl labelControl6;
         private DevExpress.XtraEditors.LabelControl labelControl7;
-        private Guna.UI2.WinForms.Guna2Button btnadd1;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel2;
-        private Guna.UI2.WinForms.Guna2Button btnadd2;
         private DevExpress.XtraEditors.LabelControl labelControl9;
         private Guna.UI2.WinForms.Guna2Panel panelDocx;
         private Guna.UI2.WinForms.Guna2Button btnAddWord;
