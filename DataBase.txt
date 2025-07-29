@@ -12,3 +12,59 @@ CREATE TABLE projects (
     project_order INT NOT NULL,
     folder_name VARCHAR(255) NOT NULL
 );
+CREATE TABLE projects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_client VARCHAR(100) NOT NULL,
+    reception_date DATE NOT NULL,
+    reception_time VARCHAR(5) NOT NULL,
+    delivery_days TINYINT NOT NULL,
+    delivery_date DATE NOT NULL,
+    hours_spent TINYINT DEFAULT 24,
+    project_order INT NOT NULL,
+    folder_name VARCHAR(255) NOT NULL,
+    note VARCHAR(500) NULL,
+    document_type VARCHAR(50) NOT NULL,
+    translation_type VARCHAR(50) NOT NULL,
+    registration_date DATE DEFAULT CURRENT_DATE,
+    last_update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    project_id INT NOT NULL,
+    image_name VARCHAR(255) NOT NULL,         -- اسم الصورة
+    image_path VARCHAR(255) NOT NULL,         -- مسار الصورة
+    attachment_type VARCHAR(50) NULL,         -- نوع المرفق (Certificate, Transcript, ID, Passport, etc.)
+    registration_date DATE DEFAULT CURRENT_DATE,
+    last_update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+);
+
+
+
+CREATE TABLE clients (
+    client_id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    client_code VARCHAR(20) NOT NULL UNIQUE,
+    email VARCHAR(100),
+    phone VARCHAR(20),
+    address VARCHAR(255),
+    notes TEXT,
+    registration_date DATE DEFAULT CURRENT_DATE,
+    last_update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE companies (
+    company_id INT AUTO_INCREMENT PRIMARY KEY,
+    company_name VARCHAR(100) NOT NULL,
+    company_code VARCHAR(50) NOT NULL UNIQUE,     
+    tax_number VARCHAR(25) UNIQUE,         
+    address VARCHAR(255),
+    phone VARCHAR(20),
+    email VARCHAR(100),
+    notes TEXT,
+    registration_date DATE DEFAULT CURRENT_DATE,
+    last_update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
