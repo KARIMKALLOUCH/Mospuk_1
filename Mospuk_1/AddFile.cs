@@ -22,6 +22,11 @@ namespace Mospuk_1
 
     {
         MySqlDatabase db;
+        private Rectangle selectionRectangle;      // مستطيل التحديد
+        private Point selectionStartPoint;         // نقطة بداية السحب للتحديد
+        private bool isSelecting = false;          // حالة تدل على أننا نقوم برسم مستطيل التحديد
+        private FlowLayoutPanel dragSourcePanel = null;  // لتتبع المصدر
+                                                         // ****************************************
 
         private Point dragStartPoint;
         private bool isDragging = false;
@@ -35,6 +40,11 @@ namespace Mospuk_1
             panel1.AutoScroll = true; // AutoScroll ON
 
             panel1.Padding = new Padding(10);
+            // *** إضافة 2: تفعيل استقبال السحب والإفلات في panel1 ***
+            panel1.AllowDrop = true;
+            panel1.DragEnter += panel1_DragEnter;
+            panel1.DragDrop += panel1_DragDrop;
+
 
 
             panel1.MouseDown += Pb_MouseDown;
@@ -42,9 +52,127 @@ namespace Mospuk_1
             SetupFlowLayoutPanel1();
             SetupFlowLayoutPanel2();     // إضافة تهيئة flowLayoutPanel2 مع دعم إعادة الترتيب
 
-
+            // *** إضافة 3: ربط أحداث جديدة لـ panel1 لرسم مستطيل التحديد ***
+            panel1.MouseDown += panel1_MouseDown_ForSelection;
+            panel1.MouseMove += panel1_MouseMove_ForSelection;
+            panel1.MouseUp += panel1_MouseUp_ForSelection;
+            panel1.Paint += panel1_Paint_SelectionRectangle;
 
         }
+        private void Pic_MouseMove_FlowPanel(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left && draggedPictureBox != null && draggedPictureBox.Image != null)
+            {
+                if (!isDragging)
+                {
+                    Size dragSize = SystemInformation.DragSize;
+                    Rectangle dragRect = new Rectangle(
+                        dragStartPoint.X - dragSize.Width / 2,
+                        dragStartPoint.Y - dragSize.Height / 2,
+                        dragSize.Width,
+                        dragSize.Height);
+
+                    if (!dragRect.Contains(e.Location))
+                    {
+                        isDragging = true;
+
+                        // تعديل: إرسال بيانات مع تحديد المصدر
+                        DataObject dataObject = new DataObject();
+                        dataObject.SetData("FlowPanelReorder", draggedPictureBox); // لإعادة الترتيب الداخلي
+                        dataObject.SetData("ReturnToPanel1", draggedPictureBox);   // للإرجاع إلى panel1
+
+                        // *** إضافة جديدة: تحديد مصدر السحب ***
+                        dataObject.SetData("DragSource", dragSourcePanel?.Name ?? "unknown");
+
+                        // إرسال مسار الملف للسماح بالنقل إلى حاوية أخرى
+                        if (draggedPictureBox.Tag != null)
+                        {
+                            dataObject.SetData(DataFormats.StringFormat, draggedPictureBox.Tag.ToString());
+                        }
+
+                        draggedPictureBox.DoDragDrop(dataObject, DragDropEffects.Move);
+                    }
+                }
+            }
+        }
+        private void panel1_DragEnter(object sender, DragEventArgs e)
+        {
+            // تحقق مما إذا كانت البيانات المسحوبة من النوع الذي يمكن إرجاعه
+            if (e.Data.GetDataPresent("ReturnToPanel1"))
+            {
+                e.Effect = DragDropEffects.Move; // إظهار أيقونة النقل
+            }
+            else
+            {
+                e.Effect = DragDropEffects.None;
+            }
+        }
+
+        private void panel1_DragDrop(object sender, DragEventArgs e)
+        {
+            // التأكد مرة أخرى من نوع البيانات عند الإفلات
+            if (e.Data.GetDataPresent("ReturnToPanel1"))
+            {
+                PictureBox sourcePb = (PictureBox)e.Data.GetData("ReturnToPanel1");
+
+                if (sourcePb?.Tag != null)
+                {
+                    string filePath = sourcePb.Tag.ToString();
+
+                    // 1. إعادة الصورة إلى panel1
+                    AddImageBackToPanel1(filePath);
+
+                    // 2. إزالة الصورة من مصدرها
+                    // الحالة أ: المصدر هو imageApostille
+                    if (sourcePb.Name == "imageApostille")
+                    {
+                        sourcePb.Image?.Dispose();
+                        sourcePb.Image = null;
+                        sourcePb.Tag = null;
+                    }
+                    // الحالة ب: المصدر هو flowLayoutPanel1 أو flowLayoutPanel2
+                    else
+                    {
+                        // إزالة الكونترول من الحاوية الأم
+                        if (sourcePb.Parent != null)
+                        {
+                            sourcePb.Parent.Controls.Remove(sourcePb);
+                        }
+                        sourcePb.Dispose(); // التخلص من الكونترول لتوفير الذاكرة
+                    }
+                }
+            }
+        }
+        private void OpenImage_DoubleClick(object sender, EventArgs e)
+        {
+            PictureBox pb = sender as PictureBox;
+            if (pb?.Tag != null)
+            {
+                string filePath = pb.Tag.ToString();
+                try
+                {
+                    // التأكد من وجود الملف قبل محاولة فتحه
+                    if (File.Exists(filePath))
+                    {
+                        var psi = new System.Diagnostics.ProcessStartInfo()
+                        {
+                            FileName = filePath,
+                            UseShellExecute = true // مهم لفتح الملف بالبرنامج الافتراضي
+                        };
+                        System.Diagnostics.Process.Start(psi);
+                    }
+                    else
+                    {
+                        MessageBox.Show("الملف المحدد لم يعد موجوداً في المسار:\n" + filePath, "ملف غير موجود", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("خطأ في فتح الملف: " + ex.Message, "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
 
         private void btnUplaod_Click(object sender, EventArgs e)
         {
@@ -149,7 +277,7 @@ namespace Mospuk_1
                     }
 
                     pb.Location = new Point(x, y);
-                    pb.DoubleClick += Pb_DoubleClick;
+                    pb.DoubleClick += OpenImage_DoubleClick;
                     pb.MouseDown += Pb_MouseDown_Panel1;  // تحديث اسم الدالة
                     pb.MouseMove += Pb_MouseMove_Panel1;  // تحديث اسم الدالة
                     pb.MouseUp += Pb_MouseUp_Panel1;      // تحديث اسم الدالة
@@ -216,7 +344,7 @@ namespace Mospuk_1
                             }
 
                             pb.Location = new Point(x, y);
-                            pb.DoubleClick += Pb_DoubleClick;
+                            pb.DoubleClick += OpenImage_DoubleClick;
                             pb.MouseDown += Pb_MouseDown_Panel1;
                             pb.MouseMove += Pb_MouseMove_Panel1;
                             pb.MouseUp += Pb_MouseUp_Panel1;
@@ -269,7 +397,7 @@ namespace Mospuk_1
                     };
                     pbOther.Location = new Point(x, y);
                     pbOther.Tag = file;
-                    pbOther.DoubleClick += Pb_DoubleClick;
+                    pbOther.DoubleClick += OpenImage_DoubleClick;
                     panel1.Controls.Add(pbOther);
 
                     x += maxWidth + padding;
@@ -283,27 +411,7 @@ namespace Mospuk_1
             }
         }
 
-        private void Pb_DoubleClick(object sender, EventArgs e)
-        {
-            PictureBox pb = sender as PictureBox;
-            if (pb?.Tag != null)
-            {
-                try
-                {
-                    var psi = new System.Diagnostics.ProcessStartInfo()
-                    {
-                        FileName = pb.Tag.ToString(),
-                        UseShellExecute = true
-                    };
-                    System.Diagnostics.Process.Start(psi);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("خطأ في فتح الملف: " + ex.Message);
-                }
-            }
-
-        }
+ 
         // أحداث panel1 - تم تحديث الأسماء والوظائف للتحديد المتعدد
         private void Pb_Click_Panel1(object sender, EventArgs e)
         {
@@ -419,34 +527,9 @@ namespace Mospuk_1
 
 
 
-        private void Pb_MouseMove(object sender, MouseEventArgs e)
-        {
-            PictureBox pb = sender as PictureBox;
-            if (e.Button == MouseButtons.Left && pb != null)
-            {
-                // إذا تحرك الماوس مسافة أكبر من DragSize نبدأ السحب
-                if (!isDragging)
-                {
-                    Size dragSize = SystemInformation.DragSize;
-                    Rectangle dragRect = new Rectangle(
-                        dragStartPoint.X - dragSize.Width / 2,
-                        dragStartPoint.Y - dragSize.Height / 2,
-                        dragSize.Width,
-                        dragSize.Height);
+    
 
-                    if (!dragRect.Contains(e.Location))
-                    {
-                        isDragging = true;
-                        pb.DoDragDrop(pb.Tag.ToString(), DragDropEffects.Copy);
-                    }
-                }
-            }
-        }
-
-        private void Pb_MouseUp(object sender, MouseEventArgs e)
-        {
-            isDragging = false;
-        }
+    
         private void ReArrangeImages()
         {
             int padding = 10;
@@ -476,7 +559,24 @@ namespace Mospuk_1
 
         private void FlowLayoutPanel1_DragEnter(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.StringFormat) || e.Data.GetDataPresent(DataFormats.FileDrop))
+            // *** إضافة جديدة: منع السحب إلى نفس المصدر ***
+            if (e.Data.GetDataPresent("DragSource"))
+            {
+                string dragSource = e.Data.GetData("DragSource").ToString();
+                FlowLayoutPanel targetPanel = sender as FlowLayoutPanel;
+
+                // إذا كان المصدر والهدف هما نفس الـ FlowLayoutPanel، امنع السحب
+                if (dragSource == targetPanel?.Name)
+                {
+                    e.Effect = DragDropEffects.None;
+                    return;
+                }
+            }
+
+            // السماح بالسحب في الحالات الأخرى
+            if (e.Data.GetDataPresent(DataFormats.StringFormat) ||
+                e.Data.GetDataPresent(DataFormats.FileDrop) ||
+                e.Data.GetDataPresent("ReturnToPanel1"))
             {
                 e.Effect = DragDropEffects.Move;
             }
@@ -491,6 +591,20 @@ namespace Mospuk_1
             try
             {
                 List<string> filePaths = new List<string>();
+                bool isInternalDrag = e.Data.GetDataPresent(DataFormats.StringFormat);
+
+                // *** إضافة جديدة: التحقق من مصدر السحب مرة أخرى ***
+                if (e.Data.GetDataPresent("DragSource"))
+                {
+                    string dragSource = e.Data.GetData("DragSource").ToString();
+                    FlowLayoutPanel targetPanel = sender as FlowLayoutPanel;
+
+                    // إذا كان المصدر والهدف هما نفس الـ FlowLayoutPanel، توقف
+                    if (dragSource == targetPanel?.Name)
+                    {
+                        return; // لا تفعل شيئاً
+                    }
+                }
 
                 // التعامل مع الملفات الخارجية
                 if (e.Data.GetDataPresent(DataFormats.FileDrop))
@@ -503,6 +617,15 @@ namespace Mospuk_1
                 {
                     string data = (string)e.Data.GetData(DataFormats.StringFormat);
                     filePaths.AddRange(data.Split('|'));
+                }
+                // التعامل مع السحب من ImageApostille
+                else if (e.Data.GetDataPresent("ReturnToPanel1"))
+                {
+                    PictureBox sourcePb = (PictureBox)e.Data.GetData("ReturnToPanel1");
+                    if (sourcePb?.Tag != null)
+                    {
+                        filePaths.Add(sourcePb.Tag.ToString());
+                    }
                 }
 
                 // معالجة كل ملف
@@ -533,23 +656,47 @@ namespace Mospuk_1
                             targetPic.Tag = filePath;
                         }
 
-                        // حذف الصورة من panel1 إذا كانت من السحب الداخلي
+                        // حذف الصورة من المصدر حسب نوع السحب
                         if (e.Data.GetDataPresent(DataFormats.StringFormat))
                         {
+                            // السحب من panel1
                             RemoveImageFromPanel1(filePath);
+                            // محاولة الحذف من imageApostille
+                            PictureBox apostilleBox = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
+                            if (apostilleBox != null && apostilleBox.Tag?.ToString() == filePath)
+                            {
+                                apostilleBox.Image?.Dispose();
+                                apostilleBox.Image = null;
+                                apostilleBox.Tag = null;
+                            }
+                            // محاولة الحذف من flowLayoutPanel2
+                            RemoveImageFromFlowLayoutPanel(flowLayoutPanel2, filePath);
+                        }
+                        else if (e.Data.GetDataPresent("ReturnToPanel1"))
+                        {
+                            // السحب من ImageApostille - مسح الصورة من ImageApostille
+                            PictureBox sourcePb = (PictureBox)e.Data.GetData("ReturnToPanel1");
+                            if (sourcePb != null)
+                            {
+                                sourcePb.Image?.Dispose();
+                                sourcePb.Image = null;
+                                sourcePb.Tag = null;
+                            }
                         }
                     }
                 }
 
                 // مسح التحديد بعد السحب
                 ClearSelection();
+
+                // *** إضافة جديدة: مسح معلومات مصدر السحب ***
+                dragSourcePanel = null;
             }
             catch (Exception ex)
             {
                 MessageBox.Show("An error occurred while processing drag and drop:\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
         // البحث عن PictureBox فارغ في flowLayoutPanel1
         private PictureBox FindEmptyPictureBox()
         {
@@ -585,16 +732,78 @@ namespace Mospuk_1
             pic.MouseMove += Pic_MouseMove_FlowPanel;
             pic.MouseUp += Pic_MouseUp_FlowPanel;
 
-            // إضافة قائمة سياق
-            AddContextMenuToPictureBox(pic);
+            pic.DoubleClick += OpenImage_DoubleClick;
 
             return pic;
+        }
+        private void Pic_MouseMove_Panel2(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left && draggedPictureBoxPanel2 != null && draggedPictureBoxPanel2.Image != null)
+            {
+                if (!isDragging)
+                {
+                    Size dragSize = SystemInformation.DragSize;
+                    Rectangle dragRect = new Rectangle(
+                        dragStartPoint.X - dragSize.Width / 2,
+                        dragStartPoint.Y - dragSize.Height / 2,
+                        dragSize.Width,
+                        dragSize.Height);
+
+                    if (!dragRect.Contains(e.Location))
+                    {
+                        isDragging = true;
+
+                        // تعديل: إرسال بيانات مع تحديد المصدر
+                        DataObject dataObject = new DataObject();
+                        dataObject.SetData("FlowPanel2Reorder", draggedPictureBoxPanel2); // لإعادة الترتيب الداخلي
+                        dataObject.SetData("ReturnToPanel1", draggedPictureBoxPanel2);      // للإرجاع إلى panel1
+
+                        // *** إضافة جديدة: تحديد مصدر السحب ***
+                        dataObject.SetData("DragSource", dragSourcePanel?.Name ?? "unknown");
+
+                        // إرسال مسار الملف للسماح بالنقل إلى حاوية أخرى
+                        if (draggedPictureBoxPanel2.Tag != null)
+                        {
+                            dataObject.SetData(DataFormats.StringFormat, draggedPictureBoxPanel2.Tag.ToString());
+                        }
+
+                        draggedPictureBoxPanel2.DoDragDrop(dataObject, DragDropEffects.Move);
+                    }
+                }
+            }
         }
 
         // أحداث السحب والإفلات في flowLayoutPanel1
         private void Pic_DragEnter_FlowPanel(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent(DataFormats.StringFormat) || e.Data.GetDataPresent("FlowPanelReorder"))
+            // *** إضافة جديدة: منع السحب داخل نفس الـ FlowLayoutPanel ***
+            if (e.Data.GetDataPresent("DragSource"))
+            {
+                string dragSource = e.Data.GetData("DragSource").ToString();
+                PictureBox targetPic = sender as PictureBox;
+                FlowLayoutPanel targetPanel = targetPic?.Parent as FlowLayoutPanel;
+
+                // إذا كان المصدر والهدف في نفس الـ FlowLayoutPanel
+                if (dragSource == targetPanel?.Name)
+                {
+                    // السماح فقط بإعادة الترتيب (FlowPanelReorder)
+                    if (e.Data.GetDataPresent("FlowPanelReorder"))
+                    {
+                        e.Effect = DragDropEffects.Move;
+                    }
+                    else
+                    {
+                        e.Effect = DragDropEffects.None; // منع إنشاء نسخ مكررة
+                    }
+                    return;
+                }
+            }
+
+            // السماح بالسحب في الحالات الأخرى
+            if (e.Data.GetDataPresent(DataFormats.FileDrop) ||
+                e.Data.GetDataPresent(DataFormats.StringFormat) ||
+                e.Data.GetDataPresent("FlowPanelReorder") ||
+                e.Data.GetDataPresent("ReturnToPanel1"))
             {
                 e.Effect = DragDropEffects.Move;
             }
@@ -611,6 +820,19 @@ namespace Mospuk_1
 
             try
             {
+                // *** إضافة جديدة: منع السحب داخل نفس الـ FlowLayoutPanel (باستثناء إعادة الترتيب) ***
+                if (e.Data.GetDataPresent("DragSource") && !e.Data.GetDataPresent("FlowPanelReorder"))
+                {
+                    string dragSource = e.Data.GetData("DragSource").ToString();
+                    FlowLayoutPanel targetPanel = targetPic.Parent as FlowLayoutPanel;
+
+                    // إذا كان المصدر والهدف في نفس الـ FlowLayoutPanel، توقف
+                    if (dragSource == targetPanel?.Name)
+                    {
+                        return; // لا تفعل شيئاً
+                    }
+                }
+
                 // التعامل مع إعادة الترتيب داخل flowLayoutPanel1
                 if (e.Data.GetDataPresent("FlowPanelReorder"))
                 {
@@ -622,7 +844,7 @@ namespace Mospuk_1
                     return;
                 }
 
-                // التعامل مع السحب العادي (من panel1 أو ملفات خارجية)
+                // التعامل مع السحب العادي (من panel1، ملفات خارجية، أو ImageApostille)
                 string filePath = null;
 
                 if (e.Data.GetDataPresent(DataFormats.FileDrop))
@@ -635,6 +857,14 @@ namespace Mospuk_1
                 {
                     string data = (string)e.Data.GetData(DataFormats.StringFormat);
                     filePath = data.Split('|')[0]; // أخذ الملف الأول إذا كان هناك عدة ملفات
+                }
+                else if (e.Data.GetDataPresent("ReturnToPanel1"))
+                {
+                    PictureBox sourcePb = (PictureBox)e.Data.GetData("ReturnToPanel1");
+                    if (sourcePb?.Tag != null)
+                    {
+                        filePath = sourcePb.Tag.ToString();
+                    }
                 }
 
                 if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
@@ -651,10 +881,32 @@ namespace Mospuk_1
                             targetPic.Tag = filePath;
                         }
 
-                        // حذف من panel1 إذا كان السحب داخليًا
+                        // حذف من المصدر حسب نوع السحب
                         if (e.Data.GetDataPresent(DataFormats.StringFormat))
                         {
+                            // حذف من panel1
                             RemoveImageFromPanel1(filePath);
+                            // محاولة الحذف من imageApostille
+                            PictureBox apostilleBox = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
+                            if (apostilleBox != null && apostilleBox.Tag?.ToString() == filePath)
+                            {
+                                apostilleBox.Image?.Dispose();
+                                apostilleBox.Image = null;
+                                apostilleBox.Tag = null;
+                            }
+                            // محاولة الحذف من flowLayoutPanel2
+                            RemoveImageFromFlowLayoutPanel(flowLayoutPanel2, filePath);
+                        }
+                        else if (e.Data.GetDataPresent("ReturnToPanel1"))
+                        {
+                            // مسح الصورة من ImageApostille
+                            PictureBox sourcePb = (PictureBox)e.Data.GetData("ReturnToPanel1");
+                            if (sourcePb != null)
+                            {
+                                sourcePb.Image?.Dispose();
+                                sourcePb.Image = null;
+                                sourcePb.Tag = null;
+                            }
                         }
                     }
                 }
@@ -675,44 +927,24 @@ namespace Mospuk_1
                 dragStartPoint = e.Location;
                 isDragging = false;
                 draggedPictureBox = sender as PictureBox;
-            }
-        }
 
-        // الحل الأول: استخدام DataObject لحمل البيانات المخصصة
-        private void Pic_MouseMove_FlowPanel(object sender, MouseEventArgs e)
-        {
-            if (e.Button == MouseButtons.Left && draggedPictureBox != null && draggedPictureBox.Image != null)
-            {
-                if (!isDragging)
+                // *** إضافة جديدة: تحديد مصدر السحب ***
+                if (draggedPictureBox != null)
                 {
-                    Size dragSize = SystemInformation.DragSize;
-                    Rectangle dragRect = new Rectangle(
-                        dragStartPoint.X - dragSize.Width / 2,
-                        dragStartPoint.Y - dragSize.Height / 2,
-                        dragSize.Width,
-                        dragSize.Height);
-
-                    if (!dragRect.Contains(e.Location))
-                    {
-                        isDragging = true;
-
-                        // إنشاء DataObject لحمل البيانات المخصصة
-                        DataObject dataObject = new DataObject();
-                        dataObject.SetData("FlowPanelReorder", draggedPictureBox);
-
-                        // بدء عملية السحب لإعادة الترتيب
-                        draggedPictureBox.DoDragDrop(dataObject, DragDropEffects.Move);
-                    }
+                    dragSourcePanel = draggedPictureBox.Parent as FlowLayoutPanel;
                 }
             }
         }
+
+
+        // الحل الأول: استخدام DataObject لحمل البيانات المخصصة
 
         private void Pic_MouseUp_FlowPanel(object sender, MouseEventArgs e)
         {
             isDragging = false;
             draggedPictureBox = null;
+            dragSourcePanel = null; // *** إضافة جديدة: مسح مصدر السحب ***
         }
-
         // دالة تبديل مواضع الصور في flowLayoutPanel1
         private void SwapPictureBoxes(PictureBox source, PictureBox target)
         {
@@ -1132,84 +1364,9 @@ namespace Mospuk_1
         }
      
 
-        // تصحيح Pic_DragEnter لقبول كلا النوعين من السحب
-        private void Pic_DragEnter(object sender, DragEventArgs e)
-        {
-            // قبول الملفات الخارجية والسحب الداخلي من panel1
-            if (e.Data.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent(DataFormats.StringFormat))
-            {
-                e.Effect = DragDropEffects.Copy;
-            }
-            else
-            {
-                e.Effect = DragDropEffects.None;
-            }
-        }
+      
 
-        // تصحيح Pic_DragDrop للتعامل مع النوعين
-        private void Pic_DragDrop(object sender, DragEventArgs e)
-        {
-            PictureBox targetPic = sender as PictureBox;
-            if (targetPic == null) return;
-
-            string filePath = null;
-
-            try
-            {
-                // التعامل مع الملفات الخارجية (من خارج التطبيق)
-                if (e.Data.GetDataPresent(DataFormats.FileDrop))
-                {
-                    string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                    if (files != null && files.Length > 0)
-                    {
-                        filePath = files[0];
-                    }
-                }
-                // التعامل مع السحب الداخلي من panel1
-                else if (e.Data.GetDataPresent(DataFormats.StringFormat))
-                {
-                    filePath = (string)e.Data.GetData(DataFormats.StringFormat);
-                }
-
-                // إذا تم الحصول على مسار الملف
-                if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
-                {
-                    // التأكد من أن الملف صورة
-                    string ext = Path.GetExtension(filePath).ToLower();
-                    if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".gif")
-                    {
-                        // تحميل الصورة
-                        using (var imgTemp = Image.FromFile(filePath))
-                        {
-                            // تنظيف الصورة السابقة إن وجدت
-                            if (targetPic.Image != null)
-                            {
-                                targetPic.Image.Dispose();
-                            }
-
-                            targetPic.Image = new Bitmap(imgTemp);
-                            targetPic.Tag = filePath;
-                        }
-
-                        // حذف الصورة من panel1 إذا كانت موجودة هناك (فقط في حالة السحب الداخلي)
-                        if (e.Data.GetDataPresent(DataFormats.StringFormat))
-                        {
-                            RemoveImageFromPanel1(filePath);
-                        }
-                    }
-                    else
-                    {
-                        MessageBox.Show("Please select a valid image file (jpg, png, bmp, gif).", "Unsupported File", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("An error occurred while loading the image:\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        // دالة مساعدة لحذف الصورة من panel1
+             // دالة مساعدة لحذف الصورة من panel1
         private void RemoveImageFromPanel1(string filePath)
         {
             PictureBox pbToRemove = null;
@@ -1240,22 +1397,6 @@ namespace Mospuk_1
             }
         }
 
-        // إضافة دالة لتنظيف PictureBox (اختيارية)
-        private void ClearPictureBox(PictureBox pb)
-        {
-            if (pb.Image != null && pb.Tag != null && File.Exists(pb.Tag.ToString()))
-            {
-                string filePath = pb.Tag.ToString();
-
-                // تنظيف الصورة في الـ PictureBox في flowLayoutPanel1 (لكن لا تزيله)
-                pb.Image.Dispose();
-                pb.Image = null;
-                pb.Tag = null;
-
-                // إرجاع الصورة إلى panel1 كصورة جديدة
-                AddImageBackToPanel1(filePath);
-            }
-        }
         private void AddImageBackToPanel1(string filePath)
         {
             int padding = 10;
@@ -1288,10 +1429,15 @@ namespace Mospuk_1
             }
 
             pb.Location = new Point(x, y);
-            pb.DoubleClick += Pb_DoubleClick;
-            pb.MouseDown += Pb_MouseDown;
-            pb.MouseMove += Pb_MouseMove;
-            pb.MouseUp += Pb_MouseUp;
+
+            // --- الجزء الذي تم تعديله ---
+            // ربط الأحداث الصحيحة التي تسمح بالسحب المتعدد والسحب للخارج
+            pb.DoubleClick += OpenImage_DoubleClick;
+            pb.MouseDown += Pb_MouseDown_Panel1; //  مهم للسحب
+            pb.MouseMove += Pb_MouseMove_Panel1; //  مهم للسحب
+            pb.MouseUp += Pb_MouseUp_Panel1;   //  مهم للسحب
+            pb.Click += Pb_Click_Panel1;       //  مهم للتحديد الفردي والمتعدد
+                                               // ----------------------------
 
             panel1.Controls.Add(pb);
             panel1.Controls.SetChildIndex(pb, 0); // ضعه في بداية القائمة
@@ -1299,40 +1445,8 @@ namespace Mospuk_1
             ReArrangeImages();
         }
 
-
         // إضافة قائمة سياق للتحكم في PictureBox الجديد (اختيارية)
-        private void AddContextMenuToPictureBox(PictureBox pb)
-        {
-            ContextMenuStrip contextMenu = new ContextMenuStrip();
 
-            ToolStripMenuItem clearItem = new ToolStripMenuItem("Return Image");
-            clearItem.Click += (s, e) => ClearPictureBox(pb);
-
-            ToolStripMenuItem openItem = new ToolStripMenuItem("Open Image");
-            openItem.Click += (s, e) => {
-                if (pb.Tag != null && File.Exists(pb.Tag.ToString()))
-                {
-                    try
-                    {
-                        var psi = new System.Diagnostics.ProcessStartInfo()
-                        {
-                            FileName = pb.Tag.ToString(),
-                            UseShellExecute = true
-                        };
-                        System.Diagnostics.Process.Start(psi);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("An error occurred while opening the file:\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-            };
-
-            contextMenu.Items.Add(clearItem);
-            contextMenu.Items.Add(openItem);
-
-            pb.ContextMenuStrip = contextMenu;
-        }
 
         private void AddFile_Load(object sender, EventArgs e)
         {
@@ -1455,15 +1569,6 @@ namespace Mospuk_1
             }
          }
 
-        private void flowLayoutPanel2_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
-
-        private void labelControl11_Click(object sender, EventArgs e)
-        {
-
-        }
       
 
         // ثانياً: إضافة دالة تهيئة مخصصة لـ flowLayoutPanel2
@@ -1476,6 +1581,21 @@ namespace Mospuk_1
         // ثالثاً: أحداث flowLayoutPanel2 (نسخة من أحداث flowLayoutPanel1)
         private void FlowLayoutPanel2_DragEnter(object sender, DragEventArgs e)
         {
+            // *** إضافة جديدة: منع السحب إلى نفس المصدر ***
+            if (e.Data.GetDataPresent("DragSource"))
+            {
+                string dragSource = e.Data.GetData("DragSource").ToString();
+                FlowLayoutPanel targetPanel = sender as FlowLayoutPanel;
+
+                // إذا كان المصدر والهدف هما نفس الـ FlowLayoutPanel، امنع السحب
+                if (dragSource == targetPanel?.Name)
+                {
+                    e.Effect = DragDropEffects.None;
+                    return;
+                }
+            }
+
+            // السماح بالسحب في الحالات الأخرى
             if (e.Data.GetDataPresent(DataFormats.StringFormat) || e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 e.Effect = DragDropEffects.Move;
@@ -1491,21 +1611,19 @@ namespace Mospuk_1
             try
             {
                 List<string> filePaths = new List<string>();
+                bool isInternalDrag = e.Data.GetDataPresent(DataFormats.StringFormat);
 
-                // التعامل مع الملفات الخارجية
                 if (e.Data.GetDataPresent(DataFormats.FileDrop))
                 {
                     string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                     filePaths.AddRange(files);
                 }
-                // التعامل مع السحب الداخلي من panel1
-                else if (e.Data.GetDataPresent(DataFormats.StringFormat))
+                else if (isInternalDrag)
                 {
                     string data = (string)e.Data.GetData(DataFormats.StringFormat);
                     filePaths.AddRange(data.Split('|'));
                 }
 
-                // معالجة كل ملف
                 foreach (string filePath in filePaths)
                 {
                     if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) continue;
@@ -1513,35 +1631,38 @@ namespace Mospuk_1
                     string ext = Path.GetExtension(filePath).ToLower();
                     if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".gif")
                     {
-                        // البحث عن PictureBox فارغ في flowLayoutPanel2
                         PictureBox targetPic = FindEmptyPictureBoxInPanel2();
-
                         if (targetPic == null)
                         {
-                            // إنشاء PictureBox جديد إذا لم يوجد فارغ
                             targetPic = CreateNewPictureBoxForPanel2();
                             flowLayoutPanel2.Controls.Add(targetPic);
                         }
 
-                        // تحميل الصورة في PictureBox
                         using (var imgTemp = Image.FromFile(filePath))
                         {
-                            if (targetPic.Image != null)
-                                targetPic.Image.Dispose();
-
+                            targetPic.Image?.Dispose();
                             targetPic.Image = new Bitmap(imgTemp);
                             targetPic.Tag = filePath;
                         }
 
-                        // حذف الصورة من panel1 إذا كانت من السحب الداخلي
-                        if (e.Data.GetDataPresent(DataFormats.StringFormat))
+                        if (isInternalDrag)
                         {
+                            // محاولة الحذف من panel1
                             RemoveImageFromPanel1(filePath);
+                            // محاولة الحذف من imageApostille
+                            PictureBox apostilleBox = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
+                            if (apostilleBox != null && apostilleBox.Tag?.ToString() == filePath)
+                            {
+                                apostilleBox.Image?.Dispose();
+                                apostilleBox.Image = null;
+                                apostilleBox.Tag = null;
+                            }
+                            // *** إضافة جديدة: محاولة الحذف من flowLayoutPanel1 ***
+                            RemoveImageFromFlowLayoutPanel(flowLayoutPanel1, filePath);
                         }
                     }
                 }
 
-                // مسح التحديد بعد السحب
                 ClearSelection();
             }
             catch (Exception ex)
@@ -1549,7 +1670,6 @@ namespace Mospuk_1
                 MessageBox.Show("An error occurred while processing drag and drop:\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
         // رابعاً: البحث عن PictureBox فارغ في flowLayoutPanel2
         private PictureBox FindEmptyPictureBoxInPanel2()
         {
@@ -1585,8 +1705,8 @@ namespace Mospuk_1
             pic.MouseMove += Pic_MouseMove_Panel2;
             pic.MouseUp += Pic_MouseUp_Panel2;
 
-            // إضافة قائمة سياق
-            AddContextMenuToPictureBoxPanel2(pic);
+            pic.DoubleClick += OpenImage_DoubleClick;
+
 
             return pic;
         }
@@ -1594,6 +1714,30 @@ namespace Mospuk_1
         // سادساً: أحداث السحب والإفلات في PictureBox داخل flowLayoutPanel2
         private void Pic_DragEnter_Panel2(object sender, DragEventArgs e)
         {
+            // *** إضافة جديدة: منع السحب داخل نفس الـ FlowLayoutPanel ***
+            if (e.Data.GetDataPresent("DragSource"))
+            {
+                string dragSource = e.Data.GetData("DragSource").ToString();
+                PictureBox targetPic = sender as PictureBox;
+                FlowLayoutPanel targetPanel = targetPic?.Parent as FlowLayoutPanel;
+
+                // إذا كان المصدر والهدف في نفس الـ FlowLayoutPanel
+                if (dragSource == targetPanel?.Name)
+                {
+                    // السماح فقط بإعادة الترتيب (FlowPanel2Reorder)
+                    if (e.Data.GetDataPresent("FlowPanel2Reorder"))
+                    {
+                        e.Effect = DragDropEffects.Move;
+                    }
+                    else
+                    {
+                        e.Effect = DragDropEffects.None; // منع إنشاء نسخ مكررة
+                    }
+                    return;
+                }
+            }
+
+            // السماح بالسحب في الحالات الأخرى
             if (e.Data.GetDataPresent(DataFormats.FileDrop) ||
                 e.Data.GetDataPresent(DataFormats.StringFormat) ||
                 e.Data.GetDataPresent("FlowPanel2Reorder"))
@@ -1677,43 +1821,22 @@ namespace Mospuk_1
                 dragStartPoint = e.Location;
                 isDragging = false;
                 draggedPictureBoxPanel2 = sender as PictureBox;
-            }
-        }
 
-        private void Pic_MouseMove_Panel2(object sender, MouseEventArgs e)
-        {
-            if (e.Button == MouseButtons.Left && draggedPictureBoxPanel2 != null && draggedPictureBoxPanel2.Image != null)
-            {
-                if (!isDragging)
+                // *** إضافة جديدة: تحديد مصدر السحب ***
+                if (draggedPictureBoxPanel2 != null)
                 {
-                    Size dragSize = SystemInformation.DragSize;
-                    Rectangle dragRect = new Rectangle(
-                        dragStartPoint.X - dragSize.Width / 2,
-                        dragStartPoint.Y - dragSize.Height / 2,
-                        dragSize.Width,
-                        dragSize.Height);
-
-                    if (!dragRect.Contains(e.Location))
-                    {
-                        isDragging = true;
-
-                        // إنشاء DataObject لحمل البيانات المخصصة
-                        DataObject dataObject = new DataObject();
-                        dataObject.SetData("FlowPanel2Reorder", draggedPictureBoxPanel2);
-
-                        // بدء عملية السحب لإعادة الترتيب
-                        draggedPictureBoxPanel2.DoDragDrop(dataObject, DragDropEffects.Move);
-                    }
+                    dragSourcePanel = draggedPictureBoxPanel2.Parent as FlowLayoutPanel;
                 }
             }
         }
+
 
         private void Pic_MouseUp_Panel2(object sender, MouseEventArgs e)
         {
             isDragging = false;
             draggedPictureBoxPanel2 = null;
+            dragSourcePanel = null; // *** إضافة جديدة: مسح مصدر السحب ***
         }
-
         // ثامناً: دالة تبديل مواضع الصور في flowLayoutPanel2
         private void SwapPictureBoxesPanel2(PictureBox source, PictureBox target)
         {
@@ -1733,58 +1856,9 @@ namespace Mospuk_1
             target.Tag = sourceTag;
         }
 
-        // تاسعاً: دالة تنظيف PictureBox في flowLayoutPanel2
-        private void ClearPictureBoxPanel2(PictureBox pb)
-        {
-            if (pb.Image != null && pb.Tag != null && File.Exists(pb.Tag.ToString()))
-            {
-                string filePath = pb.Tag.ToString();
+       
 
-                // تنظيف الصورة في الـ PictureBox في flowLayoutPanel2
-                pb.Image.Dispose();
-                pb.Image = null;
-                pb.Tag = null;
-
-                // إرجاع الصورة إلى panel1 كصورة جديدة
-                AddImageBackToPanel1(filePath);
-            }
-        }
-
-        // عاشراً: إضافة قائمة سياق مخصصة لـ flowLayoutPanel2
-        private void AddContextMenuToPictureBoxPanel2(PictureBox pb)
-        {
-            ContextMenuStrip contextMenu = new ContextMenuStrip();
-
-            ToolStripMenuItem clearItem = new ToolStripMenuItem("Return Image");
-            clearItem.Click += (s, e) => ClearPictureBoxPanel2(pb);
-
-            ToolStripMenuItem openItem = new ToolStripMenuItem("Open Image");
-            openItem.Click += (s, e) => {
-                if (pb.Tag != null && File.Exists(pb.Tag.ToString()))
-                {
-                    try
-                    {
-                        var psi = new System.Diagnostics.ProcessStartInfo()
-                        {
-                            FileName = pb.Tag.ToString(),
-                            UseShellExecute = true
-                        };
-                        System.Diagnostics.Process.Start(psi);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("An error occurred while opening the file:\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-            };
-
-            contextMenu.Items.Add(clearItem);
-            contextMenu.Items.Add(openItem);
-
-            pb.ContextMenuStrip = contextMenu;
-        }
-        // إضافة دالة لتهيئة imageApostille مع إمكانية السحب والإفلات
-        // إضافة دالة لتهيئة imageApostille مع إمكانية السحب والإفلات
+      
         private void SetupImageApostille()
         {
             PictureBox imageApostille = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
@@ -1800,11 +1874,64 @@ namespace Mospuk_1
 
                 // إضافة DragOver للتأكد من استمرارية السحب
                 imageApostille.DragOver += ImageApostille_DragOver;
+                // *** تعديل 8: إضافة حدث النقر المزدوج لفتح الصورة ***
+                imageApostille.DoubleClick += OpenImage_DoubleClick;
 
-                // إضافة قائمة سياق
-                AddContextMenuToImageApostille(imageApostille);
+                // *** إضافة 9: إضافة أحداث السحب (لإرجاع الصورة إلى panel1) ***
+                imageApostille.MouseDown += imageApostille_MouseDown;
+                imageApostille.MouseMove += imageApostille_MouseMove;
+                imageApostille.MouseUp += imageApostille_MouseUp;
+            }
+            // إضافة قائمة سياق
+        
+        }
+        private void imageApostille_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                dragStartPoint = e.Location;
+                isDragging = false;
             }
         }
+
+        private void imageApostille_MouseMove(object sender, MouseEventArgs e)
+        {
+            PictureBox pb = sender as PictureBox;
+            if (e.Button == MouseButtons.Left && pb != null && pb.Image != null)
+            {
+                if (!isDragging)
+                {
+                    Size dragSize = SystemInformation.DragSize;
+                    Rectangle dragRect = new Rectangle(dragStartPoint, dragSize);
+                    if (!dragRect.Contains(e.Location))
+                    {
+                        isDragging = true;
+
+                        // *** تعديل رئيسي: إنشاء DataObject يحمل كلا النوعين من البيانات ***
+                        DataObject data = new DataObject();
+
+                        // 1. بيانات لإمكانية الإرجاع إلى panel1 (السلوك القديم)
+                        data.SetData("ReturnToPanel1", pb);
+
+                        // 2. بيانات للسحب إلى flowLayoutPanel1 (السلوك الجديد)
+                        // نستخدم نفس تنسيق السحب من panel1 (مسار الملف كنص)
+                        if (pb.Tag != null)
+                        {
+                            data.SetData(DataFormats.StringFormat, pb.Tag.ToString());
+                        }
+
+                        // بدء عملية السحب والإفلات مع البيانات المدمجة
+                        pb.DoDragDrop(data, DragDropEffects.Move);
+                    }
+                }
+            }
+        }
+
+        private void imageApostille_MouseUp(object sender, MouseEventArgs e)
+        {
+            isDragging = false;
+        }
+
 
         // حدث DragEnter لـ imageApostille - محدث
         private void ImageApostille_DragEnter(object sender, DragEventArgs e)
@@ -1872,6 +1999,9 @@ namespace Mospuk_1
 
             try
             {
+                // نحدد إذا كان السحب داخلياً لتسهيل القراءة
+                bool isInternalDrag = e.Data.GetDataPresent(DataFormats.StringFormat);
+
                 // التعامل مع الملفات الخارجية (من خارج التطبيق)
                 if (e.Data.GetDataPresent(DataFormats.FileDrop))
                 {
@@ -1881,8 +2011,8 @@ namespace Mospuk_1
                         filePath = files[0];
                     }
                 }
-                // التعامل مع السحب الداخلي من panel1
-                else if (e.Data.GetDataPresent(DataFormats.StringFormat))
+                // التعامل مع السحب الداخلي من أي حاوية
+                else if (isInternalDrag)
                 {
                     string data = (string)e.Data.GetData(DataFormats.StringFormat);
                     if (!string.IsNullOrEmpty(data))
@@ -1902,22 +2032,24 @@ namespace Mospuk_1
                         using (var imgTemp = Image.FromFile(filePath))
                         {
                             // تنظيف الصورة السابقة إن وجدت
-                            if (targetPic.Image != null)
-                            {
-                                targetPic.Image.Dispose();
-                            }
-
+                            targetPic.Image?.Dispose();
                             targetPic.Image = new Bitmap(imgTemp);
                             targetPic.Tag = filePath;
                         }
 
-                        // حذف الصورة من panel1 إذا كانت موجودة هناك (فقط في حالة السحب الداخلي)
-                        if (e.Data.GetDataPresent(DataFormats.StringFormat))
+                        // *** التعديل الرئيسي هنا ***
+                        // إذا كان السحب داخليًا، قم بحذف الصورة من مصدرها الأصلي
+                        if (isInternalDrag)
                         {
+                            // محاولة الحذف من panel1
                             RemoveImageFromPanel1(filePath);
-                        }
 
-                        // رسالة نجح العملية
+                            // محاولة الحذف من flowLayoutPanel1
+                            RemoveImageFromFlowLayoutPanel(flowLayoutPanel1, filePath);
+
+                            // محاولة الحذف من flowLayoutPanel2
+                            RemoveImageFromFlowLayoutPanel(flowLayoutPanel2, filePath);
+                        }
                     }
                     else
                     {
@@ -1927,8 +2059,7 @@ namespace Mospuk_1
                 }
                 else
                 {
-                    MessageBox.Show("File not found or invalid path.", "Error",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    // لا تظهر رسالة خطأ إذا كان المسار فارغاً، فقد يكون السحب من نوع آخر
                 }
             }
             catch (Exception ex)
@@ -1936,68 +2067,128 @@ namespace Mospuk_1
                 MessageBox.Show("An error occurred while loading the image:\n" + ex.Message,
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }
+        }        // *** الدوال الجديدة التي تمت إضافتها لرسم مستطيل التحديد ***
 
-        // إضافة قائمة سياق لـ imageApostille - محدثة
-        private void AddContextMenuToImageApostille(PictureBox pb)
+        private void panel1_MouseDown_ForSelection(object sender, MouseEventArgs e)
         {
-            ContextMenuStrip contextMenu = new ContextMenuStrip();
-
-            ToolStripMenuItem clearItem = new ToolStripMenuItem("Return Image");
-            clearItem.Click += (s, e) => ClearImageApostille(pb);
-
-            ToolStripMenuItem openItem = new ToolStripMenuItem("Open Image");
-            openItem.Click += (s, e) => {
-                if (pb.Tag != null && File.Exists(pb.Tag.ToString()))
-                {
-                    try
-                    {
-                        var psi = new System.Diagnostics.ProcessStartInfo()
-                        {
-                            FileName = pb.Tag.ToString(),
-                            UseShellExecute = true
-                        };
-                        System.Diagnostics.Process.Start(psi);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("An error occurred while opening the file:\n" + ex.Message,
-                            "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-            };
-
-         
-
-            contextMenu.Items.Add(clearItem);
-            contextMenu.Items.Add(openItem);
-            contextMenu.Items.Add(new ToolStripSeparator());
-
-            pb.ContextMenuStrip = contextMenu;
-        }
-
-        // دالة تنظيف imageApostille وإرجاع الصورة لـ panel1 - محدثة
-        private void ClearImageApostille(PictureBox pb)
-        {
-            if (pb.Image != null)
+            // ابدأ التحديد فقط إذا تم الضغط على زر الفأرة الأيسر
+            // وعلى مساحة فارغة في panel1 (وليس على PictureBox)
+            if (e.Button == MouseButtons.Left)
             {
-                string filePath = pb.Tag?.ToString();
-
-                // تنظيف الصورة في imageApostille
-                pb.Image.Dispose();
-                pb.Image = null;
-                pb.Tag = null;
-
-                // إرجاع الصورة إلى panel1 إذا كان المسار صحيح
-                if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+                // التحقق مما إذا كان النقر فوق عنصر تحكم فرعي (صورة)
+                Control clickedControl = panel1.GetChildAtPoint(e.Location);
+                if (clickedControl != null && clickedControl is PictureBox)
                 {
-                    AddImageBackToPanel1(filePath);
+                    // إذا نقرت على صورة، دع منطق النقر على الصورة يعمل
+                    // ولا تبدأ رسم المستطيل
+                    isSelecting = false;
+                    return;
                 }
 
-                MessageBox.Show("Image cleared from Apostille section!", "Info",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                isSelecting = true;
+                selectionStartPoint = e.Location;
+
+                // إذا لم يكن مفتاح Ctrl مضغوطًا، قم بإلغاء التحديد الحالي
+                if (Control.ModifierKeys != Keys.Control)
+                {
+                    ClearSelection();
+                }
+
+                // إعادة رسم اللوحة لإظهار التغييرات
+                panel1.Invalidate();
             }
         }
+
+        private void panel1_MouseMove_ForSelection(object sender, MouseEventArgs e)
+        {
+            if (isSelecting)
+            {
+                // حساب أبعاد المستطيل أثناء تحريك الفأرة
+                int x = Math.Min(selectionStartPoint.X, e.X);
+                int y = Math.Min(selectionStartPoint.Y, e.Y);
+                int width = Math.Abs(selectionStartPoint.X - e.X);
+                int height = Math.Abs(selectionStartPoint.Y - e.Y);
+                selectionRectangle = new Rectangle(x, y, width, height);
+
+                // طلب إعادة رسم اللوحة لإظهار المستطيل المحدث
+                panel1.Invalidate();
+            }
+        }
+
+        private void panel1_MouseUp_ForSelection(object sender, MouseEventArgs e)
+        {
+            if (isSelecting)
+            {
+                isSelecting = false;
+
+                // المرور على كل الصور في panel1
+                foreach (Control control in panel1.Controls)
+                {
+                    if (control is PictureBox pb)
+                    {
+                        // التحقق مما إذا كانت حدود الصورة تتقاطع مع مستطيل التحديد
+                        if (selectionRectangle.IntersectsWith(pb.Bounds))
+                        {
+                            // إذا تقاطعت، قم بتحديد الصورة
+                            if (!selectedPictureBoxes.Contains(pb))
+                            {
+                                selectedPictureBoxes.Add(pb);
+                                pb.BorderStyle = BorderStyle.FixedSingle;
+                            }
+                        }
+                    }
+                }
+
+                // طلب إعادة رسم اللوحة لإخفاء المستطيل
+                panel1.Invalidate();
+            }
+        }
+
+        private void panel1_Paint_SelectionRectangle(object sender, PaintEventArgs e)
+        {
+            // إذا كنا في وضع التحديد، قم برسم المستطيل
+            if (isSelecting)
+            {
+                // استخدام لون شفاف جزئيًا لتعبئة المستطيل
+                using (Brush brush = new SolidBrush(Color.FromArgb(70, 0, 120, 215))) // لون أزرق شفاف
+                {
+                    e.Graphics.FillRectangle(brush, selectionRectangle);
+                }
+                // استخدام قلم لرسم حدود المستطيل
+                using (Pen pen = new Pen(Color.DodgerBlue, 1))
+                {
+                    e.Graphics.DrawRectangle(pen, selectionRectangle);
+                }
+            }
+        }
+
+        // ***************************************************************
+        // دالة مساعدة جديدة لحذف الصورة من أي FlowLayoutPanel بناءً على مسار الملف
+        private void RemoveImageFromFlowLayoutPanel(FlowLayoutPanel panel, string filePath)
+        {
+            PictureBox pbToRemove = null;
+            // ابحث عن الصورة في الـ FlowLayoutPanel المحدد
+            foreach (Control control in panel.Controls)
+            {
+                if (control is PictureBox pb && pb.Tag != null && pb.Tag.ToString() == filePath)
+                {
+                    pbToRemove = pb;
+                    break;
+                }
+            }
+
+            if (pbToRemove != null)
+            {
+                // إزالة الكونترول من الحاوية
+                panel.Controls.Remove(pbToRemove);
+                // التخلص من الموارد لتوفير الذاكرة
+                pbToRemove.Image?.Dispose();
+                pbToRemove.Dispose();
+            }
+        }
+        // ***************************************************************
+
+
     }
 
 

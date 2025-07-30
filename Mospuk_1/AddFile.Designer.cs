@@ -337,7 +337,6 @@
             this.flowLayoutPanel2.Name = "flowLayoutPanel2";
             this.flowLayoutPanel2.Size = new System.Drawing.Size(572, 168);
             this.flowLayoutPanel2.TabIndex = 167;
-            this.flowLayoutPanel2.Paint += new System.Windows.Forms.PaintEventHandler(this.flowLayoutPanel2_Paint);
             // 
             // labelControl9
             // 
@@ -389,6 +388,7 @@
             // 
             // AddFile
             // 
+            this.AcceptButton = this.btnUplaod;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1164, 671);
