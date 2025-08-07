@@ -30,7 +30,6 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AddFile));
             this.panel1 = new System.Windows.Forms.Panel();
-            this.btnUplaod = new Guna.UI2.WinForms.Guna2Button();
             this.savebtn = new Guna.UI2.WinForms.Guna2Button();
             this.comboTranslation = new Guna.UI2.WinForms.Guna2ComboBox();
             this.comboDocumentType = new Guna.UI2.WinForms.Guna2ComboBox();
@@ -49,10 +48,10 @@
             this.labelControl7 = new DevExpress.XtraEditors.LabelControl();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.flowLayoutPanel2 = new System.Windows.Forms.FlowLayoutPanel();
-            this.labelControl9 = new DevExpress.XtraEditors.LabelControl();
-            this.panelDocx = new Guna.UI2.WinForms.Guna2Panel();
             this.btnAddWord = new Guna.UI2.WinForms.Guna2Button();
+            this.btnUplaod = new Guna.UI2.WinForms.Guna2Button();
             this.imageApostille = new Guna.UI2.WinForms.Guna2PictureBox();
+            this.panelDocx = new System.Windows.Forms.Panel();
             ((System.ComponentModel.ISupportInitialize)(this.imageApostille)).BeginInit();
             this.SuspendLayout();
             // 
@@ -66,24 +65,6 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(1164, 82);
             this.panel1.TabIndex = 23;
-            // 
-            // btnUplaod
-            // 
-            this.btnUplaod.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnUplaod.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
-            this.btnUplaod.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
-            this.btnUplaod.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
-            this.btnUplaod.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
-            this.btnUplaod.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
-            this.btnUplaod.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.btnUplaod.ForeColor = System.Drawing.Color.White;
-            this.btnUplaod.Image = ((System.Drawing.Image)(resources.GetObject("btnUplaod.Image")));
-            this.btnUplaod.Location = new System.Drawing.Point(1012, 536);
-            this.btnUplaod.Name = "btnUplaod";
-            this.btnUplaod.Size = new System.Drawing.Size(140, 38);
-            this.btnUplaod.TabIndex = 22;
-            this.btnUplaod.Text = "Add";
-            this.btnUplaod.Click += new System.EventHandler(this.btnUplaod_Click);
             // 
             // savebtn
             // 
@@ -338,29 +319,10 @@
             this.flowLayoutPanel2.Size = new System.Drawing.Size(572, 168);
             this.flowLayoutPanel2.TabIndex = 167;
             // 
-            // labelControl9
-            // 
-            this.labelControl9.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.labelControl9.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelControl9.Appearance.Options.UseFont = true;
-            this.labelControl9.Location = new System.Drawing.Point(603, 310);
-            this.labelControl9.Name = "labelControl9";
-            this.labelControl9.Size = new System.Drawing.Size(95, 18);
-            this.labelControl9.TabIndex = 169;
-            this.labelControl9.Text = "Attached Files:";
-            // 
-            // panelDocx
-            // 
-            this.panelDocx.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.panelDocx.BackColor = System.Drawing.SystemColors.Control;
-            this.panelDocx.Location = new System.Drawing.Point(603, 349);
-            this.panelDocx.Name = "panelDocx";
-            this.panelDocx.Size = new System.Drawing.Size(549, 137);
-            this.panelDocx.TabIndex = 170;
-            // 
             // btnAddWord
             // 
             this.btnAddWord.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnAddWord.BorderRadius = 3;
             this.btnAddWord.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
             this.btnAddWord.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
             this.btnAddWord.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
@@ -368,23 +330,50 @@
             this.btnAddWord.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
             this.btnAddWord.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.btnAddWord.ForeColor = System.Drawing.Color.White;
-            this.btnAddWord.Location = new System.Drawing.Point(1012, 294);
+            this.btnAddWord.Location = new System.Drawing.Point(603, 294);
             this.btnAddWord.Name = "btnAddWord";
             this.btnAddWord.Size = new System.Drawing.Size(140, 38);
             this.btnAddWord.TabIndex = 171;
-            this.btnAddWord.Text = "Docx";
+            this.btnAddWord.Text = "Archive";
             this.btnAddWord.Click += new System.EventHandler(this.btnAddWord_Click);
+            // 
+            // btnUplaod
+            // 
+            this.btnUplaod.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnUplaod.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
+            this.btnUplaod.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
+            this.btnUplaod.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
+            this.btnUplaod.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
+            this.btnUplaod.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.btnUplaod.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.btnUplaod.ForeColor = System.Drawing.Color.White;
+            this.btnUplaod.Image = ((System.Drawing.Image)(resources.GetObject("btnUplaod.Image")));
+            this.btnUplaod.Location = new System.Drawing.Point(1012, 536);
+            this.btnUplaod.Name = "btnUplaod";
+            this.btnUplaod.Size = new System.Drawing.Size(140, 38);
+            this.btnUplaod.TabIndex = 22;
+            this.btnUplaod.Text = "Add";
+            this.btnUplaod.Click += new System.EventHandler(this.btnUplaod_Click);
             // 
             // imageApostille
             // 
             this.imageApostille.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.imageApostille.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.imageApostille.ImageRotate = 0F;
             this.imageApostille.Location = new System.Drawing.Point(981, 75);
             this.imageApostille.Name = "imageApostille";
             this.imageApostille.Size = new System.Drawing.Size(141, 168);
+            this.imageApostille.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.imageApostille.TabIndex = 172;
             this.imageApostille.TabStop = false;
+            // 
+            // panelDocx
+            // 
+            this.panelDocx.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.panelDocx.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panelDocx.Location = new System.Drawing.Point(603, 343);
+            this.panelDocx.Name = "panelDocx";
+            this.panelDocx.Size = new System.Drawing.Size(525, 162);
+            this.panelDocx.TabIndex = 173;
             // 
             // AddFile
             // 
@@ -392,10 +381,9 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1164, 671);
+            this.Controls.Add(this.panelDocx);
             this.Controls.Add(this.imageApostille);
             this.Controls.Add(this.btnAddWord);
-            this.Controls.Add(this.panelDocx);
-            this.Controls.Add(this.labelControl9);
             this.Controls.Add(this.flowLayoutPanel2);
             this.Controls.Add(this.flowLayoutPanel1);
             this.Controls.Add(this.labelControl7);
@@ -416,9 +404,9 @@
             this.Controls.Add(this.savebtn);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.btnUplaod);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "AddFile";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "AddFile";
             this.Load += new System.EventHandler(this.AddFile_Load);
             ((System.ComponentModel.ISupportInitialize)(this.imageApostille)).EndInit();
             this.ResumeLayout(false);
@@ -448,9 +436,8 @@
         private DevExpress.XtraEditors.LabelControl labelControl7;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel2;
-        private DevExpress.XtraEditors.LabelControl labelControl9;
-        private Guna.UI2.WinForms.Guna2Panel panelDocx;
         private Guna.UI2.WinForms.Guna2Button btnAddWord;
         private Guna.UI2.WinForms.Guna2PictureBox imageApostille;
+        private System.Windows.Forms.Panel panelDocx;
     }
 }

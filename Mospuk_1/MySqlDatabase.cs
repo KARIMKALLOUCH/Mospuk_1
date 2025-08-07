@@ -238,4 +238,26 @@ public class MySqlDatabase
 
         return false;
     }
+    public string GetSavedPathById(int userId, string pathType)
+    {
+        try
+        {
+            string query = "SELECT path_value FROM user_paths WHERE user_id = @userId AND path_type = @pathType";
+            var parameters = new List<MySqlParameter>
+        {
+            new MySqlParameter("@userId", userId),
+            new MySqlParameter("@pathType", pathType)
+        };
+
+            object result = ExecuteScalar(query, parameters);
+            return result?.ToString() ?? string.Empty;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Error retrieving path: " + ex.Message,
+                          "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return string.Empty;
+        }
+    }
+
 }

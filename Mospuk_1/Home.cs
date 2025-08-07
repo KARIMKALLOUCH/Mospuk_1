@@ -8,7 +8,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-    
+using System.IO;
+
 namespace Mospuk_1
 {
     public partial class Home : Form
@@ -16,26 +17,48 @@ namespace Mospuk_1
         MySqlDatabase db;
         private int selectedClientId = -1;
         private int selectedCompanyId = -1;
+        private int currentUserId;
 
 
 
-        public Home(MySqlDatabase database)
+        public Home(MySqlDatabase database, int userId)
         {
             InitializeComponent();
             db = database;  // ← هنا تحفظ المتغير لتستخدمه لاحقاً
+            currentUserId = userId;
+
             LoadProjectsToDGV();
             navigationFrame1.TransitionAnimationProperties.FrameCount = 1;
             LoadClientsToDGV();
             LoadCompaniesToDGV();
+            LoadDocumentTypesToDGV();
+            LoadLanguagePairsToDGV();
+
 
         }
+        private void btnLogout_Click(object sender, EventArgs e)
+        {
+       
+            DialogResult result = MessageBox.Show(
+               "Are you sure you want to exit the application?",
+               "Confirm Logout",
+               MessageBoxButtons.YesNo,
+               MessageBoxIcon.Question,
+               MessageBoxDefaultButton.Button2);
 
+            if (result == DialogResult.Yes)
+            {
+                if (File.Exists("session.txt"))
+                    File.Delete("session.txt");
+
+                Application.Exit(); // إعادة تشغيل التطبيق لتظهر صفحة Login
+            }
+        }
         private void btnAdd_Click(object sender, EventArgs e)
         {
-            AddFile addproject = new AddFile(db);
-
-            addproject.ShowDialog();
-            LoadProjectsToDGV();
+            AddFile addproject = new AddFile(db, currentUserId);
+            addproject.FormClosed += (s, args) => LoadProjectsToDGV(); // تحديث عند إغلاق النموذج
+            addproject.Show();
         }
         private void LoadProjectsToDGV()
         {
@@ -653,7 +676,326 @@ namespace Mospuk_1
 
         private void guna2Button3_Click(object sender, EventArgs e)
         {
+            navigationFrame1.SelectedPage = navigationPage4;
 
         }
+
+        private void add_document_types_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // 1. Validate that the field is not empty
+                if (string.IsNullOrWhiteSpace(txt_document_types.Text))
+                {
+                    MessageBox.Show("Please enter a document type", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                string documentTypeName = txt_document_types.Text.Trim();
+
+                // 2. Check if the document type already exists
+                string checkQuery = "SELECT COUNT(*) FROM document_types WHERE name = @name";
+                var checkParams = new List<MySqlParameter>
+        {
+            new MySqlParameter("@name", documentTypeName)
+        };
+
+                int count = Convert.ToInt32(db.ExecuteScalar(checkQuery, checkParams));
+
+                if (count > 0)
+                {
+                    MessageBox.Show("This document type already exists!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // 3. Add the new document type
+                string insertQuery = "INSERT INTO document_types (name) VALUES (@name)";
+                var insertParams = new List<MySqlParameter>
+        {
+            new MySqlParameter("@name", documentTypeName)
+        };
+
+                bool success = db.ExecuteNonQuery(insertQuery, insertParams);
+
+                if (success)
+                {
+                    MessageBox.Show("Document type added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    txt_document_types.Clear(); // Clear the field after adding
+                    LoadDocumentTypesToDGV();
+                }
+                else
+                {
+                    MessageBox.Show("Failed to add document type", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        private void LoadDocumentTypesToDGV()
+        {
+            string query = @"
+    SELECT 
+        id AS 'ID',
+        name AS 'Document Type'
+        FROM document_types
+    ORDER BY id DESC";
+
+            DataTable dt = db.ExecuteQuery(query, null);
+            DTGVdocument.DataSource = dt;
+
+            // Remove existing Delete column if it exists
+            if (DTGVdocument.Columns.Contains("Delete"))
+                DTGVdocument.Columns.Remove("Delete");
+
+            // Add Delete button column
+            DataGridViewImageColumn imgCol = new DataGridViewImageColumn();
+            imgCol.Name = "Delete";
+            imgCol.HeaderText = "";
+            imgCol.Image = Properties.Resources.delete_red; // Make sure you have this image in resources
+            imgCol.ImageLayout = DataGridViewImageCellLayout.Zoom;
+            DTGVdocument.Columns.Add(imgCol);
+
+          
+        }
+
+        private void DTGVdocument_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0 && DTGVdocument.Columns[e.ColumnIndex].Name == "Delete")
+            {
+                DialogResult result = MessageBox.Show("Are you sure you want to delete this document type?",
+                                                   "Confirm Delete",
+                                                   MessageBoxButtons.YesNo,
+                                                   MessageBoxIcon.Question);
+
+                if (result == DialogResult.Yes)
+                {
+                    int documentTypeId = Convert.ToInt32(DTGVdocument.Rows[e.RowIndex].Cells["ID"].Value);
+
+                    string deleteQuery = "DELETE FROM document_types WHERE id = @id";
+                    var parameters = new List<MySqlParameter>
+            {
+                new MySqlParameter("@id", documentTypeId)
+            };
+
+                    bool success = db.ExecuteNonQuery(deleteQuery, parameters);
+
+                    if (success)
+                    {
+                        MessageBox.Show("Document type deleted successfully.", "Success",
+                                      MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        LoadDocumentTypesToDGV(); // Refresh the DataGridView
+                    }
+                    else
+                    {
+                        MessageBox.Show("Failed to delete document type.", "Error",
+                                      MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+       
+
+        private void txtsearchdocument_TextChanged(object sender, EventArgs e)
+        {
+            string searchText = txtsearchdocument.Text.Trim();
+
+            string query = @"
+    SELECT 
+        id AS 'ID',
+        name AS 'Document Type'
+    FROM document_types
+    WHERE 
+        name LIKE @search
+    ORDER BY id DESC";
+
+            var parameters = new List<MySqlParameter>
+    {
+        new MySqlParameter("@search", "%" + searchText + "%")
+    };
+
+            DataTable dt = db.ExecuteQuery(query, parameters);
+            DTGVdocument.DataSource = dt;
+
+            // Re-add delete column if it doesn't exist
+            if (!DTGVdocument.Columns.Contains("Delete"))
+            {
+                DataGridViewImageColumn imgCol = new DataGridViewImageColumn();
+                imgCol.Name = "Delete";
+                imgCol.HeaderText = "";
+                imgCol.Image = Properties.Resources.delete_red;
+                imgCol.ImageLayout = DataGridViewImageCellLayout.Zoom;
+                DTGVdocument.Columns.Add(imgCol);
+            }
+        }
+
+        private void add_Language_Pair_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // 1. Validate that the field is not empty
+                if (string.IsNullOrWhiteSpace(txt_Language_Pair.Text))
+                {
+                    MessageBox.Show("Please enter a language pair", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                string languagePairName = txt_Language_Pair.Text.Trim();
+
+                // 2. Check if the language pair already exists
+                string checkQuery = "SELECT COUNT(*) FROM language_pairs WHERE name = @name";
+                var checkParams = new List<MySqlParameter>
+        {
+            new MySqlParameter("@name", languagePairName)
+        };
+
+                int count = Convert.ToInt32(db.ExecuteScalar(checkQuery, checkParams));
+
+                if (count > 0)
+                {
+                    MessageBox.Show("This language pair already exists!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // 3. Add the new language pair
+                string insertQuery = "INSERT INTO language_pairs (name) VALUES (@name)";
+                var insertParams = new List<MySqlParameter>
+        {
+            new MySqlParameter("@name", languagePairName)
+        };
+
+                bool success = db.ExecuteNonQuery(insertQuery, insertParams);
+
+                if (success)
+                {
+                    MessageBox.Show("Language pair added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    txt_Language_Pair.Clear(); // Clear the field after adding
+                    LoadLanguagePairsToDGV();
+                }
+                else
+                {
+                    MessageBox.Show("Failed to add language pair", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void LoadLanguagePairsToDGV()
+        {
+            string query = @"
+    SELECT 
+        id AS 'ID',
+        name AS 'Language Pair'
+        FROM language_pairs
+    ORDER BY id DESC";
+
+            DataTable dt = db.ExecuteQuery(query, null);
+            DTGVLanguage.DataSource = dt;
+
+            // Remove existing Delete column if it exists
+            if (DTGVLanguage.Columns.Contains("Delete"))
+                DTGVLanguage.Columns.Remove("Delete");
+
+            // Add Delete button column
+            DataGridViewImageColumn imgCol = new DataGridViewImageColumn();
+            imgCol.Name = "Delete";
+            imgCol.HeaderText = "";
+            imgCol.Image = Properties.Resources.delete_red;
+            imgCol.ImageLayout = DataGridViewImageCellLayout.Zoom;
+            DTGVLanguage.Columns.Add(imgCol);
+
+           
+        }
+
+        
+
+        private void txtsearchLanguage_TextChanged(object sender, EventArgs e)
+        {
+            string searchText = txtsearchLanguage.Text.Trim();
+
+            string query = @"
+    SELECT 
+        id AS 'ID',
+        name AS 'Language Pair'        
+    FROM language_pairs
+    WHERE 
+        name LIKE @search
+    ORDER BY id DESC";
+
+            var parameters = new List<MySqlParameter>
+    {
+        new MySqlParameter("@search", "%" + searchText + "%")
+    };
+
+            DataTable dt = db.ExecuteQuery(query, parameters);
+            DTGVLanguage.DataSource = dt;
+
+            // Re-add delete column if it doesn't exist
+            if (!DTGVLanguage.Columns.Contains("Delete"))
+            {
+                DataGridViewImageColumn imgCol = new DataGridViewImageColumn();
+                imgCol.Name = "Delete";
+                imgCol.HeaderText = "";
+                imgCol.Image = Properties.Resources.delete_red;
+                imgCol.ImageLayout = DataGridViewImageCellLayout.Zoom;
+                DTGVLanguage.Columns.Add(imgCol);
+            }
+        }
+
+        private void DTGVLanguage_CellContentClick_1(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0 && DTGVLanguage.Columns[e.ColumnIndex].Name == "Delete")
+            {
+                DialogResult result = MessageBox.Show("Are you sure you want to delete this language pair?",
+                                                   "Confirm Delete",
+                                                   MessageBoxButtons.YesNo,
+                                                   MessageBoxIcon.Question);
+
+                if (result == DialogResult.Yes)
+                {
+                    int languagePairId = Convert.ToInt32(DTGVLanguage.Rows[e.RowIndex].Cells["ID"].Value);
+
+                    string deleteQuery = "DELETE FROM language_pairs WHERE id = @id";
+                    var parameters = new List<MySqlParameter>
+            {
+                new MySqlParameter("@id", languagePairId)
+            };
+
+                    bool success = db.ExecuteNonQuery(deleteQuery, parameters);
+
+                    if (success)
+                    {
+                        MessageBox.Show("Language pair deleted successfully.", "Success",
+                                      MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        LoadLanguagePairsToDGV(); // Refresh the DataGridView
+                    }
+                    else
+                    {
+                        MessageBox.Show("Failed to delete language pair.", "Error",
+                                      MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void btnDirectory_Click(object sender, EventArgs e)
+        {
+            SaveDirectory saveDirectory = new SaveDirectory(db, currentUserId);
+
+            saveDirectory.ShowDialog();
+        }
+
+        private void Home_Load(object sender, EventArgs e)
+        {
+            LoadProjectsToDGV();
+
+        }
+
+      
     }
 }

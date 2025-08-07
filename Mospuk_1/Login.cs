@@ -8,12 +8,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.IO;
 
 namespace Mospuk_1
 {
 
     public partial class Login : Form
-    {  
+    {
         MySqlDatabase db;
 
         public Login(MySqlDatabase database)
@@ -46,37 +47,36 @@ namespace Mospuk_1
 
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
-                MessageBox.Show("Please fill in all fields", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Please enter both username and password.", "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
-            // SQL query
-            string query = "SELECT * FROM tb_user WHERE username = @username AND password = @password";
+            // استعلام لجلب بيانات المستخدم بما فيها الـ ID
+            string query = "SELECT id FROM users WHERE username = @username AND password = @password";
 
-            // Set query parameters
             var parameters = new List<MySqlParameter>
+    {
+        new MySqlParameter("@username", username),
+        new MySqlParameter("@password", password)
+    };
+
+            object result = db.ExecuteScalar(query, parameters);
+
+            if (result != null && int.TryParse(result.ToString(), out int userId))
             {
-                new MySqlParameter("@username", username),
-                new MySqlParameter("@password", password) // 🔐 Ideally, use hashed passwords in production
-            };
+                // ✅ حفظ userId في session.txt
+                File.WriteAllText("session.txt", userId.ToString());
 
-            DataTable result = db.ExecuteQuery(query, parameters);
-
-            if (result.Rows.Count > 0)
-            {
-                // MessageBox.Show("Login successful", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                // Open the main form or hide the login form
                 this.Hide();
-                Home home = new Home(db);
+                Home home = new Home(db, userId); // نمرر ID المستخدم للنموذج الرئيسي
                 home.Show();
             }
             else
             {
-                MessageBox.Show("Invalid username or password", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Incorrect username or password.", "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }
-    
 
+
+        }
     }
 }

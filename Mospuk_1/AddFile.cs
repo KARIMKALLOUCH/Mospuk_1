@@ -14,6 +14,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using PdfiumViewer;
 using MySql.Data.MySqlClient;
+using Org.BouncyCastle.Asn1.Cms;
+using System.Threading.Tasks;  // ← هذه المكتبة مهمة للـ async/await
 
 namespace Mospuk_1
 {
@@ -29,12 +31,15 @@ namespace Mospuk_1
         private List<PictureBox> selectedPictureBoxesFlow1 = new List<PictureBox>(); // للتحديد المتعدد في flowLayoutPanel1
         private bool isMultiSelectModeFlow1 = false; // وضع التحديد المتعدد                                              // ****************************************
         private DateTime lastClickTime = DateTime.MinValue;
-
+        private List<PictureBox> selectedPictureBoxesFlow2 = new List<PictureBox>(); // للتحديد المتعدد في flowLayoutPanel2
+        private bool isMultiSelectModeFlow2 = false; // وضع التحديد المتعدد
         private Point dragStartPoint;
         private bool isDragging = false;
         private List<PictureBox> selectedPictureBoxes = new List<PictureBox>(); // للتحديد المتعدد
         private bool isMultiSelectMode = false; // وضع التحديد المتعدد
-        public AddFile(MySqlDatabase database)
+        private int currentUserId; // إضافة متغير لتخزين معرف المستخدم الحالي
+
+        public AddFile(MySqlDatabase database, int userId)
         {
             InitializeComponent();
             db = database;
@@ -49,6 +54,8 @@ namespace Mospuk_1
 
             this.KeyPreview = true; // *** أضف هذا السطر الهام ***
             this.KeyDown += AddFile_KeyDown; // *** أضف هذا السطر لربط الحدث ***
+            this.AcceptButton = null;
+            currentUserId = userId; // حفظ معرف المستخدم
 
 
             panel1.MouseDown += Pb_MouseDown;
@@ -56,6 +63,10 @@ namespace Mospuk_1
             SetupFlowLayoutPanel1();
             SetupFlowLayoutPanel2();     // إضافة تهيئة flowLayoutPanel2 مع دعم إعادة الترتيب
 
+            this.Click += EmptySpace_Click;
+            panel1.Click += EmptySpace_Click;
+            flowLayoutPanel1.Click += EmptySpace_Click;
+            flowLayoutPanel2.Click += EmptySpace_Click;
             // *** إضافة 3: ربط أحداث جديدة لـ panel1 لرسم مستطيل التحديد ***
             panel1.MouseDown += panel1_MouseDown_ForSelection;
             panel1.MouseMove += panel1_MouseMove_ForSelection;
@@ -67,28 +78,79 @@ namespace Mospuk_1
         {
             if (e.KeyCode == Keys.Delete)
             {
-                if (selectedPictureBoxesFlow1.Count > 0)
+                // إنشاء قائمة بجميع الصور المحددة من جميع الأماكن
+                List<PictureBox> allSelectedPictures = new List<PictureBox>();
+                allSelectedPictures.AddRange(selectedPictureBoxesFlow1);
+                allSelectedPictures.AddRange(selectedPictureBoxesFlow2);
+                allSelectedPictures.AddRange(selectedPictureBoxes);
+
+                // إضافة صورة imageApostille إذا كانت محددة
+                PictureBox apostilleBox = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
+                if (apostilleBox != null && apostilleBox.Image != null && apostilleBox.BorderStyle == BorderStyle.FixedSingle)
+                {
+                    allSelectedPictures.Add(apostilleBox);
+                }
+
+                // إذا كان هناك أي صور محددة، عرض رسالة تأكيد
+                if (allSelectedPictures.Count > 0)  
                 {
                     var confirmResult = MessageBox.Show(
-                        "Are you sure you want to delete the selected images?",
+                        $"Are you sure you want to delete {allSelectedPictures.Count} selected images?",
                         "Confirm Deletion",
                         MessageBoxButtons.YesNo,
                         MessageBoxIcon.Warning);
 
                     if (confirmResult == DialogResult.Yes)
                     {
-                      
-                        foreach (var pb in selectedPictureBoxesFlow1.ToList())
+                        // حذف الصور المحددة من جميع الأماكن
+                        foreach (var pb in allSelectedPictures.ToList())
                         {
-                            flowLayoutPanel1.Controls.Remove(pb);
-
-                            pb.Dispose();
+                            if (pb.Parent == flowLayoutPanel1)
+                            {
+                                flowLayoutPanel1.Controls.Remove(pb);
+                                pb.Dispose();
+                            }
+                            else if (pb.Parent == flowLayoutPanel2)
+                            {
+                                flowLayoutPanel2.Controls.Remove(pb);
+                                pb.Dispose();
+                            }
+                            else if (pb.Parent == panel1)
+                            {
+                                panel1.Controls.Remove(pb);
+                                pb.Dispose();
+                                ReArrangeImages(); // إعادة ترتيب الصور المتبقية
+                            }
+                            else if (pb.Name == "imageApostille")
+                            {
+                                pb.Image?.Dispose();
+                                pb.Image = null;
+                                pb.Tag = null;
+                                pb.BorderStyle = BorderStyle.None;
+                            }
                         }
 
-                        // بعد حذف كل الصور، قم بتفريغ قائمة العناصر المحددة
+                        // مسح جميع قوائم التحديد
                         selectedPictureBoxesFlow1.Clear();
+                        selectedPictureBoxesFlow2.Clear();
+                        selectedPictureBoxes.Clear();
                     }
                 }
+            }
+            else if (e.KeyCode == Keys.Enter)
+            {
+
+                if (AreAnyImagesSelected())
+                {
+                    OpenSelectedImages();
+                }
+                else
+                {
+                    btnUplaod.PerformClick();
+                }
+
+                e.Handled = true;
+                e.SuppressKeyPress = true;
             }
         }
         private void Pic_MouseMove_FlowPanel(object sender, MouseEventArgs e)
@@ -167,59 +229,78 @@ namespace Mospuk_1
 
         private void panel1_DragDrop(object sender, DragEventArgs e)
         {
+            // أولاً: التعامل مع السحب المتعدد (هنا لا يوجد تبديل، فقط إعادة الصور)
+            // هذا الجزء يبقى كما هو
+            if (e.Data.GetDataPresent("MultiDragFlow1"))
+            {
+                PictureBox[] selectedPictureBoxes = (PictureBox[])e.Data.GetData("MultiDragFlow1");
+                foreach (PictureBox sourcePb in selectedPictureBoxes)
+                {
+                    if (sourcePb?.Tag != null && sourcePb.Image != null)
+                    {
+                        AddImageBackToPanel1(sourcePb.Tag.ToString());
+                    }
+                }
+                foreach (PictureBox sourcePb in selectedPictureBoxes)
+                {
+                    if (sourcePb.Parent != null) sourcePb.Parent.Controls.Remove(sourcePb);
+                    sourcePb.Dispose();
+                }
+                ClearSelectionFlow1();
+                return; // الخروج بعد المعالجة
+            }
+
+            if (e.Data.GetDataPresent("MultiDragFlow2"))
+            {
+                PictureBox[] selectedPictureBoxes = (PictureBox[])e.Data.GetData("MultiDragFlow2");
+                foreach (PictureBox sourcePb in selectedPictureBoxes)
+                {
+                    if (sourcePb?.Tag != null && sourcePb.Image != null)
+                    {
+                        AddImageBackToPanel1(sourcePb.Tag.ToString());
+                    }
+                }
+                foreach (PictureBox sourcePb in selectedPictureBoxes)
+                {
+                    if (sourcePb.Parent != null) sourcePb.Parent.Controls.Remove(sourcePb);
+                    sourcePb.Dispose();
+                }
+                ClearSelectionFlow2();
+                return; // الخروج بعد المعالجة
+            }
+
+
             if (e.Data.GetDataPresent("ReturnToPanel1"))
             {
-                // التعامل مع السحب المتعدد من flowLayoutPanel1
-                if (e.Data.GetDataPresent("MultiDragFlow1"))
+                PictureBox sourcePb = (PictureBox)e.Data.GetData("ReturnToPanel1");
+                if (sourcePb == null || sourcePb.Tag == null) return;
+
+                Point dropPoint = panel1.PointToClient(new Point(e.X, e.Y));
+
+                PictureBox targetPb = panel1.GetChildAtPoint(dropPoint) as PictureBox;
+
+                if (targetPb != null && targetPb != sourcePb)
                 {
-                    PictureBox[] selectedPictureBoxes = (PictureBox[])e.Data.GetData("MultiDragFlow1");
+                    SwapImagesBetweenControls(sourcePb, targetPb);
+                }
+                else
+                {
+                    string filePath = sourcePb.Tag.ToString();
+                    AddImageBackToPanel1(filePath);
 
-                    foreach (PictureBox sourcePb in selectedPictureBoxes)
+                    if (sourcePb.Name == "imageApostille")
                     {
-                        if (sourcePb?.Tag != null && sourcePb.Image != null)
-                        {
-                            string filePath = sourcePb.Tag.ToString();
-                            AddImageBackToPanel1(filePath);
-                        }
+                        sourcePb.Image?.Dispose();
+                        sourcePb.Image = null;
+                        sourcePb.Tag = null;
                     }
-
-                    // إزالة جميع الصور المحددة من flowLayoutPanel1
-                    foreach (PictureBox sourcePb in selectedPictureBoxes)
+                    else 
                     {
                         if (sourcePb.Parent != null)
                         {
                             sourcePb.Parent.Controls.Remove(sourcePb);
                         }
                         sourcePb.Dispose();
-                    }
-
-                    // مسح التحديد
-                    ClearSelectionFlow1();
-                }
-                else
-                {
-                    // السحب المفرد (الكود الأصلي)
-                    PictureBox sourcePb = (PictureBox)e.Data.GetData("ReturnToPanel1");
-
-                    if (sourcePb?.Tag != null)
-                    {
-                        string filePath = sourcePb.Tag.ToString();
-                        AddImageBackToPanel1(filePath);
-
-                        if (sourcePb.Name == "imageApostille")
-                        {
-                            sourcePb.Image?.Dispose();
-                            sourcePb.Image = null;
-                            sourcePb.Tag = null;
-                        }
-                        else
-                        {
-                            if (sourcePb.Parent != null)
-                            {
-                                sourcePb.Parent.Controls.Remove(sourcePb);
-                            }
-                            sourcePb.Dispose();
-                        }
                     }
                 }
             }
@@ -258,9 +339,22 @@ namespace Mospuk_1
 
         private void btnUplaod_Click(object sender, EventArgs e)
         {
+
+            string downloadsPath = db.GetSavedPathById(currentUserId, "downloads");
+
+            if (string.IsNullOrEmpty(downloadsPath) || !Directory.Exists(downloadsPath))
+            {
+                MessageBox.Show("Please set a downloads directory first.", "Error",
+                               MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             OpenFileDialog ofd = new OpenFileDialog();
             ofd.Filter = "All Supported Files|*.rar;*.zip;*.jpg;*.jpeg;*.png;*.pdf;*.docx;*.xlsx|RAR Files|*.rar|ZIP Files|*.zip|Images|*.jpg;*.jpeg;*.png|PDF Files|*.pdf|All Files|*.*";
             ofd.Multiselect = true;
+
+            // تعيين المسار الابتدائي لمجلد التنزيلات
+            ofd.InitialDirectory = downloadsPath;
 
             if (ofd.ShowDialog() == DialogResult.OK)
             {
@@ -271,9 +365,6 @@ namespace Mospuk_1
 
                 Directory.CreateDirectory(outputFolder);
 
-                // نظف لوحة panel1 قبل الإضافة (اختياري)
-
-                // تعالج كل ملف على حدة
                 foreach (string path in ofd.FileNames)
                 {
                     string extension = Path.GetExtension(path).ToLower();
@@ -287,12 +378,10 @@ namespace Mospuk_1
                     }
                     else
                     {
-                        // انسخ الملف داخل مجلد الاستخراج
                         File.Copy(path, Path.Combine(outputFolder, Path.GetFileName(path)), true);
                     }
                 }
 
-                // بعد انتهاء معالجة كل الملفات، اعرضها
                 DisplayFiles(outputFolder);
             }
         }
@@ -313,7 +402,17 @@ namespace Mospuk_1
 
         private void ExtractZIP(string zipPath, string outputDirectory)
         {
-            //     ZipFile.ExtractToDirectory(zipPath, outputDirectory, true);
+            using (var archive = ArchiveFactory.Open(zipPath))
+            {
+                foreach (var entry in archive.Entries.Where(entry => !entry.IsDirectory))
+                {
+                    entry.WriteToDirectory(outputDirectory, new ExtractionOptions()
+                    {
+                        ExtractFullPath = true,
+                        Overwrite = true
+                    });
+                }
+            }
         }
 
 
@@ -493,41 +592,47 @@ namespace Mospuk_1
             }
         }
 
- 
+
         // أحداث panel1 - تم تحديث الأسماء والوظائف للتحديد المتعدد
+        // دالة Pb_Click_Panel1 المعدّلة
         private void Pb_Click_Panel1(object sender, EventArgs e)
         {
             PictureBox pb = sender as PictureBox;
             if (pb == null) return;
 
-            // التحقق من الضغط على مفتاح Ctrl للتحديد المتعدد
+            if ((DateTime.Now - lastClickTime).TotalMilliseconds < SystemInformation.DoubleClickTime)
+            {
+                return;
+            }
+            lastClickTime = DateTime.Now;
+            // *** نهاية الإضافة ***
+
             if (Control.ModifierKeys == Keys.Control)
             {
-                isMultiSelectMode = true;
+                // لا تمسح التحديدات الأخرى في وضع Ctrl
                 if (selectedPictureBoxes.Contains(pb))
                 {
-                    // إلغاء التحديد
                     selectedPictureBoxes.Remove(pb);
                     pb.BorderStyle = BorderStyle.None;
                 }
                 else
                 {
-                    // إضافة للتحديد
                     selectedPictureBoxes.Add(pb);
                     pb.BorderStyle = BorderStyle.FixedSingle;
                 }
             }
             else
             {
-                // إلغاء التحديد السابق
-                ClearSelection();
+                // استخدم الدالة الجديدة
+                ClearAllSelections();
+
                 // تحديد الصورة الحالية
                 selectedPictureBoxes.Add(pb);
                 pb.BorderStyle = BorderStyle.FixedSingle;
-                isMultiSelectMode = false;
             }
-        }
+            panel1.Focus();
 
+        }
         private void ClearSelection()
         {
             foreach (var pb in selectedPictureBoxes)
@@ -637,6 +742,11 @@ namespace Mospuk_1
             flowLayoutPanel1.AllowDrop = true;
             flowLayoutPanel1.DragEnter += FlowLayoutPanel1_DragEnter;
             flowLayoutPanel1.DragDrop += FlowLayoutPanel1_DragDrop;
+            // إضافة الأحداث الجديدة للتحديد بواسطة المستطيل
+            flowLayoutPanel1.MouseDown += FlowLayoutPanel1_MouseDown_ForSelection;
+            flowLayoutPanel1.MouseMove += FlowLayoutPanel1_MouseMove_ForSelection;
+            flowLayoutPanel1.MouseUp += FlowLayoutPanel1_MouseUp_ForSelection;
+            flowLayoutPanel1.Paint += FlowLayoutPanel1_Paint_SelectionRectangle;
         }
 
         private void FlowLayoutPanel1_DragEnter(object sender, DragEventArgs e)
@@ -712,7 +822,54 @@ namespace Mospuk_1
                     }
                 }
 
-                // باقي الكود الأصلي للتعامل مع الحالات الأخرى...
+                // *** إضافة جديدة: التعامل مع السحب المتعدد من flowLayoutPanel2 ***
+                if (e.Data.GetDataPresent("MultiDragFlow2"))
+                {
+                    PictureBox[] selectedPictureBoxes = (PictureBox[])e.Data.GetData("MultiDragFlow2");
+
+                    foreach (PictureBox sourcePb in selectedPictureBoxes)
+                    {
+                        if (sourcePb?.Tag != null && sourcePb.Image != null)
+                        {
+                            string filePath = sourcePb.Tag.ToString();
+
+                            // البحث عن PictureBox فارغ في flowLayoutPanel1
+                            PictureBox targetPic = FindEmptyPictureBox();
+
+                            if (targetPic == null)
+                            {
+                                targetPic = CreateNewPictureBox();
+                                flowLayoutPanel1.Controls.Add(targetPic);
+                            }
+
+                            // نقل الصورة
+                            using (var imgTemp = Image.FromFile(filePath))
+                            {
+                                if (targetPic.Image != null)
+                                    targetPic.Image.Dispose();
+
+                                targetPic.Image = new Bitmap(imgTemp);
+                                targetPic.Tag = filePath;
+                            }
+                        }
+                    }
+
+                    // إزالة جميع الصور المحددة من flowLayoutPanel2
+                    foreach (PictureBox sourcePb in selectedPictureBoxes)
+                    {
+                        if (sourcePb.Parent != null)
+                        {
+                            sourcePb.Parent.Controls.Remove(sourcePb);
+                        }
+                        sourcePb.Dispose();
+                    }
+
+                    // مسح التحديد
+                    ClearSelectionFlow2();
+                    return;
+                }
+
+                // باقي الكود الأصلي للحالات الأخرى...
                 if (e.Data.GetDataPresent("DragSource"))
                 {
                     string dragSource = e.Data.GetData("DragSource").ToString();
@@ -784,7 +941,7 @@ namespace Mospuk_1
             {
                 MessageBox.Show("An error occurred while processing drag and drop:\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }        // البحث عن PictureBox فارغ في flowLayoutPanel1
+        }
         private PictureBox FindEmptyPictureBox()
         {
             foreach (Control control in flowLayoutPanel1.Controls)
@@ -836,22 +993,19 @@ namespace Mospuk_1
             {
                 return;
             }
-            lastClickTime = DateTime.Now; // سجل وقت هذه النقرة.
+            lastClickTime = DateTime.Now;
 
-            // التحقق من الضغط على مفتاح Ctrl للتحديد المتعدد
             if (Control.ModifierKeys == Keys.Control)
             {
-                isMultiSelectModeFlow1 = true;
+                // لا تمسح التحديدات الأخرى في وضع Ctrl
                 if (selectedPictureBoxesFlow1.Contains(pb))
                 {
-                    // إلغاء التحديد
                     selectedPictureBoxesFlow1.Remove(pb);
                     pb.BorderStyle = BorderStyle.None;
                     pb.BackColor = Color.Transparent;
                 }
                 else
                 {
-                    // إضافة للتحديد
                     selectedPictureBoxesFlow1.Add(pb);
                     pb.BorderStyle = BorderStyle.FixedSingle;
                     pb.BackColor = Color.LightBlue;
@@ -859,8 +1013,9 @@ namespace Mospuk_1
             }
             else
             {
-                // إلغاء التحديد السابق
-                ClearSelectionFlow1();
+                // *** التعديل هنا: استخدم الدالة الجديدة ***
+                ClearAllSelections();
+
                 // تحديد الصورة الحالية
                 if (pb.Image != null)
                 {
@@ -868,7 +1023,6 @@ namespace Mospuk_1
                     pb.BorderStyle = BorderStyle.FixedSingle;
                     pb.BackColor = Color.LightBlue;
                 }
-                isMultiSelectModeFlow1 = false;
             }
         }
         private void ClearSelectionFlow1()
@@ -897,18 +1051,43 @@ namespace Mospuk_1
                     {
                         isDragging = true;
 
-                        // تعديل: إرسال بيانات مع تحديد المصدر
+                        // *** تعديل جديد: دعم السحب المتعدد من flowLayoutPanel2 ***
                         DataObject dataObject = new DataObject();
+                        List<string> filePathsToTransfer = new List<string>();
+
+                        // إذا كانت الصورة المسحوبة ضمن التحديد المتعدد وهناك أكثر من صورة محددة
+                        if (selectedPictureBoxesFlow2.Count > 1 && selectedPictureBoxesFlow2.Contains(draggedPictureBoxPanel2))
+                        {
+                            // سحب جميع الصور المحددة
+                            foreach (var selectedPb in selectedPictureBoxesFlow2)
+                            {
+                                if (selectedPb.Tag != null && selectedPb.Image != null)
+                                {
+                                    filePathsToTransfer.Add(selectedPb.Tag.ToString());
+                                }
+                            }
+                            // إضافة معرف خاص للسحب المتعدد من flowLayoutPanel2
+                            dataObject.SetData("MultiDragFlow2", selectedPictureBoxesFlow2.ToArray());
+                        }
+                        else
+                        {
+                            // سحب الصورة الحالية فقط
+                            if (draggedPictureBoxPanel2.Tag != null)
+                            {
+                                filePathsToTransfer.Add(draggedPictureBoxPanel2.Tag.ToString());
+                            }
+                        }
+
+                        // إعداد البيانات للسحب
                         dataObject.SetData("FlowPanel2Reorder", draggedPictureBoxPanel2); // لإعادة الترتيب الداخلي
                         dataObject.SetData("ReturnToPanel1", draggedPictureBoxPanel2);      // للإرجاع إلى panel1
-
-                        // *** إضافة جديدة: تحديد مصدر السحب ***
                         dataObject.SetData("DragSource", dragSourcePanel?.Name ?? "unknown");
 
-                        // إرسال مسار الملف للسماح بالنقل إلى حاوية أخرى
-                        if (draggedPictureBoxPanel2.Tag != null)
+                        // إرسال مسارات الملفات
+                        if (filePathsToTransfer.Count > 0)
                         {
-                            dataObject.SetData(DataFormats.StringFormat, draggedPictureBoxPanel2.Tag.ToString());
+                            string dataToTransfer = string.Join("|", filePathsToTransfer);
+                            dataObject.SetData(DataFormats.StringFormat, dataToTransfer);
                         }
 
                         draggedPictureBoxPanel2.DoDragDrop(dataObject, DragDropEffects.Move);
@@ -916,7 +1095,6 @@ namespace Mospuk_1
                 }
             }
         }
-
         // أحداث السحب والإفلات في flowLayoutPanel1
         private void Pic_DragEnter_FlowPanel(object sender, DragEventArgs e)
         {
@@ -963,119 +1141,87 @@ namespace Mospuk_1
             PictureBox targetPic = sender as PictureBox;
             if (targetPic == null) return;
 
+            // التعامل أولاً مع إعادة الترتيب الداخلي
+            if (e.Data.GetDataPresent("FlowPanelReorder"))
+            {
+                PictureBox sourcePic = (PictureBox)e.Data.GetData("FlowPanelReorder");
+                if (sourcePic != targetPic)
+                {
+                    SwapPictureBoxes(sourcePic, targetPic);
+                }
+                return;
+            }
+
+            string filePath = null;
+            PictureBox sourcePictureBox = null;
+
             try
             {
-                string filePath = null;
-
-                // التعامل مع إعادة الترتيب داخل flowLayoutPanel1
-                if (e.Data.GetDataPresent("FlowPanelReorder"))
-                {
-                    PictureBox sourcePic = (PictureBox)e.Data.GetData("FlowPanelReorder");
-                    if (sourcePic != targetPic)
-                    {
-                        SwapPictureBoxes(sourcePic, targetPic);
-                    }
-                    return;
-                }
-
-                // التعامل مع التبديل من imageApostille
-                if (e.Data.GetDataPresent("ReturnToPanel1"))
-                {
-                    PictureBox sourceApostille = (PictureBox)e.Data.GetData("ReturnToPanel1");
-                    if (sourceApostille != null && sourceApostille.Name == "imageApostille")
-                    {
-                        // إذا كان targetPic يحتوي على صورة، قم بالتبديل
-                        if (targetPic.Image != null)
-                        {
-                            SwapImagesBetweenControls(targetPic, sourceApostille);
-                        }
-                        else
-                        {
-                            // نقل عادي إلى PictureBox فارغ
-                            if (sourceApostille.Image != null && sourceApostille.Tag != null)
-                            {
-                                filePath = sourceApostille.Tag.ToString();
-                                using (var imgTemp = Image.FromFile(filePath))
-                                {
-                                    targetPic.Image = new Bitmap(imgTemp);
-                                    targetPic.Tag = filePath;
-                                }
-
-                                // مسح الصورة من imageApostille
-                                sourceApostille.Image?.Dispose();
-                                sourceApostille.Image = null;
-                                sourceApostille.Tag = null;
-                            }
-                        }
-                        return;
-                    }
-                }
-
-                // التعامل مع السحب العادي (من panel1، flowLayoutPanel2، ملفات خارجية)
-                if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                // --- استخلاص مسار الملف المصدر ---
+                if (e.Data.GetDataPresent(DataFormats.FileDrop)) // من ملف خارجي
                 {
                     string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                    if (files != null && files.Length > 0)
-                        filePath = files[0];
+                    if (files != null && files.Length > 0) filePath = files[0];
                 }
-                else if (e.Data.GetDataPresent(DataFormats.StringFormat))
+                else if (e.Data.GetDataPresent(DataFormats.StringFormat)) // من داخل البرنامج
                 {
                     string data = (string)e.Data.GetData(DataFormats.StringFormat);
                     filePath = data.Split('|')[0];
+
+                    // البحث عن مصدر الصورة في الحاويات الأخرى
+                    sourcePictureBox = FindPictureBoxInFlowPanel(flowLayoutPanel2, filePath); // البحث في اللوحة الثانية
+                    if (sourcePictureBox == null)
+                    {
+                        PictureBox apostille = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
+                        if (apostille?.Tag?.ToString() == filePath) sourcePictureBox = apostille; // البحث في أبوستيل
+                    }
+                    if (sourcePictureBox == null)
+                    {
+                        foreach (Control c in panel1.Controls) // البحث في اللوحة الرئيسية
+                        {
+                            if (c is PictureBox pb && pb.Tag?.ToString() == filePath)
+                            {
+                                sourcePictureBox = pb;
+                                break;
+                            }
+                        }
+                    }
                 }
 
-                if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+                if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) return;
+
+                // --- تطبيق منطق التبديل أو النقل ---
+                string ext = Path.GetExtension(filePath).ToLower();
+                if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".gif")
                 {
-                    string ext = Path.GetExtension(filePath).ToLower();
-                    if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".gif")
+                    // *** تعديل: التحقق من وجود صورة في الهدف ومصدر داخلي للتبديل ***
+                    if (sourcePictureBox != null && targetPic.Image != null)
                     {
-                        // *** التعديل الرئيسي: التحقق من مصدر السحب للتبديل ***
-                        bool isFromFlowLayoutPanel2 = false;
-                        PictureBox sourcePictureBox = null;
-
-                        // البحث عن مصدر الصورة في flowLayoutPanel2
-                        if (e.Data.GetDataPresent(DataFormats.StringFormat))
+                        SwapImagesBetweenControls(sourcePictureBox, targetPic);
+                    }
+                    else
+                    {
+                        // النقل العادي إلى الهدف
+                        using (var imgTemp = Image.FromFile(filePath))
                         {
-                            sourcePictureBox = FindPictureBoxInFlowPanel(flowLayoutPanel2, filePath);
-                            if (sourcePictureBox != null)
-                            {
-                                isFromFlowLayoutPanel2 = true;
-                            }
+                            targetPic.Image?.Dispose();
+                            targetPic.Image = new Bitmap(imgTemp);
+                            targetPic.Tag = filePath;
                         }
 
-                        // إذا كان المصدر من flowLayoutPanel2 والهدف يحتوي على صورة، قم بالتبديل
-                        if (isFromFlowLayoutPanel2 && sourcePictureBox != null && targetPic.Image != null)
+                        // حذف من المصدر في حالة النقل
+                        if (sourcePictureBox != null)
                         {
-                            SwapImagesBetweenControls(sourcePictureBox, targetPic);
-                        }
-                        else
-                        {
-                            // نقل عادي (للملفات الخارجية أو الهدف فارغ)
-                            using (var imgTemp = Image.FromFile(filePath))
+                            // إذا كان المصدر هو أبوستيل، فقط امسح محتواه
+                            if (sourcePictureBox.Name == "imageApostille")
                             {
-                                if (targetPic.Image != null)
-                                    targetPic.Image.Dispose();
-
-                                targetPic.Image = new Bitmap(imgTemp);
-                                targetPic.Tag = filePath;
+                                sourcePictureBox.Image = null;
+                                sourcePictureBox.Tag = null;
                             }
-
-                            // حذف من المصدر فقط في حالات معينة (ليس من flowLayoutPanel2 إذا كان الهدف يحتوي على صورة)
-                            if (e.Data.GetDataPresent(DataFormats.StringFormat) && !isFromFlowLayoutPanel2)
-                            {
-                                RemoveImageFromPanel1(filePath);
-                                PictureBox apostilleBox = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
-                                if (apostilleBox != null && apostilleBox.Tag?.ToString() == filePath)
-                                {
-                                    apostilleBox.Image?.Dispose();
-                                    apostilleBox.Image = null;
-                                    apostilleBox.Tag = null;
-                                }
-                            }
-                            // إذا كان من flowLayoutPanel2 لكن الهدف فارغ، احذف من المصدر
-                            else if (isFromFlowLayoutPanel2 && targetPic.Image == null)
+                            else // إذا كان من لوحة أخرى، قم بإزالته بالكامل
                             {
                                 RemoveImageFromFlowLayoutPanel(flowLayoutPanel2, filePath);
+                                RemoveImageFromPanel1(filePath);
                             }
                         }
                     }
@@ -1100,26 +1246,23 @@ namespace Mospuk_1
 
 
         // دالة جديدة لتبديل الصور بين أي عنصرين
+        // دالة جديدة لتبديل الصور بين أي عنصرين
         private void SwapImagesBetweenControls(PictureBox control1, PictureBox control2)
         {
             try
             {
-                // حفظ بيانات الصورة الأولى
                 Image image1 = control1.Image;
                 object tag1 = control1.Tag;
 
-                // حفظ بيانات الصورة الثانية
                 Image image2 = control2.Image;
                 object tag2 = control2.Tag;
 
-                // تبديل الصور
                 control1.Image = image2;
                 control1.Tag = tag2;
 
                 control2.Image = image1;
                 control2.Tag = tag1;
 
-                // لا نحتاج لـ Dispose هنا لأننا فقط ننقل المراجع
             }
             catch (Exception ex)
             {
@@ -1181,7 +1324,38 @@ namespace Mospuk_1
             string companyClient = Company_Client.Text.Trim();
             DateTime receptionDate = Reception_Date.Value.Date;
             string receptionTime = Time.Text.Trim();
+            if (!flowLayoutPanel1.Controls.OfType<PictureBox>().Any())
+            {
+                MessageBox.Show("Please upload at least one translation image.", "No Images", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                this.ActiveControl = null; 
 
+                return; // إيقاف العملية لأن لا توجد صور أساسية
+
+            }
+            // 1. التحقق من اختيار العميل
+
+            if (Company_Client.SelectedItem == null)
+            {
+                MessageBox.Show("Please select a client or company.", "Input Error");           
+                    Company_Client.Focus();
+                return; // إيقاف العملية
+            }
+
+            // 2. التحقق من اختيار نوع الوثيقة
+            if (!(comboDocumentType.SelectedItem is KeyValuePair<int, string> selectedDocTypePair))
+            {
+                MessageBox.Show("Please select a document type.", "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                comboDocumentType.Focus();
+                return; // إيقاف العملية
+            }
+
+            // 3. التحقق من اختيار نوع الترجمة
+            if (!(comboTranslation.SelectedItem is KeyValuePair<int, string> selectedTranslationPair))
+            {
+                MessageBox.Show("Please select a translation type.", "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                comboTranslation.Focus();
+                return; // إيقاف العملية
+            }
             // قيمة أيام التسليم من الـ ComboBox (مخزن كـ KeyValuePair<string,int>)
             int deliveryDays = ((KeyValuePair<string, int>)Delivery_Date.SelectedItem).Value;
 
@@ -1197,9 +1371,8 @@ namespace Mospuk_1
             int lastOrder = (result == null || result == DBNull.Value) ? 0 : Convert.ToInt32(result);
             int newOrder = lastOrder + 1;
 
-            // قيم أنواع الوثيقة والترجمة (مخزنة كـ KeyValuePair<string,string>)
-            string documentType = ((KeyValuePair<string, string>)comboDocumentType.SelectedItem).Value;
-            string translationType = ((KeyValuePair<string, string>)comboTranslation.SelectedItem).Value;
+            string documentType = selectedDocTypePair.Value;
+            string translationType = selectedTranslationPair.Value;
 
             string hoursSpent = "24";
 
@@ -1259,10 +1432,15 @@ namespace Mospuk_1
                 if (allImagesSaved)
                 {
                     MessageBox.Show("✅ Project and images saved successfully");
+                    CleanWorkspace();
+                    this.ActiveControl = null;
+
                 }
                 else
                 {
                     MessageBox.Show("⚠️ Project saved but some images failed to save.");
+                    this.ActiveControl = null;
+
                 }
             }
             else
@@ -1276,8 +1454,13 @@ namespace Mospuk_1
             bool allSaved = true;
             int imageCounter = 1;
 
+            string projectFolder = db.GetSavedPathById(currentUserId, "save");
+            if (string.IsNullOrEmpty(projectFolder))
+            {
+                MessageBox.Show("Please set a save directory first.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
             // إنشاء مجلد للمشروع إذا لم يكن موجوداً
-            string projectFolder = Path.Combine(Application.StartupPath, "ProjectImages", folderName);
             if (!Directory.Exists(projectFolder))
             {
                 Directory.CreateDirectory(projectFolder);
@@ -1293,90 +1476,87 @@ namespace Mospuk_1
                         // تكوين اسم الصورة الأساسية
                         string imageName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}";
 
-                        // الحصول على امتداد الملف الأصلي
+                        if (imageCounter == 1)
+                        {
+                            if (!string.IsNullOrWhiteSpace(txtnotes.Text))
+                            {
+                                string rawNote = txtnotes.Text.Trim();
+                                string sanitizedNote = new string(rawNote.Where(c => char.IsLetterOrDigit(c) || c == ' ').ToArray()).Replace(" ", "_");
+                                if (sanitizedNote.Length > 30)
+                                    sanitizedNote = sanitizedNote.Substring(0, 30);
+                                imageName += $"------------------------{sanitizedNote}----------------------";
+                            }
+                            else
+                            {
+                                imageName += "--------------------------------------------------------------";
+                            }
+                        }
+
                         string originalPath = pb.Tag.ToString();
                         string extension = Path.GetExtension(originalPath);
-
-                        // اسم الملف الكامل مع الامتداد
                         string fullImageName = imageName + extension;
-
-                        // مسار حفظ الصورة
                         string imagePath = Path.Combine(projectFolder, fullImageName);
 
-                        // نسخ الصورة إلى مجلد المشروع
                         if (File.Exists(originalPath))
                         {
                             File.Copy(originalPath, imagePath, true);
                         }
                         else
                         {
-                            // إذا لم يكن الملف الأصلي موجود، احفظ الصورة من PictureBox
                             pb.Image.Save(imagePath);
                         }
 
-                        // حفظ معلومات الصورة في قاعدة البيانات
                         string insertImageQuery = @"INSERT INTO items (project_id, image_name, image_path, registration_date, last_update_date) 
                                   VALUES (@project_id, @image_name, @image_path, CURRENT_DATE, CURRENT_TIMESTAMP)";
-
                         List<MySqlParameter> imageParameters = new List<MySqlParameter>
                 {
                     new MySqlParameter("@project_id", projectId),
                     new MySqlParameter("@image_name", fullImageName),
                     new MySqlParameter("@image_path", imagePath)
                 };
-
                         bool imageSaved = db.ExecuteNonQuery(insertImageQuery, imageParameters);
                         if (!imageSaved)
                         {
                             allSaved = false;
                             MessageBox.Show($"Failed to save image: {fullImageName}");
                         }
-
-                        imageCounter++;
+                        else
+                        {
+                            // زيادة العداد فقط عند النجاح
+                            imageCounter++;
+                        }
                     }
                     catch (Exception ex)
                     {
                         allSaved = false;
                         MessageBox.Show($"Error saving image {imageCounter}: {ex.Message}");
-                        imageCounter++;
                     }
                 }
             }
 
-            // 2. حفظ صورة imageApostille (إذا كانت موجودة وتحتوي على صورة)
+            // 2. حفظ صورة imageApostille
             PictureBox imageApostille = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
             if (imageApostille != null && imageApostille.Image != null && imageApostille.Tag != null)
             {
                 try
                 {
-                    // تكوين اسم صورة Apostille
                     string imageName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_Apostille";
-
-                    // الحصول على امتداد الملف الأصلي
                     string originalPath = imageApostille.Tag.ToString();
                     string extension = Path.GetExtension(originalPath);
-
-                    // اسم الملف الكامل مع الامتداد
                     string fullImageName = imageName + extension;
-
-                    // مسار حفظ الصورة
                     string imagePath = Path.Combine(projectFolder, fullImageName);
 
-                    // نسخ الصورة إلى مجلد المشروع
                     if (File.Exists(originalPath))
                     {
                         File.Copy(originalPath, imagePath, true);
                     }
                     else
                     {
-                        // إذا لم يكن الملف الأصلي موجود، احفظ الصورة من PictureBox
                         imageApostille.Image.Save(imagePath);
                     }
 
-                    // حفظ معلومات الصورة في قاعدة البيانات
                     string insertImageQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
                               VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-
                     List<MySqlParameter> imageParameters = new List<MySqlParameter>
             {
                 new MySqlParameter("@project_id", projectId),
@@ -1384,135 +1564,114 @@ namespace Mospuk_1
                 new MySqlParameter("@image_path", imagePath),
                 new MySqlParameter("@attachment_type", "Apostille")
             };
-
                     bool imageSaved = db.ExecuteNonQuery(insertImageQuery, imageParameters);
                     if (!imageSaved)
                     {
                         allSaved = false;
                         MessageBox.Show($"Failed to save Apostille image: {fullImageName}");
                     }
-
-                    imageCounter++;
+                    else
+                    {
+                        imageCounter++;
+                    }
                 }
                 catch (Exception ex)
                 {
                     allSaved = false;
                     MessageBox.Show($"Error saving Apostille image: {ex.Message}");
-                    imageCounter++;
                 }
             }
 
             // 3. حفظ صور flowLayoutPanel2 (المرفقات)
             string attachmentType = "A";
-
             foreach (Control control in flowLayoutPanel2.Controls)
             {
                 if (control is PictureBox pb && pb.Image != null && pb.Tag != null)
                 {
                     try
                     {
-                        // تكوين اسم صورة المرفق
                         string imageName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_{attachmentType}";
-
-                        // الحصول على امتداد الملف الأصلي
                         string originalPath = pb.Tag.ToString();
                         string extension = Path.GetExtension(originalPath);
-
-                        // اسم الملف الكامل مع الامتداد
                         string fullImageName = imageName + extension;
-
-                        // مسار حفظ الصورة
                         string imagePath = Path.Combine(projectFolder, fullImageName);
 
-                        // نسخ الصورة إلى مجلد المشروع
                         if (File.Exists(originalPath))
                         {
                             File.Copy(originalPath, imagePath, true);
                         }
                         else
                         {
-                            // إذا لم يكن الملف الأصلي موجود، احفظ الصورة من PictureBox
                             pb.Image.Save(imagePath);
                         }
 
-                        // حفظ معلومات الصورة في قاعدة البيانات
                         string insertImageQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
                       VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-
                         List<MySqlParameter> imageParameters = new List<MySqlParameter>
-            {
-                new MySqlParameter("@project_id", projectId),
-                new MySqlParameter("@image_name", fullImageName),
-                new MySqlParameter("@image_path", imagePath),
-                new MySqlParameter("@attachment_type", attachmentType)
-            };
-
+                {
+                    new MySqlParameter("@project_id", projectId),
+                    new MySqlParameter("@image_name", fullImageName),
+                    new MySqlParameter("@image_path", imagePath),
+                    new MySqlParameter("@attachment_type", attachmentType)
+                };
                         bool imageSaved = db.ExecuteNonQuery(insertImageQuery, imageParameters);
                         if (!imageSaved)
                         {
                             allSaved = false;
                             MessageBox.Show($"Failed to save attachment image: {fullImageName}");
                         }
-
-                        imageCounter++;
+                        else
+                        {
+                            imageCounter++;
+                        }
                     }
                     catch (Exception ex)
                     {
                         allSaved = false;
                         MessageBox.Show($"Error saving attachment image {imageCounter}: {ex.Message}");
-                        imageCounter++;
                     }
                 }
             }
 
-            // 4. حفظ ملفات Word من panelDocx أخيراً
+            // ================== بداية التعديل المطلوب ==================
+
+            // 4. حجز رقم لملف OCR وزيادة العداد الرئيسي فوراً
+            int ocrFileNumber = imageCounter;
+            imageCounter++;
+
+            // 5. حفظ ملفات Word المرفوعة (OCR) باستخدام الرقم المحجوز
             foreach (Control control in panelDocx.Controls)
             {
                 if (control is Label lbl && lbl.Tag != null)
                 {
                     try
                     {
-                        // تكوين اسم ملف Word
-                        string wordFileName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_OCR";
-
-                        // الحصول على مسار الملف الأصلي
+                        string wordFileName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{ocrFileNumber}_OCR";
                         string originalPath = lbl.Tag.ToString();
                         string extension = Path.GetExtension(originalPath);
-
-                        // اسم الملف الكامل مع الامتداد
                         string fullWordFileName = wordFileName + extension;
-
-                        // مسار حفظ ملف Word
                         string wordPath = Path.Combine(projectFolder, fullWordFileName);
 
-                        // نسخ ملف Word إلى مجلد المشروع
                         if (File.Exists(originalPath))
                         {
                             File.Copy(originalPath, wordPath, true);
 
-                            // حفظ معلومات ملف Word في قاعدة البيانات
                             string insertWordQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
                                       VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-
                             List<MySqlParameter> wordParameters = new List<MySqlParameter>
                     {
                         new MySqlParameter("@project_id", projectId),
                         new MySqlParameter("@image_name", fullWordFileName),
                         new MySqlParameter("@image_path", wordPath),
-                        new MySqlParameter("@attachment_type", "WORD") // تحديد نوع المرفق كـ WORD
+                        new MySqlParameter("@attachment_type", "WORD")
                     };
-
                             bool wordSaved = db.ExecuteNonQuery(insertWordQuery, wordParameters);
                             if (!wordSaved)
                             {
                                 allSaved = false;
                                 MessageBox.Show($"Failed to save Word file: {fullWordFileName}");
                             }
-                            else
-                            {
-                            }
-
-                            imageCounter++;
+                            // لا توجد زيادة للعداد الرئيسي هنا
                         }
                         else
                         {
@@ -1523,59 +1682,117 @@ namespace Mospuk_1
                     catch (Exception ex)
                     {
                         allSaved = false;
-                        MessageBox.Show($"Error saving Word file {imageCounter}: {ex.Message}");
-                        imageCounter++;
+                        MessageBox.Show($"Error saving Word file {ocrFileNumber}: {ex.Message}");
                     }
-                    // 5. إنشاء ملف Word جديد بإسم Google Driver
-                    try
-                    {
-                        string googleDriverFileName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_Google Driver.docx";
-                        string googleDriverPath = Path.Combine(projectFolder, googleDriverFileName);
-
-                        // إنشاء ملف Word فارغ (يمكنك تعديل هذا لإنشاء قالب مخصص مثلاً)
-                        using (var fs = File.Create(googleDriverPath))
-                        {
-                            // يمكنك كتابة محتوى افتراضي هنا إن أردت
-                        }
-
-                        // حفظ في قاعدة البيانات
-                        string insertGoogleDriverQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
-              VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-
-                        List<MySqlParameter> googleDriverParams = new List<MySqlParameter>
-    {
-        new MySqlParameter("@project_id", projectId),
-        new MySqlParameter("@image_name", googleDriverFileName),
-        new MySqlParameter("@image_path", googleDriverPath),
-        new MySqlParameter("@attachment_type", "Google Driver")
-    };
-
-                        bool googleDriverSaved = db.ExecuteNonQuery(insertGoogleDriverQuery, googleDriverParams);
-                        if (!googleDriverSaved)
-                        {
-                            allSaved = false;
-                            MessageBox.Show($"❌ Failed to save Google Driver file: {googleDriverFileName}");
-                        }
-
-                        imageCounter++;
-                    }
-                    catch (Exception ex)
-                    {
-                        allSaved = false;
-                        MessageBox.Show($"❌ Error creating Google Driver file {imageCounter}: {ex.Message}");
-                        imageCounter++;
-                    }
-
                 }
             }
 
+            // 6. إنشاء ملف Word جديد بإسم Google Driver
+            try
+            {
+                string googleDriverFileName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_Google Driver.docx";
+                string googleDriverPath = Path.Combine(projectFolder, googleDriverFileName);
+                using (var fs = File.Create(googleDriverPath)) { }
+
+                string insertGoogleDriverQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
+              VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
+                List<MySqlParameter> googleDriverParams = new List<MySqlParameter>
+        {
+            new MySqlParameter("@project_id", projectId),
+            new MySqlParameter("@image_name", googleDriverFileName),
+            new MySqlParameter("@image_path", googleDriverPath),
+            new MySqlParameter("@attachment_type", "Google Driver")
+        };
+                bool googleDriverSaved = db.ExecuteNonQuery(insertGoogleDriverQuery, googleDriverParams);
+                if (!googleDriverSaved)
+                {
+                    allSaved = false;
+                    MessageBox.Show($"❌ Failed to save Google Driver file: {googleDriverFileName}");
+                }
+                else
+                {
+                    imageCounter++;
+                }
+            }
+            catch (Exception ex)
+            {
+                allSaved = false;
+                MessageBox.Show($"❌ Error creating Google Driver file {imageCounter}: {ex.Message}");
+            }
+
+            // 7. إنشاء ملف Word جديد بإسم Traducción Preliminar
+            try
+            {
+                string traduccionFileName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_Traducción Preliminar.docx";
+                string traduccionPath = Path.Combine(projectFolder, traduccionFileName);
+                using (var fs = File.Create(traduccionPath)) { }
+
+                string insertTraduccionQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
+                  VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
+                List<MySqlParameter> traduccionParams = new List<MySqlParameter>
+        {
+            new MySqlParameter("@project_id", projectId),
+            new MySqlParameter("@image_name", traduccionFileName),
+            new MySqlParameter("@image_path", traduccionPath),
+            new MySqlParameter("@attachment_type", "Traducción Preliminar")
+        };
+                bool traduccionSaved = db.ExecuteNonQuery(insertTraduccionQuery, traduccionParams);
+                if (!traduccionSaved)
+                {
+                    allSaved = false;
+                    MessageBox.Show($"❌ Failed to save Traducción Preliminar file: {traduccionFileName}");
+                }
+                else
+                {
+                    imageCounter++;
+                }
+            }
+            catch (Exception ex)
+            {
+                allSaved = false;
+                MessageBox.Show($"❌ Error creating Traducción Preliminar file {imageCounter}: {ex.Message}");
+            }
+
+            // 8. إنشاء ملف Word جديد بإسم Informe revisión
+            try
+            {
+                string informeFileName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_Informe revisión.docx";
+                string informePath = Path.Combine(projectFolder, informeFileName);
+                using (var fs = File.Create(informePath)) { }
+
+                string insertInformeQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
+          VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
+                List<MySqlParameter> informeParams = new List<MySqlParameter>
+        {
+            new MySqlParameter("@project_id", projectId),
+            new MySqlParameter("@image_name", informeFileName),
+            new MySqlParameter("@image_path", informePath),
+            new MySqlParameter("@attachment_type", "Informe revisión")
+        };
+                bool informeSaved = db.ExecuteNonQuery(insertInformeQuery, informeParams);
+                if (!informeSaved)
+                {
+                    allSaved = false;
+                    MessageBox.Show($"❌ Failed to save Informe revisión file: {informeFileName}");
+                }
+                else
+                {
+                    imageCounter++;
+                }
+            }
+            catch (Exception ex)
+            {
+                allSaved = false;
+                MessageBox.Show($"❌ Error creating Informe revisión file {imageCounter}: {ex.Message}");
+            }
+
+            // =================== نهاية التعديل المطلوب ===================
+
             return allSaved;
         }
-     
 
-      
 
-             // دالة مساعدة لحذف الصورة من panel1
+        // دالة مساعدة لحذف الصورة من panel1
         private void RemoveImageFromPanel1(string filePath)
         {
             PictureBox pbToRemove = null;
@@ -1667,35 +1884,32 @@ namespace Mospuk_1
             Delivery_Date.ValueMember = "Value";
             Delivery_Date.SelectedIndex = 0;
 
-            // تهيئة comboDocumentType
-            comboDocumentType.Items.Add(new KeyValuePair<string, string>("Nacimiento", "Nacimiento"));
-            comboDocumentType.Items.Add(new KeyValuePair<string, string>("Bac", "Bac"));
-            comboDocumentType.DisplayMember = "Key";
-            comboDocumentType.ValueMember = "Value";
-            comboDocumentType.SelectedIndex = 0;
-
-            // تهيئة comboTranslation
-            comboTranslation.Items.Add(new KeyValuePair<string, string>("ErAr", "ErAr"));
-            comboTranslation.Items.Add(new KeyValuePair<string, string>("EsAr", "EsAr"));
-            comboTranslation.DisplayMember = "Key";
-            comboTranslation.ValueMember = "Value";
-            comboTranslation.SelectedIndex = 0;
+         
 
             UpdateExistingPictureBoxEvents();
+            Reception_Date.Value = DateTime.Now;
 
-
+            LoadClientsAndCompanies();
+            Time.Value = DateTime.Now; // تعيين الوقت الحالي
+            LoadDocumentTypesToComboBox();
+            LoadLanguagePairsToComboBox();
 
         }
 
 
-
-
-
-
         private void btnAddWord_Click(object sender, EventArgs e)
         {
+            string projectFolder = db.GetSavedPathById(currentUserId, "archive");
+            if (string.IsNullOrEmpty(projectFolder))
+            {
+                MessageBox.Show("Please set a save directory first.", "Error",
+                               MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             OpenFileDialog ofd = new OpenFileDialog();
-            ofd.InitialDirectory = @"C:\Users\karim_01\Downloads\karim archive\karim archive";
+            // يمكنك جعل المسار الابتدائي هو مسار الحفظ الذي تم تحديده
+            ofd.InitialDirectory = projectFolder; // بدلاً من المسار الثابت
             ofd.Filter = "Word Files|*.doc;*.docx|All Files|*.*";
             ofd.Title = "Select Word File";
             ofd.Multiselect = true; // السماح بتحديد عدة ملفات
@@ -1787,6 +2001,137 @@ namespace Mospuk_1
             flowLayoutPanel2.AllowDrop = true;
             flowLayoutPanel2.DragEnter += FlowLayoutPanel2_DragEnter;
             flowLayoutPanel2.DragDrop += FlowLayoutPanel2_DragDrop;
+            // إضافة الأحداث الجديدة للتحديد بواسطة المستطيل
+            flowLayoutPanel2.MouseDown += FlowLayoutPanel2_MouseDown_ForSelection;
+            flowLayoutPanel2.MouseMove += FlowLayoutPanel2_MouseMove_ForSelection;
+            flowLayoutPanel2.MouseUp += FlowLayoutPanel2_MouseUp_ForSelection;
+            flowLayoutPanel2.Paint += FlowLayoutPanel2_Paint_SelectionRectangle;
+
+        }
+        private void FlowLayoutPanel2_MouseDown_ForSelection(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                Control clickedControl = flowLayoutPanel2.GetChildAtPoint(e.Location);
+                if (clickedControl != null && clickedControl is PictureBox)
+                {
+                    isSelecting = false;
+                    return;
+                }
+
+                isSelecting = true;
+                selectionStartPoint = e.Location;
+
+                if (Control.ModifierKeys != Keys.Control)
+                {
+                    ClearSelectionFlow2();
+                }
+
+                flowLayoutPanel2.Invalidate();
+            }
+        }
+
+        private void FlowLayoutPanel2_MouseMove_ForSelection(object sender, MouseEventArgs e)
+        {
+            if (isSelecting)
+            {
+                int x = Math.Min(selectionStartPoint.X, e.X);
+                int y = Math.Min(selectionStartPoint.Y, e.Y);
+                int width = Math.Abs(selectionStartPoint.X - e.X);
+                int height = Math.Abs(selectionStartPoint.Y - e.Y);
+                selectionRectangle = new Rectangle(x, y, width, height);
+                flowLayoutPanel2.Invalidate();
+            }
+        }
+
+        private void FlowLayoutPanel2_MouseUp_ForSelection(object sender, MouseEventArgs e)
+        {
+            if (isSelecting)
+            {
+                isSelecting = false;
+
+                foreach (Control control in flowLayoutPanel2.Controls)
+                {
+                    if (control is PictureBox pb)
+                    {
+                        if (selectionRectangle.IntersectsWith(pb.Bounds))
+                        {
+                            if (!selectedPictureBoxesFlow2.Contains(pb))
+                            {
+                                selectedPictureBoxesFlow2.Add(pb);
+                                pb.BorderStyle = BorderStyle.FixedSingle;
+                                pb.BackColor = Color.LightBlue;
+                            }
+                        }
+                    }
+                }
+
+                flowLayoutPanel2.Invalidate();
+            }
+        }
+        private void ClearSelectionFlow2()
+        {
+            foreach (var pb in selectedPictureBoxesFlow2)
+            {
+                pb.BorderStyle = BorderStyle.None;
+                pb.BackColor = Color.Transparent;
+            }
+            selectedPictureBoxesFlow2.Clear();
+        }
+        private void Pic_Click_FlowPanel2(object sender, EventArgs e)
+        {
+            PictureBox pb = sender as PictureBox;
+            if (pb == null || pb.Image == null) return;
+
+            if ((DateTime.Now - lastClickTime).TotalMilliseconds < SystemInformation.DoubleClickTime)
+            {
+                return;
+            }
+            lastClickTime = DateTime.Now;
+
+            if (Control.ModifierKeys == Keys.Control)
+            {
+                // لا تمسح التحديدات الأخرى في وضع Ctrl
+                if (selectedPictureBoxesFlow2.Contains(pb))
+                {
+                    selectedPictureBoxesFlow2.Remove(pb);
+                    pb.BorderStyle = BorderStyle.None;
+                    pb.BackColor = Color.Transparent;
+                }
+                else
+                {
+                    selectedPictureBoxesFlow2.Add(pb);
+                    pb.BorderStyle = BorderStyle.FixedSingle;
+                    pb.BackColor = Color.LightBlue;
+                }
+            }
+            else
+            {
+                // *** التعديل هنا: استخدم الدالة الجديدة ***
+                ClearAllSelections();
+
+                if (pb.Image != null)
+                {
+                    selectedPictureBoxesFlow2.Add(pb);
+                    pb.BorderStyle = BorderStyle.FixedSingle;
+                    pb.BackColor = Color.LightBlue;
+                }
+            }
+        }
+
+        private void FlowLayoutPanel2_Paint_SelectionRectangle(object sender, PaintEventArgs e)
+        {
+            if (isSelecting)
+            {
+                using (Brush brush = new SolidBrush(Color.FromArgb(70, 0, 120, 215)))
+                {
+                    e.Graphics.FillRectangle(brush, selectionRectangle);
+                }
+                using (Pen pen = new Pen(Color.DodgerBlue, 1))
+                {
+                    e.Graphics.DrawRectangle(pen, selectionRectangle);
+                }
+            }
         }
         // ثالثاً: أحداث flowLayoutPanel2 (نسخة من أحداث flowLayoutPanel1)
         private void FlowLayoutPanel2_DragEnter(object sender, DragEventArgs e)
@@ -1951,8 +2296,9 @@ namespace Mospuk_1
             pic.Name = "_panel2_" + index.ToString();
             pic.Width = 130;
             pic.Height = 157;
-            pic.BorderStyle = BorderStyle.FixedSingle;
+            pic.BorderStyle = BorderStyle.None;
             pic.SizeMode = PictureBoxSizeMode.StretchImage;
+            pic.BackColor = Color.Transparent;
             pic.Margin = new Padding(5);
             pic.AllowDrop = true;
 
@@ -1966,6 +2312,7 @@ namespace Mospuk_1
             pic.MouseUp += Pic_MouseUp_Panel2;
 
             pic.DoubleClick += OpenImage_DoubleClick;
+            pic.Click += Pic_Click_FlowPanel2;
 
 
             return pic;
@@ -2015,120 +2362,86 @@ namespace Mospuk_1
             PictureBox targetPic = sender as PictureBox;
             if (targetPic == null) return;
 
+            // التعامل أولاً مع إعادة الترتيب الداخلي
+            if (e.Data.GetDataPresent("FlowPanel2Reorder"))
+            {
+                PictureBox sourcePic = (PictureBox)e.Data.GetData("FlowPanel2Reorder");
+                if (sourcePic != targetPic)
+                {
+                    SwapPictureBoxesPanel2(sourcePic, targetPic);
+                }
+                return;
+            }
+
+            string filePath = null;
+            PictureBox sourcePictureBox = null;
+
             try
             {
-                string filePath = null;
-
-                // التعامل مع إعادة الترتيب داخل flowLayoutPanel2
-                if (e.Data.GetDataPresent("FlowPanel2Reorder"))
-                {
-                    PictureBox sourcePic = (PictureBox)e.Data.GetData("FlowPanel2Reorder");
-                    if (sourcePic != targetPic)
-                    {
-                        SwapPictureBoxesPanel2(sourcePic, targetPic);
-                    }
-                    return;
-                }
-
-                // التعامل مع التبديل من imageApostille
-                if (e.Data.GetDataPresent("ReturnToPanel1"))
-                {
-                    PictureBox sourceApostille = (PictureBox)e.Data.GetData("ReturnToPanel1");
-                    if (sourceApostille != null && sourceApostille.Name == "imageApostille")
-                    {
-                        // إذا كان targetPic يحتوي على صورة، قم بالتبديل
-                        if (targetPic.Image != null)
-                        {
-                            SwapImagesBetweenControls(targetPic, sourceApostille);
-                        }
-                        else
-                        {
-                            // نقل عادي إلى PictureBox فارغ
-                            if (sourceApostille.Image != null && sourceApostille.Tag != null)
-                            {
-                                filePath = sourceApostille.Tag.ToString();
-                                using (var imgTemp = Image.FromFile(filePath))
-                                {
-                                    targetPic.Image = new Bitmap(imgTemp);
-                                    targetPic.Tag = filePath;
-                                }
-
-                                // مسح الصورة من imageApostille
-                                sourceApostille.Image?.Dispose();
-                                sourceApostille.Image = null;
-                                sourceApostille.Tag = null;
-                            }
-                        }
-                        return;
-                    }
-                }
-
-                // التعامل مع السحب العادي (من panel1، flowLayoutPanel1، ملفات خارجية)
-                if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                // --- استخلاص مسار الملف المصدر ---
+                if (e.Data.GetDataPresent(DataFormats.FileDrop)) // من ملف خارجي
                 {
                     string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                    if (files != null && files.Length > 0)
-                        filePath = files[0];
+                    if (files != null && files.Length > 0) filePath = files[0];
                 }
-                else if (e.Data.GetDataPresent(DataFormats.StringFormat))
+                else if (e.Data.GetDataPresent(DataFormats.StringFormat)) // من داخل البرنامج
                 {
                     string data = (string)e.Data.GetData(DataFormats.StringFormat);
                     filePath = data.Split('|')[0];
+
+                    // البحث عن مصدر الصورة في الحاويات الأخرى
+                    sourcePictureBox = FindPictureBoxInFlowPanel(flowLayoutPanel1, filePath); // البحث في اللوحة الأولى
+                    if (sourcePictureBox == null)
+                    {
+                        PictureBox apostille = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
+                        if (apostille?.Tag?.ToString() == filePath) sourcePictureBox = apostille; // البحث في أبوستيل
+                    }
+                    if (sourcePictureBox == null)
+                    {
+                        foreach (Control c in panel1.Controls) // البحث في اللوحة الرئيسية
+                        {
+                            if (c is PictureBox pb && pb.Tag?.ToString() == filePath)
+                            {
+                                sourcePictureBox = pb;
+                                break;
+                            }
+                        }
+                    }
                 }
 
-                if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+                if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) return;
+
+                // --- تطبيق منطق التبديل أو النقل ---
+                string ext = Path.GetExtension(filePath).ToLower();
+                if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".gif")
                 {
-                    string ext = Path.GetExtension(filePath).ToLower();
-                    if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".gif")
+                    // *** تعديل: التحقق من وجود صورة في الهدف ومصدر داخلي للتبديل ***
+                    if (sourcePictureBox != null && targetPic.Image != null)
                     {
-                        // *** التعديل الرئيسي: التحقق من مصدر السحب للتبديل ***
-                        bool isFromFlowLayoutPanel1 = false;
-                        PictureBox sourcePictureBox = null;
-
-                        // البحث عن مصدر الصورة في flowLayoutPanel1
-                        if (e.Data.GetDataPresent(DataFormats.StringFormat))
+                        SwapImagesBetweenControls(sourcePictureBox, targetPic);
+                    }
+                    else
+                    {
+                        // النقل العادي إلى الهدف
+                        using (var imgTemp = Image.FromFile(filePath))
                         {
-                            sourcePictureBox = FindPictureBoxInFlowPanel(flowLayoutPanel1, filePath);
-                            if (sourcePictureBox != null)
-                            {
-                                isFromFlowLayoutPanel1 = true;
-                            }
+                            targetPic.Image?.Dispose();
+                            targetPic.Image = new Bitmap(imgTemp);
+                            targetPic.Tag = filePath;
                         }
 
-                        // إذا كان المصدر من flowLayoutPanel1 والهدف يحتوي على صورة، قم بالتبديل
-                        if (isFromFlowLayoutPanel1 && sourcePictureBox != null && targetPic.Image != null)
+                        // حذف من المصدر في حالة النقل
+                        if (sourcePictureBox != null)
                         {
-                            SwapImagesBetweenControls(sourcePictureBox, targetPic);
-                        }
-                        else
-                        {
-                            // نقل عادي (للملفات الخارجية أو الهدف فارغ)
-                            using (var imgTemp = Image.FromFile(filePath))
+                            if (sourcePictureBox.Name == "imageApostille")
                             {
-                                if (targetPic.Image != null)
-                                    targetPic.Image.Dispose();
-
-                                targetPic.Image = new Bitmap(imgTemp);
-                                targetPic.Tag = filePath;
+                                sourcePictureBox.Image = null;
+                                sourcePictureBox.Tag = null;
                             }
-
-                            // حذف من المصدر فقط في حالات معينة (ليس من flowLayoutPanel1 إذا كان الهدف يحتوي على صورة)
-                            if (e.Data.GetDataPresent(DataFormats.StringFormat) && !isFromFlowLayoutPanel1)
-                            {
-                                RemoveImageFromPanel1(filePath);
-                                // محاولة الحذف من imageApostille
-                                PictureBox apostilleBox = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
-                                if (apostilleBox != null && apostilleBox.Tag?.ToString() == filePath)
-                                {
-                                    apostilleBox.Image?.Dispose();
-                                    apostilleBox.Image = null;
-                                    apostilleBox.Tag = null;
-                                }
-                            }
-                            // إذا كان من flowLayoutPanel1 لكن الهدف فارغ، احذف من المصدر
-                            else if (isFromFlowLayoutPanel1 && targetPic.Image == null)
+                            else
                             {
                                 RemoveImageFromFlowLayoutPanel(flowLayoutPanel1, filePath);
+                                RemoveImageFromPanel1(filePath);
                             }
                         }
                     }
@@ -2138,8 +2451,7 @@ namespace Mospuk_1
             {
                 MessageBox.Show("An error occurred while loading the image:\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }
-        // سابعاً: أحداث إعادة الترتيب داخل flowLayoutPanel2
+        }        // سابعاً: أحداث إعادة الترتيب داخل flowLayoutPanel2
         private PictureBox draggedPictureBoxPanel2 = null;
 
         private void Pic_MouseDown_Panel2(object sender, MouseEventArgs e)
@@ -2194,7 +2506,7 @@ namespace Mospuk_1
             {
                 imageApostille.AllowDrop = true;
                 imageApostille.SizeMode = PictureBoxSizeMode.StretchImage;
-                imageApostille.BorderStyle = BorderStyle.FixedSingle;
+                imageApostille.BorderStyle = BorderStyle.None;
 
                 // إضافة الأحداث المطلوبة للسحب والإفلات
                 imageApostille.DragEnter += ImageApostille_DragEnter;
@@ -2209,9 +2521,12 @@ namespace Mospuk_1
                 imageApostille.MouseDown += imageApostille_MouseDown;
                 imageApostille.MouseMove += imageApostille_MouseMove;
                 imageApostille.MouseUp += imageApostille_MouseUp;
+                imageApostille.Click += imageApostille_Click;
+              
+
             }
             // إضافة قائمة سياق
-        
+
         }
         private void imageApostille_MouseDown(object sender, MouseEventArgs e)
         {
@@ -2310,15 +2625,48 @@ namespace Mospuk_1
             }
         }
 
-        // إضافة حدث DragOver للتأكد من استمرارية السحب
         private void ImageApostille_DragOver(object sender, DragEventArgs e)
         {
-            // نفس منطق DragEnter
             ImageApostille_DragEnter(sender, e);
         }
+        private void imageApostille_Click(object sender, EventArgs e)
+        {
+            PictureBox pb = sender as PictureBox;
+            if (pb?.Image == null) return; 
 
-        // حدث DragDrop لـ imageApostille - محدث
-        // تحديث حدث DragDrop لـ imageApostille لدعم التبديل مع flowLayoutPanel2 أيضاً
+            if ((DateTime.Now - lastClickTime).TotalMilliseconds < SystemInformation.DoubleClickTime)
+            {
+                return;
+            }
+            lastClickTime = DateTime.Now;
+
+            if (Control.ModifierKeys == Keys.Control)
+            {
+                if (pb.BorderStyle == BorderStyle.FixedSingle)
+                {
+                    pb.BorderStyle = BorderStyle.None;
+                }
+                else
+                {
+                    pb.BorderStyle = BorderStyle.FixedSingle;
+                }
+            }
+            else
+            {
+                              bool onlyApostilleIsSelected = pb.BorderStyle == BorderStyle.FixedSingle
+                                             && !selectedPictureBoxes.Any()
+                                             && !selectedPictureBoxesFlow1.Any()
+                                             && !selectedPictureBoxesFlow2.Any();
+
+                if (!onlyApostilleIsSelected)
+                {
+                    ClearAllSelections();
+
+                    pb.BorderStyle = BorderStyle.FixedSingle;
+                }
+            }
+        }
+
         private void ImageApostille_DragDrop(object sender, DragEventArgs e)
         {
             PictureBox targetPic = sender as PictureBox;
@@ -2330,78 +2678,66 @@ namespace Mospuk_1
             try
             {
                 bool isInternalDrag = e.Data.GetDataPresent(DataFormats.StringFormat);
-                bool isFromFlowPanel1 = false;
-                bool isFromFlowPanel2 = false;
 
-                // التعامل مع الملفات الخارجية
-                if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                // --- استخلاص مسار الملف المصدر ---
+                if (e.Data.GetDataPresent(DataFormats.FileDrop)) // من ملف خارجي
                 {
                     string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                    if (files != null && files.Length > 0)
-                    {
-                        filePath = files[0];
-                    }
+                    if (files != null && files.Length > 0) filePath = files[0];
                 }
-                // التعامل مع السحب الداخلي
-                else if (isInternalDrag)
+                else if (isInternalDrag) // من داخل البرنامج
                 {
                     string data = (string)e.Data.GetData(DataFormats.StringFormat);
                     if (!string.IsNullOrEmpty(data))
                     {
                         filePath = data.Split('|')[0];
-
-                        // البحث عن مصدر الصورة في flowLayoutPanel1
-                        sourcePictureBox = FindPictureBoxInFlowPanel(flowLayoutPanel1, filePath);
-                        if (sourcePictureBox != null)
+                        // البحث عن مصدر الصورة في الحاويات الأخرى
+                        sourcePictureBox = FindPictureBoxInFlowPanel(flowLayoutPanel1, filePath)
+                                        ?? FindPictureBoxInFlowPanel(flowLayoutPanel2, filePath);
+                        // إذا لم يتم العثور عليه، ابحث في panel1
+                        if (sourcePictureBox == null)
                         {
-                            isFromFlowPanel1 = true;
-                        }
-                        else
-                        {
-                            // البحث عن مصدر الصورة في flowLayoutPanel2
-                            sourcePictureBox = FindPictureBoxInFlowPanel(flowLayoutPanel2, filePath);
-                            if (sourcePictureBox != null)
+                            foreach (Control c in panel1.Controls)
                             {
-                                isFromFlowPanel2 = true;
+                                if (c is PictureBox pb && pb.Tag?.ToString() == filePath)
+                                {
+                                    sourcePictureBox = pb;
+                                    break;
+                                }
                             }
                         }
                     }
                 }
 
-                if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
-                {
-                    string ext = Path.GetExtension(filePath).ToLower();
-                    if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".gif")
-                    {
-                        // إذا كان السحب من flowLayoutPanel1 أو flowLayoutPanel2 وكان imageApostille يحتوي على صورة
-                        if ((isFromFlowPanel1 || isFromFlowPanel2) && sourcePictureBox != null && targetPic.Image != null)
-                        {
-                            // تبديل الصور
-                            SwapImagesBetweenControls(sourcePictureBox, targetPic);
-                        }
-                        else
-                        {
-                            // نقل عادي (بدون تبديل)
-                            using (var imgTemp = Image.FromFile(filePath))
-                            {
-                                targetPic.Image?.Dispose();
-                                targetPic.Image = new Bitmap(imgTemp);
-                                targetPic.Tag = filePath;
-                            }
+                if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) return;
 
-                            // حذف من المصدر في حالة النقل العادي
-                            if (isInternalDrag)
-                            {
-                                RemoveImageFromPanel1(filePath);
-                                RemoveImageFromFlowLayoutPanel(flowLayoutPanel1, filePath);
-                                RemoveImageFromFlowLayoutPanel(flowLayoutPanel2, filePath);
-                            }
-                        }
+                // --- تطبيق منطق التبديل أو النقل ---
+                string ext = Path.GetExtension(filePath).ToLower();
+                if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".gif")
+                {
+                    // *** تعديل: التحقق من وجود صورة في الهدف ومصدر داخلي للتبديل ***
+                    if (sourcePictureBox != null && targetPic.Image != null)
+                    {
+                        // إذا كان هناك صورة في الهدف والمصدر معروف، قم بالتبديل
+                        SwapImagesBetweenControls(sourcePictureBox, targetPic);
                     }
                     else
                     {
-                        MessageBox.Show("Please select a valid image file (jpg, png, bmp, gif).",
-                            "Unsupported File", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        // إذا كان الهدف فارغاً أو المصدر خارجي، قم بالنقل العادي
+                        using (var imgTemp = Image.FromFile(filePath))
+                        {
+                            targetPic.Image?.Dispose();
+                            targetPic.Image = new Bitmap(imgTemp);
+                            targetPic.Tag = filePath;
+                        }
+
+                        // حذف من المصدر في حالة النقل (وليس التبديل)
+                        if (isInternalDrag)
+                        {
+                            RemoveImageFromPanel1(filePath);
+                            RemoveImageFromFlowLayoutPanel(flowLayoutPanel1, filePath);
+                            RemoveImageFromFlowLayoutPanel(flowLayoutPanel2, filePath);
+                        }
                     }
                 }
             }
@@ -2547,8 +2883,434 @@ namespace Mospuk_1
                 }
             }
         }
-             // ***************************************************************
+        // ***************************************************************
+        private void FlowLayoutPanel1_MouseDown_ForSelection(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                Control clickedControl = flowLayoutPanel1.GetChildAtPoint(e.Location);
+                if (clickedControl != null && clickedControl is PictureBox)
+                {
+                    isSelecting = false;
+                    return;
+                }
 
+                isSelecting = true;
+                selectionStartPoint = e.Location;
+
+                if (Control.ModifierKeys != Keys.Control)
+                {
+                    ClearSelectionFlow1();
+                }
+
+                flowLayoutPanel1.Invalidate();
+            }
+        }
+
+        private void FlowLayoutPanel1_MouseMove_ForSelection(object sender, MouseEventArgs e)
+        {
+            if (isSelecting)
+            {
+                int x = Math.Min(selectionStartPoint.X, e.X);
+                int y = Math.Min(selectionStartPoint.Y, e.Y);
+                int width = Math.Abs(selectionStartPoint.X - e.X);
+                int height = Math.Abs(selectionStartPoint.Y - e.Y);
+                selectionRectangle = new Rectangle(x, y, width, height);
+                flowLayoutPanel1.Invalidate();
+            }
+        }
+
+        private void FlowLayoutPanel1_MouseUp_ForSelection(object sender, MouseEventArgs e)
+        {
+            if (isSelecting)
+            {
+                isSelecting = false;
+
+                foreach (Control control in flowLayoutPanel1.Controls)
+                {
+                    if (control is PictureBox pb)
+                    {
+                        if (selectionRectangle.IntersectsWith(pb.Bounds))
+                        {
+                            if (!selectedPictureBoxesFlow1.Contains(pb))
+                            {
+                                selectedPictureBoxesFlow1.Add(pb);
+                                pb.BorderStyle = BorderStyle.FixedSingle;
+                                pb.BackColor = Color.LightBlue;
+                            }
+                        }
+                    }
+                }
+
+                flowLayoutPanel1.Invalidate();
+            }
+        }
+
+        private void FlowLayoutPanel1_Paint_SelectionRectangle(object sender, PaintEventArgs e)
+        {
+            if (isSelecting)
+            {
+                using (Brush brush = new SolidBrush(Color.FromArgb(70, 0, 120, 215)))
+                {
+                    e.Graphics.FillRectangle(brush, selectionRectangle);
+                }
+                using (Pen pen = new Pen(Color.DodgerBlue, 1))
+                {
+                    e.Graphics.DrawRectangle(pen, selectionRectangle);
+                }
+            }
+        }
+        private void ClearAllSelections()
+        {
+            // مسح التحديد من panel1
+            foreach (var pb in selectedPictureBoxes)
+            {
+                pb.BorderStyle = BorderStyle.None;
+            }
+            selectedPictureBoxes.Clear();
+
+            // مسح التحديد من flowLayoutPanel1
+            foreach (var pb in selectedPictureBoxesFlow1)
+            {
+                pb.BorderStyle = BorderStyle.None;
+                pb.BackColor = Color.Transparent;
+            }
+            selectedPictureBoxesFlow1.Clear();
+
+            // مسح التحديد من flowLayoutPanel2
+            foreach (var pb in selectedPictureBoxesFlow2)
+            {
+                pb.BorderStyle = BorderStyle.None;
+                pb.BackColor = Color.Transparent;
+            }
+            selectedPictureBoxesFlow2.Clear();
+
+            // مسح التحديد من imageApostille
+            PictureBox apostilleBox = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
+            if (apostilleBox != null)
+            {
+                apostilleBox.BorderStyle = BorderStyle.None;
+            }
+        }
+        private void OpenSelectedImages()
+        {
+            // جمع كل الصور المحددة من جميع الأماكن
+            List<PictureBox> allSelectedPictures = new List<PictureBox>();
+            allSelectedPictures.AddRange(selectedPictureBoxesFlow1);
+            allSelectedPictures.AddRange(selectedPictureBoxesFlow2);
+            allSelectedPictures.AddRange(selectedPictureBoxes);
+
+            // إضافة صورة imageApostille إذا كانت محددة
+            PictureBox apostilleBox = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
+            if (apostilleBox != null && apostilleBox.Image != null && apostilleBox.BorderStyle == BorderStyle.FixedSingle)
+            {
+                allSelectedPictures.Add(apostilleBox);
+            }
+
+            // فتح كل الصور المحددة
+            foreach (var pb in allSelectedPictures)
+            {
+                if (pb?.Tag != null)
+                {
+                    string filePath = pb.Tag.ToString();
+                    try
+                    {
+                        if (File.Exists(filePath))
+                        {
+                            var psi = new System.Diagnostics.ProcessStartInfo()
+                            {
+                                FileName = filePath,
+                                UseShellExecute = true
+                            };
+                            System.Diagnostics.Process.Start(psi);
+                        }
+                        else
+                        {
+                            MessageBox.Show("الملف المحدد لم يعد موجوداً في المسار:\n" + filePath,
+                                          "ملف غير موجود", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("خطأ في فتح الملف: " + ex.Message,
+                                      "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+        private bool AreAnyImagesSelected()
+        {
+            // التحقق من قائمة التحديد في panel1
+            if (selectedPictureBoxes.Any()) return true;
+
+            // التحقق من قائمة التحديد في flowLayoutPanel1
+            if (selectedPictureBoxesFlow1.Any()) return true;
+
+            // التحقق من قائمة التحديد في flowLayoutPanel2
+            if (selectedPictureBoxesFlow2.Any()) return true;
+
+            // التحقق من تحديد imageApostille بشكل مباشر
+            PictureBox apostilleBox = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
+            if (apostilleBox != null && apostilleBox.Image != null && apostilleBox.BorderStyle == BorderStyle.FixedSingle)
+            {
+                return true;
+            }
+
+            // إذا وصلنا إلى هنا، فلا يوجد أي تحديد
+            return false;
+        }
+        // دالة جديدة للتعامل مع النقر على المساحات الفارغة
+        private void EmptySpace_Click(object sender, EventArgs e)
+        {
+            // استدعاء الدالة التي تمسح كل التحديدات
+            ClearAllSelections();
+        }
+        private void CleanWorkspace()
+        {
+            try
+            {
+                // 1. تنظيف flowLayoutPanel1
+                ClearFlowLayoutPanel(flowLayoutPanel1);
+
+                // 2. تنظيف flowLayoutPanel2
+                ClearFlowLayoutPanel(flowLayoutPanel2);
+
+                // 3. تنظيف imageApostille
+                ClearImageApostille();
+
+                // 4. تنظيف panelDocx
+                ClearPanelDocx();
+
+                // 5. مسح جميع التحديدات
+                ClearAllSelections();
+
+                // 6. تنظيف الحقول النصية (اختياري)
+                ClearFormFields();
+                             
+            }
+            catch (Exception ex)
+            {
+             
+            }
+        }
+        private void ClearFlowLayoutPanel(FlowLayoutPanel panel)
+        {
+            List<Control> controlsToRemove = new List<Control>();
+
+            foreach (Control control in panel.Controls)
+            {
+                if (control is PictureBox pb)
+                {
+                    controlsToRemove.Add(pb);
+                }
+            }
+
+            foreach (Control control in controlsToRemove)
+            {
+                PictureBox pb = control as PictureBox;
+
+                // تنظيف الصورة والموارد
+                if (pb.Image != null)
+                {
+                    pb.Image.Dispose();
+                    pb.Image = null;
+                }
+
+                // إزالة من الحاوي
+                panel.Controls.Remove(pb);
+
+                // تنظيف المتحكم نفسه
+                pb.Dispose();
+            }
+        }
+
+        // *** دالة مساعدة لتنظيف imageApostille ***
+        private void ClearImageApostille()
+        {
+            PictureBox imageApostille = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
+            if (imageApostille != null)
+            {
+                // تنظيف الصورة
+                if (imageApostille.Image != null)
+                {
+                    imageApostille.Image.Dispose();
+                    imageApostille.Image = null;
+                }
+
+                // مسح المعرف
+                imageApostille.Tag = null;
+
+                // إزالة الحدود
+                imageApostille.BorderStyle = BorderStyle.None;
+            }
+        }
+
+        // *** دالة مساعدة لتنظيف panelDocx ***
+        private void ClearPanelDocx()
+        {
+            List<Control> controlsToRemove = new List<Control>();
+
+            foreach (Control control in panelDocx.Controls)
+            {
+                if (control is Label lbl)
+                {
+                    controlsToRemove.Add(lbl);
+                }
+            }
+
+            foreach (Control control in controlsToRemove)
+            {
+                panelDocx.Controls.Remove(control);
+                control.Dispose();
+            }
+        }
+        private void ClearFormFields()
+        {
+            // Company_Client.Clear(); // إذا كنت تريد مسح اسم العميل
+            // txtnotes.Clear(); // إذا كنت تريد مسح الملاحظات
+
+            Reception_Date.Value = DateTime.Now;
+
+            // إعادة تعيين الوقت (اختياري)
+            // Time.Text = DateTime.Now.ToString("HH:mm");
+        }
+        private void LoadClientsAndCompanies()
+        {
+            try
+            {
+                // استعلام واحد لدمج العملاء والشركات
+                string query = @"
+            SELECT client_id AS id, client_code AS code, 'Client' AS type FROM clients
+            UNION ALL
+            SELECT company_id AS id, company_code AS code, 'Company' AS type FROM companies
+            ORDER BY type, code";
+
+                // جلب البيانات من قاعدة البيانات باستخدام ExecuteQuery بدلاً من GetDataTable
+                DataTable combinedData = db.ExecuteQuery(query, null);
+
+                // مسح العناصر الحالية
+                Company_Client.Items.Clear();
+
+                // تعبئة ComboBox بالأكواد فقط
+                foreach (DataRow row in combinedData.Rows)
+                {
+                    int entityId = Convert.ToInt32(row["id"]);
+                    string entityCode = row["code"].ToString();
+
+                    Company_Client.Items.Add(new KeyValuePair<int, string>(entityId, entityCode));
+                }
+
+                // تهيئة خصائص العرض
+                Company_Client.DisplayMember = "Value";
+                Company_Client.ValueMember = "Key";
+
+                // اختيار أول عنصر إذا كان هناك بيانات
+                if (Company_Client.Items.Count > 0)
+                {
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"حدث خطأ في تحميل العملاء والشركات:\n{ex.Message}",
+                              "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                Console.WriteLine($"Error in LoadClientsAndCompanies: {ex.ToString()}");
+            }
+        }
+        private void LoadDocumentTypesToComboBox()
+        {
+            try
+            {
+                // Single query to get all document types
+                string query = @"
+        SELECT 
+            id AS id, 
+            name AS code,
+            'Document Type' AS type 
+        FROM document_types 
+        ORDER BY type, code";
+
+                // Get data from database using ExecuteQuery
+                DataTable documentTypesData = db.ExecuteQuery(query, null);
+
+                // Clear current items
+                comboDocumentType.Items.Clear();
+
+                // Fill ComboBox with document types
+                foreach (DataRow row in documentTypesData.Rows)
+                {
+                    int documentTypeId = Convert.ToInt32(row["id"]);
+                    string documentTypeName = row["code"].ToString();
+
+                    comboDocumentType.Items.Add(new KeyValuePair<int, string>(documentTypeId, documentTypeName));
+                }
+
+                // Configure display properties
+                comboDocumentType.DisplayMember = "Value";
+                comboDocumentType.ValueMember = "Key";
+
+                // Select first item if data exists
+                if (comboDocumentType.Items.Count > 0)
+                {
+                    // Optional: Keep this empty if you don't want auto-selection
+                    // comboDocumentType.SelectedIndex = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading document types:\n{ex.Message}",
+                              "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                Console.WriteLine($"Error in LoadDocumentTypesToComboBox: {ex.ToString()}");
+            }
+        }
+        private void LoadLanguagePairsToComboBox()
+        {
+            try
+            {
+                // Single query to get all language pairs
+                string query = @"
+        SELECT 
+            id AS id, 
+            name AS code,
+            'Language Pair' AS type 
+        FROM language_pairs 
+        ORDER BY type, code";
+
+                // Get data from database using ExecuteQuery
+                DataTable languagePairsData = db.ExecuteQuery(query, null);
+
+                // Clear current items
+                comboTranslation.Items.Clear();
+
+                // Fill ComboBox with language pairs
+                foreach (DataRow row in languagePairsData.Rows)
+                {
+                    int languagePairId = Convert.ToInt32(row["id"]);
+                    string languagePairName = row["code"].ToString();
+
+                    comboTranslation.Items.Add(new KeyValuePair<int, string>(languagePairId, languagePairName));
+                }
+
+                // Configure display properties
+                comboTranslation.DisplayMember = "Value";
+                comboTranslation.ValueMember = "Key";
+
+                // Select first item if data exists
+                if (comboTranslation.Items.Count > 0)
+                {
+                    // Optional: Keep this empty if you don't want auto-selection
+                    // comboTranslation.SelectedIndex = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading language pairs:\n{ex.Message}",
+                              "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                Console.WriteLine($"Error in LoadLanguagePairsToComboBox: {ex.ToString()}");
+            }
+        }
     }
 
 

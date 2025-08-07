@@ -61,8 +61,20 @@ namespace Mospuk_1
 
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-                Application.Run(new Home(app.db)); // <-- غيّر إلى الفورم الرئيسي ديالك
-            }
+                if (File.Exists("session.txt"))
+                {
+                    // قرينا userId من الملف
+                    string userIdStr = File.ReadAllText("session.txt");
+                    if (int.TryParse(userIdStr, out int userId))
+                    {
+                        Application.Run(new Home(app.db, userId));
+                        return;
+                    }
+                }
+
+                // إذا ما كيناش session نشوفو Login
+                Application.Run(new Login(app.db));
+                        }
             catch (Exception ex)
             {
                 MessageBox.Show("Erreur lors de l'initialisation: " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
