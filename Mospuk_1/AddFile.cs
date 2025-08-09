@@ -1671,7 +1671,6 @@ namespace Mospuk_1
                                 allSaved = false;
                                 MessageBox.Show($"Failed to save Word file: {fullWordFileName}");
                             }
-                            // لا توجد زيادة للعداد الرئيسي هنا
                         }
                         else
                         {
