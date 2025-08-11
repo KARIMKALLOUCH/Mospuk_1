@@ -1,33 +1,31 @@
-﻿using MySql.Data.MySqlClient;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
+using System.Data.SQLite;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web.UI.WebControls;
 using System.Windows.Forms;
-
 
 namespace Mospuk_1
 {
     public partial class SaveDirectory : Form
     {
-        private MySqlDatabase db;
-             private int userId; // متغير لحفظ ID المستخدم الحالي
+        private readonly SQLiteDatabase db;
 
         private const string SAVE_PATH = "save";
         private const string ARCHIVE_PATH = "archive";
         private const string DOWNLOADS_PATH = "downloads";
-        public SaveDirectory(MySqlDatabase database, int userId)
+
+        public SaveDirectory(SQLiteDatabase database)
         {
             InitializeComponent();
-            this.db = database; // حفظ نسخة من اتصال قاعدة البيانات
-            this.userId = userId; // حفظ ID المستخدم
+            this.db = database;
+        }
 
+        private void SaveDirectory_Load(object sender, EventArgs e)
+        {
+            LoadPathSetting(SAVE_PATH);
+            LoadPathSetting(ARCHIVE_PATH);
+            LoadPathSetting(DOWNLOADS_PATH);
         }
 
         private void btnsaveDirectory_Click(object sender, EventArgs e)
@@ -35,11 +33,8 @@ namespace Mospuk_1
             using (var folderDialog = new FolderBrowserDialog())
             {
                 folderDialog.Description = "اختر مجلد حفظ المشاريع الافتراضي";
-
                 if (!string.IsNullOrEmpty(edittextsaveDirectory.Text))
-                {
                     folderDialog.SelectedPath = edittextsaveDirectory.Text;
-                }
 
                 if (folderDialog.ShowDialog() == DialogResult.OK)
                 {
@@ -48,17 +43,50 @@ namespace Mospuk_1
                     SavePathSetting(SAVE_PATH, selectedPath);
                 }
             }
-
         }
+
+        private void btnArchive_Click(object sender, EventArgs e)
+        {
+            using (var folderDialog = new FolderBrowserDialog())
+            {
+                folderDialog.Description = "اختر مجلد الأرشيف الافتراضي";
+                if (!string.IsNullOrEmpty(edittextarchive.Text))
+                    folderDialog.SelectedPath = edittextarchive.Text;
+
+                if (folderDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string selectedPath = folderDialog.SelectedPath;
+                    edittextarchive.Text = selectedPath;
+                    SavePathSetting(ARCHIVE_PATH, selectedPath);
+                }
+            }
+        }
+
+        private void btnDownloads_Click(object sender, EventArgs e)
+        {
+            using (var folderDialog = new FolderBrowserDialog())
+            {
+                folderDialog.Description = "اختر مجلد التنزيلات الافتراضي";
+                if (!string.IsNullOrEmpty(edittextDownloads.Text))
+                    folderDialog.SelectedPath = edittextDownloads.Text;
+
+                if (folderDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string selectedPath = folderDialog.SelectedPath;
+                    edittextDownloads.Text = selectedPath;
+                    SavePathSetting(DOWNLOADS_PATH, selectedPath);
+                }
+            }
+        }
+
         private void LoadPathSetting(string pathType)
         {
             try
             {
-                string query = "SELECT path_value FROM user_paths WHERE user_id = @userId AND path_type = @pathType";
-                var parameters = new List<MySqlParameter>
+                const string query = "SELECT path_value FROM user_paths WHERE path_type = @pathType";
+                var parameters = new List<SQLiteParameter>
                 {
-                    new MySqlParameter("@userId", userId),
-                    new MySqlParameter("@pathType", pathType)
+                    new SQLiteParameter("@pathType", pathType)
                 };
 
                 object result = db.ExecuteScalar(query, parameters);
@@ -82,7 +110,7 @@ namespace Mospuk_1
             catch (Exception ex)
             {
                 MessageBox.Show($"حدث خطأ أثناء تحميل المسار: {ex.Message}",
-                              "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -90,83 +118,35 @@ namespace Mospuk_1
         {
             try
             {
-                string query = @"INSERT INTO user_paths (user_id, path_type, path_value) 
-                                VALUES (@userId, @pathType, @path) 
-                                ON DUPLICATE KEY UPDATE path_value = @path";
+                // ملاحظة: user_paths لديها UNIQUE(user_id, path_type)
+                // لذلك نستخدم UPSERT بأسلوب SQLite:
+                const string query = @"
+                    INSERT INTO user_paths ( path_type, path_value)
+                    VALUES ( @pathType, @path)
+                    ON CONFLICT( path_type)
+                    DO UPDATE SET
+                        path_value = excluded.path_value,
+                        updated_at = CURRENT_TIMESTAMP;";
 
-                var parameters = new List<MySqlParameter>
+                var parameters = new List<SQLiteParameter>
                 {
-                    new MySqlParameter("@userId", userId),
-                    new MySqlParameter("@pathType", pathType),
-                    new MySqlParameter("@path", path)
+                    new SQLiteParameter("@pathType", pathType),
+                    new SQLiteParameter("@path", path)
                 };
 
                 bool success = db.ExecuteNonQuery(query, parameters);
 
                 if (!success)
                 {
-                    MessageBox.Show($"فشل في حفظ المسار.", "خطأ",
-                                  MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("فشل في حفظ المسار.", "خطأ",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"حدث خطأ أثناء حفظ المسار: {ex.Message}",
-                              "خطأ في قاعدة البيانات", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-
-
-        private void SaveDirectory_Load(object sender, EventArgs e)
-        {
-            LoadPathSetting(SAVE_PATH);
-            LoadPathSetting(ARCHIVE_PATH);
-            LoadPathSetting(DOWNLOADS_PATH);
-
-
-
-        }
-
-        private void btnArchive_Click(object sender, EventArgs e)
-        {
-            using (var folderDialog = new FolderBrowserDialog())
-            {
-                folderDialog.Description = "اختر مجلد الأرشيف الافتراضي";
-
-                if (!string.IsNullOrEmpty(edittextarchive.Text))
-                {
-                    folderDialog.SelectedPath = edittextarchive.Text;
-                }
-
-                if (folderDialog.ShowDialog() == DialogResult.OK)
-                {
-                    string selectedPath = folderDialog.SelectedPath;
-                    edittextarchive.Text = selectedPath;
-                    SavePathSetting(ARCHIVE_PATH, selectedPath);
-                }
-            }
-        }
-
-        private void btnDownloads_Click(object sender, EventArgs e)
-        {
-            using (var folderDialog = new FolderBrowserDialog())
-            {
-                folderDialog.Description = "اختر مجلد التنزيلات الافتراضي";
-
-                if (!string.IsNullOrEmpty(edittextDownloads.Text))
-                {
-                    folderDialog.SelectedPath = edittextDownloads.Text;
-                }
-
-                if (folderDialog.ShowDialog() == DialogResult.OK)
-                {
-                    string selectedPath = folderDialog.SelectedPath;
-                    edittextDownloads.Text = selectedPath;
-                    SavePathSetting(DOWNLOADS_PATH, selectedPath);
-                }
+                    "خطأ في قاعدة البيانات", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }
 }
-

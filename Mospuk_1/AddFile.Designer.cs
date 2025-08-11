@@ -204,7 +204,7 @@
             // 
             this.Time.BorderColor = System.Drawing.Color.White;
             this.Time.Checked = true;
-            this.Time.CustomFormat = "hh:mm";
+            this.Time.CustomFormat = "HH:mm";
             this.Time.FillColor = System.Drawing.Color.White;
             this.Time.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.Time.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));

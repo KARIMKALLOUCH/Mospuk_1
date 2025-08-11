@@ -186,7 +186,6 @@
             this.btnAdd = new Guna.UI2.WinForms.Guna2Button();
             this.lblChangesCnt = new DevExpress.XtraEditors.LabelControl();
             this.tabNavHistorique = new DevExpress.XtraBars.Navigation.TabNavigationPage();
-            this.btnLogout = new Guna.UI2.WinForms.Guna2Button();
             ((System.ComponentModel.ISupportInitialize)(this.tabPane1)).BeginInit();
             this.tabPane1.SuspendLayout();
             this.tabNavClient.SuspendLayout();
@@ -997,7 +996,7 @@
             // 
             this.navigationPage1.Appearance.BackColor = System.Drawing.SystemColors.Control;
             this.navigationPage1.Appearance.Options.UseBackColor = true;
-            this.navigationPage1.Controls.Add(this.btnLogout);
+            this.navigationPage1.Caption = "navigationPage1";
             this.navigationPage1.Controls.Add(this.btnDirectory);
             this.navigationPage1.Name = "navigationPage1";
             this.navigationPage1.Size = new System.Drawing.Size(1143, 660);
@@ -2650,25 +2649,6 @@
             this.tabNavHistorique.PageVisible = false;
             this.tabNavHistorique.Size = new System.Drawing.Size(1366, 746);
             // 
-            // btnLogout
-            // 
-            this.btnLogout.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnLogout.BorderRadius = 5;
-            this.btnLogout.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
-            this.btnLogout.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
-            this.btnLogout.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
-            this.btnLogout.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
-            this.btnLogout.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
-            this.btnLogout.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.btnLogout.ForeColor = System.Drawing.Color.White;
-            this.btnLogout.Image = global::Mospuk_1.Properties.Resources.logout;
-            this.btnLogout.Location = new System.Drawing.Point(913, 56);
-            this.btnLogout.Name = "btnLogout";
-            this.btnLogout.Size = new System.Drawing.Size(227, 38);
-            this.btnLogout.TabIndex = 163;
-            this.btnLogout.Text = "Logout";
-            this.btnLogout.Click += new System.EventHandler(this.btnLogout_Click);
-            // 
             // Home
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -2876,6 +2856,5 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private Guna.UI2.WinForms.Guna2DataGridView DGVChanges;
-        private Guna.UI2.WinForms.Guna2Button btnLogout;
     }
 }

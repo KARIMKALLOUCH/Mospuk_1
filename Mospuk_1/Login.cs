@@ -15,9 +15,9 @@ namespace Mospuk_1
 
     public partial class Login : Form
     {
-        MySqlDatabase db;
+        SQLiteDatabase db; // تم التغيير
 
-        public Login(MySqlDatabase database)
+        public Login(SQLiteDatabase database)
         {
             InitializeComponent();
             db = database;
@@ -40,7 +40,7 @@ namespace Mospuk_1
             }
         }
 
-        private void LoginB_Click(object sender, EventArgs e)
+      /*  private void LoginB_Click(object sender, EventArgs e)
         {
             string username = UsertT.Text.Trim();
             string password = PasT.Text;
@@ -68,7 +68,7 @@ namespace Mospuk_1
                 File.WriteAllText("session.txt", userId.ToString());
 
                 this.Hide();
-                Home home = new Home(db, userId); // نمرر ID المستخدم للنموذج الرئيسي
+                Home home = new Home(db); // نمرر ID المستخدم للنموذج الرئيسي
                 home.Show();
             }
             else
@@ -77,6 +77,6 @@ namespace Mospuk_1
             }
 
 
-        }
+        }*/
     }
 }

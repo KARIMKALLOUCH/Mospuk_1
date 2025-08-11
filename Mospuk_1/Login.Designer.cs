@@ -140,7 +140,7 @@
             this.LoginB.Size = new System.Drawing.Size(245, 49);
             this.LoginB.TabIndex = 42;
             this.LoginB.Text = "Login";
-            this.LoginB.Click += new System.EventHandler(this.LoginB_Click);
+           // this.LoginB.Click += new System.EventHandler(this.LoginB_Click);
             // 
             // Switch
             // 

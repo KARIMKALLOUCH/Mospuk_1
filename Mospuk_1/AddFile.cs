@@ -13,9 +13,9 @@ using System.Drawing.Imaging;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using PdfiumViewer;
-using MySql.Data.MySqlClient;
 using Org.BouncyCastle.Asn1.Cms;
 using System.Threading.Tasks;  // ← هذه المكتبة مهمة للـ async/await
+using System.Data.SQLite;       // ++ تم الإضافة
 
 namespace Mospuk_1
 {
@@ -23,7 +23,6 @@ namespace Mospuk_1
     public partial class AddFile : Form
 
     {
-        MySqlDatabase db;
         private Rectangle selectionRectangle;      // مستطيل التحديد
         private Point selectionStartPoint;         // نقطة بداية السحب للتحديد
         private bool isSelecting = false;          // حالة تدل على أننا نقوم برسم مستطيل التحديد
@@ -38,8 +37,9 @@ namespace Mospuk_1
         private List<PictureBox> selectedPictureBoxes = new List<PictureBox>(); // للتحديد المتعدد
         private bool isMultiSelectMode = false; // وضع التحديد المتعدد
         private int currentUserId; // إضافة متغير لتخزين معرف المستخدم الحالي
+        SQLiteDatabase db;
 
-        public AddFile(MySqlDatabase database, int userId)
+        public AddFile(SQLiteDatabase database)
         {
             InitializeComponent();
             db = database;
@@ -55,7 +55,6 @@ namespace Mospuk_1
             this.KeyPreview = true; // *** أضف هذا السطر الهام ***
             this.KeyDown += AddFile_KeyDown; // *** أضف هذا السطر لربط الحدث ***
             this.AcceptButton = null;
-            currentUserId = userId; // حفظ معرف المستخدم
 
 
             panel1.MouseDown += Pb_MouseDown;
@@ -340,7 +339,7 @@ namespace Mospuk_1
         private void btnUplaod_Click(object sender, EventArgs e)
         {
 
-            string downloadsPath = db.GetSavedPathById(currentUserId, "downloads");
+            string downloadsPath = db.GetSavedPathById( "downloads");
 
             if (string.IsNullOrEmpty(downloadsPath) || !Directory.Exists(downloadsPath))
             {
@@ -1245,8 +1244,6 @@ namespace Mospuk_1
         }
 
 
-        // دالة جديدة لتبديل الصور بين أي عنصرين
-        // دالة جديدة لتبديل الصور بين أي عنصرين
         private void SwapImagesBetweenControls(PictureBox control1, PictureBox control2)
         {
             try
@@ -1316,7 +1313,6 @@ namespace Mospuk_1
             target.Tag = sourceTag;
         }
 
-        // تحديث الدالة لتعمل مع التحديد المتعدد
      
 
         private void savebtn_Click(object sender, EventArgs e)
@@ -1363,10 +1359,10 @@ namespace Mospuk_1
 
             // جلب آخر رقم طلب في نفس يوم الاستقبال
             string orderQuery = "SELECT IFNULL(MAX(project_order), 0) FROM projects WHERE reception_date = @date";
-            object result = db.ExecuteScalar(orderQuery, new List<MySqlParameter>
-    {
-        new MySqlParameter("@date", receptionDate.ToString("yyyy-MM-dd"))
-    });
+            object result = db.ExecuteScalar(orderQuery, new List<SQLiteParameter>
+            {
+                new SQLiteParameter("@date", receptionDate.ToString("yyyy-MM-dd"))
+            });
 
             int lastOrder = (result == null || result == DBNull.Value) ? 0 : Convert.ToInt32(result);
             int newOrder = lastOrder + 1;
@@ -1399,39 +1395,38 @@ namespace Mospuk_1
             }
 
             string insertQuery = @"INSERT INTO projects 
-        (company_client, reception_date, reception_time, delivery_days, delivery_date, hours_spent, project_order, folder_name, note, document_type, translation_type, registration_date, last_update_date) 
-        VALUES 
-        (@company_client, @reception_date, @reception_time, @delivery_days, @delivery_date, @hours_spent, @project_order, @folder_name, @note, @document_type, @translation_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-
-            List<MySqlParameter> parameters = new List<MySqlParameter>
-    {
-        new MySqlParameter("@company_client", companyClient),
-        new MySqlParameter("@reception_date", receptionDate.ToString("yyyy-MM-dd")),
-        new MySqlParameter("@reception_time", receptionTime),
-        new MySqlParameter("@delivery_days", deliveryDays),
-        new MySqlParameter("@delivery_date", deliveryDate.ToString("yyyy-MM-dd")),
-        new MySqlParameter("@hours_spent", 24),
-        new MySqlParameter("@project_order", newOrder),
-        new MySqlParameter("@folder_name", folderName),
-        new MySqlParameter("@note", string.IsNullOrWhiteSpace(txtnotes.Text) ? DBNull.Value : (object)txtnotes.Text),
-        new MySqlParameter("@document_type", documentType),
-        new MySqlParameter("@translation_type", translationType)
-    };
+                (company_client, reception_date, reception_time, delivery_days, delivery_date, hours_spent, project_order, folder_name, note, document_type, translation_type, registration_date, last_update_date) 
+                VALUES 
+                (@company_client, @reception_date, @reception_time, @delivery_days, @delivery_date, @hours_spent, @project_order, @folder_name, @note, @document_type, @translation_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
+            // تغيير: استخدام SQLiteParameter
+            List<SQLiteParameter> parameters = new List<SQLiteParameter>
+            {
+                new SQLiteParameter("@company_client", companyClient),
+                new SQLiteParameter("@reception_date", receptionDate.ToString("yyyy-MM-dd")),
+                new SQLiteParameter("@reception_time", receptionTime),
+                new SQLiteParameter("@delivery_days", deliveryDays),
+                new SQLiteParameter("@delivery_date", deliveryDate.ToString("yyyy-MM-dd")),
+                new SQLiteParameter("@hours_spent", 24),
+                new SQLiteParameter("@project_order", newOrder),
+                new SQLiteParameter("@folder_name", folderName),
+                new SQLiteParameter("@note", string.IsNullOrWhiteSpace(txtnotes.Text) ? DBNull.Value : (object)txtnotes.Text),
+                new SQLiteParameter("@document_type", documentType),
+                new SQLiteParameter("@translation_type", translationType)
+            };
 
             bool success = db.ExecuteNonQuery(insertQuery, parameters);
             if (success)
             {
                 // الحصول على ID المشروع المحفوظ حديثاً
-                string getLastIdQuery = "SELECT LAST_INSERT_ID()";
-                object lastIdResult = db.ExecuteScalar(getLastIdQuery, new List<MySqlParameter>());
+                // تغيير: استخدام دالة SQLite للحصول على آخر ID
+                string getLastIdQuery = "SELECT last_insert_rowid()";
+                object lastIdResult = db.ExecuteScalar(getLastIdQuery, null); // لا نحتاج لمعاملات هنا
                 int projectId = Convert.ToInt32(lastIdResult);
 
-                // حفظ الصور من flowLayoutPanel1
                 bool allImagesSaved = SaveProjectImages(projectId, folderName, deliveryDateStr, receptionDateStr, projectOrderStr, receptionTimeStr, companyClient, translationType, documentType);
 
                 if (allImagesSaved)
                 {
-                    MessageBox.Show("✅ Project and images saved successfully");
                     CleanWorkspace();
                     this.ActiveControl = null;
 
@@ -1454,7 +1449,7 @@ namespace Mospuk_1
             bool allSaved = true;
             int imageCounter = 1;
 
-            string projectFolder = db.GetSavedPathById(currentUserId, "save");
+            string projectFolder = db.GetSavedPathById("save");
             if (string.IsNullOrEmpty(projectFolder))
             {
                 MessageBox.Show("Please set a save directory first.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -1507,13 +1502,15 @@ namespace Mospuk_1
                         }
 
                         string insertImageQuery = @"INSERT INTO items (project_id, image_name, image_path, registration_date, last_update_date) 
-                                  VALUES (@project_id, @image_name, @image_path, CURRENT_DATE, CURRENT_TIMESTAMP)";
-                        List<MySqlParameter> imageParameters = new List<MySqlParameter>
-                {
-                    new MySqlParameter("@project_id", projectId),
-                    new MySqlParameter("@image_name", fullImageName),
-                    new MySqlParameter("@image_path", imagePath)
-                };
+                                                  VALUES (@project_id, @image_name, @image_path, CURRENT_DATE, CURRENT_TIMESTAMP)";
+
+                        // تغيير: استخدام SQLiteParameter
+                        List<SQLiteParameter> imageParameters = new List<SQLiteParameter>
+                        {
+                            new SQLiteParameter("@project_id", projectId),
+                            new SQLiteParameter("@image_name", fullImageName),
+                            new SQLiteParameter("@image_path", imagePath)
+                        };
                         bool imageSaved = db.ExecuteNonQuery(insertImageQuery, imageParameters);
                         if (!imageSaved)
                         {
@@ -1554,16 +1551,17 @@ namespace Mospuk_1
                     {
                         imageApostille.Image.Save(imagePath);
                     }
-
                     string insertImageQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
-                              VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-                    List<MySqlParameter> imageParameters = new List<MySqlParameter>
-            {
-                new MySqlParameter("@project_id", projectId),
-                new MySqlParameter("@image_name", fullImageName),
-                new MySqlParameter("@image_path", imagePath),
-                new MySqlParameter("@attachment_type", "Apostille")
-            };
+                                              VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
+
+                    // تغيير: استخدام SQLiteParameter
+                    List<SQLiteParameter> imageParameters = new List<SQLiteParameter>
+                    {
+                        new SQLiteParameter("@project_id", projectId),
+                        new SQLiteParameter("@image_name", fullImageName),
+                        new SQLiteParameter("@image_path", imagePath),
+                        new SQLiteParameter("@attachment_type", "Apostille")
+                    };
                     bool imageSaved = db.ExecuteNonQuery(insertImageQuery, imageParameters);
                     if (!imageSaved)
                     {
@@ -1607,13 +1605,13 @@ namespace Mospuk_1
 
                         string insertImageQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
                       VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-                        List<MySqlParameter> imageParameters = new List<MySqlParameter>
-                {
-                    new MySqlParameter("@project_id", projectId),
-                    new MySqlParameter("@image_name", fullImageName),
-                    new MySqlParameter("@image_path", imagePath),
-                    new MySqlParameter("@attachment_type", attachmentType)
-                };
+                        List<SQLiteParameter> imageParameters = new List<SQLiteParameter>
+                        {
+                            new SQLiteParameter("@project_id", projectId),
+                            new SQLiteParameter("@image_name", fullImageName),
+                            new SQLiteParameter("@image_path", imagePath),
+                            new SQLiteParameter("@attachment_type", attachmentType)
+                        };
                         bool imageSaved = db.ExecuteNonQuery(insertImageQuery, imageParameters);
                         if (!imageSaved)
                         {
@@ -1658,13 +1656,14 @@ namespace Mospuk_1
 
                             string insertWordQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
                                       VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-                            List<MySqlParameter> wordParameters = new List<MySqlParameter>
-                    {
-                        new MySqlParameter("@project_id", projectId),
-                        new MySqlParameter("@image_name", fullWordFileName),
-                        new MySqlParameter("@image_path", wordPath),
-                        new MySqlParameter("@attachment_type", "WORD")
-                    };
+                    
+                            List<SQLiteParameter> wordParameters = new List<SQLiteParameter>
+                        {
+                            new SQLiteParameter("@project_id", projectId),
+                            new SQLiteParameter("@image_name", fullWordFileName),
+                            new SQLiteParameter("@image_path", wordPath),
+                            new SQLiteParameter("@attachment_type", "WORD")
+                        };
                             bool wordSaved = db.ExecuteNonQuery(insertWordQuery, wordParameters);
                             if (!wordSaved)
                             {
@@ -1695,13 +1694,14 @@ namespace Mospuk_1
 
                 string insertGoogleDriverQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
               VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-                List<MySqlParameter> googleDriverParams = new List<MySqlParameter>
-        {
-            new MySqlParameter("@project_id", projectId),
-            new MySqlParameter("@image_name", googleDriverFileName),
-            new MySqlParameter("@image_path", googleDriverPath),
-            new MySqlParameter("@attachment_type", "Google Driver")
-        };
+             
+                List<SQLiteParameter> googleDriverParams = new List<SQLiteParameter>
+                        {
+                            new SQLiteParameter("@project_id", projectId),
+                            new SQLiteParameter("@image_name", googleDriverFileName),
+                            new SQLiteParameter("@image_path", googleDriverPath),
+                            new SQLiteParameter("@attachment_type", "Google Driver")
+                        };
                 bool googleDriverSaved = db.ExecuteNonQuery(insertGoogleDriverQuery, googleDriverParams);
                 if (!googleDriverSaved)
                 {
@@ -1728,13 +1728,14 @@ namespace Mospuk_1
 
                 string insertTraduccionQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
                   VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-                List<MySqlParameter> traduccionParams = new List<MySqlParameter>
-        {
-            new MySqlParameter("@project_id", projectId),
-            new MySqlParameter("@image_name", traduccionFileName),
-            new MySqlParameter("@image_path", traduccionPath),
-            new MySqlParameter("@attachment_type", "Traducción Preliminar")
-        };
+            
+                List<SQLiteParameter> traduccionParams = new List<SQLiteParameter>
+                        {
+                            new SQLiteParameter("@project_id", projectId),
+                            new SQLiteParameter("@image_name", traduccionFileName),
+                            new SQLiteParameter("@image_path", traduccionPath),
+                            new SQLiteParameter("@attachment_type", "Traducción Preliminar")
+                        };
                 bool traduccionSaved = db.ExecuteNonQuery(insertTraduccionQuery, traduccionParams);
                 if (!traduccionSaved)
                 {
@@ -1761,13 +1762,14 @@ namespace Mospuk_1
 
                 string insertInformeQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
           VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-                List<MySqlParameter> informeParams = new List<MySqlParameter>
-        {
-            new MySqlParameter("@project_id", projectId),
-            new MySqlParameter("@image_name", informeFileName),
-            new MySqlParameter("@image_path", informePath),
-            new MySqlParameter("@attachment_type", "Informe revisión")
-        };
+        
+                List<SQLiteParameter> informeParams = new List<SQLiteParameter>
+                        {
+                            new SQLiteParameter("@project_id", projectId),
+                            new SQLiteParameter("@image_name", informeFileName),
+                            new SQLiteParameter("@image_path", informePath),
+                            new SQLiteParameter("@attachment_type", attachmentType)
+                        };
                 bool informeSaved = db.ExecuteNonQuery(insertInformeQuery, informeParams);
                 if (!informeSaved)
                 {
@@ -1898,7 +1900,7 @@ namespace Mospuk_1
 
         private void btnAddWord_Click(object sender, EventArgs e)
         {
-            string projectFolder = db.GetSavedPathById(currentUserId, "archive");
+            string projectFolder = db.GetSavedPathById( "archive");
             if (string.IsNullOrEmpty(projectFolder))
             {
                 MessageBox.Show("Please set a save directory first.", "Error",
@@ -3165,8 +3167,9 @@ namespace Mospuk_1
         }
         private void ClearFormFields()
         {
-            // Company_Client.Clear(); // إذا كنت تريد مسح اسم العميل
-            // txtnotes.Clear(); // إذا كنت تريد مسح الملاحظات
+            txtnotes.Clear();
+            comboDocumentType.SelectedIndex = -1; // يلغي التحديد
+            comboTranslation.SelectedIndex = -1; // يلغي التحديد
 
             Reception_Date.Value = DateTime.Now;
 

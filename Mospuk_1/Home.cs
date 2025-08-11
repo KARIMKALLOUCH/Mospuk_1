@@ -1,5 +1,4 @@
-﻿using MySql.Data.MySqlClient;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -9,23 +8,21 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
+using System.Data.SQLite; // تمت الإضافة
 
 namespace Mospuk_1
 {
     public partial class Home : Form
     {
-        MySqlDatabase db;
+        SQLiteDatabase db; // تم التغيير
         private int selectedClientId = -1;
         private int selectedCompanyId = -1;
-        private int currentUserId;
 
-
-
-        public Home(MySqlDatabase database, int userId)
+        // تم تغيير نوع المتغير في الـ Constructor
+        public Home(SQLiteDatabase database)
         {
             InitializeComponent();
             db = database;  // ← هنا تحفظ المتغير لتستخدمه لاحقاً
-            currentUserId = userId;
 
             LoadProjectsToDGV();
             navigationFrame1.TransitionAnimationProperties.FrameCount = 1;
@@ -33,30 +30,15 @@ namespace Mospuk_1
             LoadCompaniesToDGV();
             LoadDocumentTypesToDGV();
             LoadLanguagePairsToDGV();
-
-
         }
         private void btnLogout_Click(object sender, EventArgs e)
         {
-       
-            DialogResult result = MessageBox.Show(
-               "Are you sure you want to exit the application?",
-               "Confirm Logout",
-               MessageBoxButtons.YesNo,
-               MessageBoxIcon.Question,
-               MessageBoxDefaultButton.Button2);
 
-            if (result == DialogResult.Yes)
-            {
-                if (File.Exists("session.txt"))
-                    File.Delete("session.txt");
 
-                Application.Exit(); // إعادة تشغيل التطبيق لتظهر صفحة Login
-            }
         }
         private void btnAdd_Click(object sender, EventArgs e)
         {
-            AddFile addproject = new AddFile(db, currentUserId);
+            AddFile addproject = new AddFile(db);
             addproject.FormClosed += (s, args) => LoadProjectsToDGV(); // تحديث عند إغلاق النموذج
             addproject.Show();
         }
@@ -70,25 +52,21 @@ namespace Mospuk_1
         private void btnCompanyAdd_Click(object sender, EventArgs e)
         {
             OrcTest addproject = new OrcTest();
-
             addproject.ShowDialog();
         }
 
         private void btnUserAdd_Click(object sender, EventArgs e)
         {
             navigationFrame1.SelectedPage = navigationPage1;
-
         }
 
         private void btnClientAdd_Click(object sender, EventArgs e)
         {
             navigationFrame1.SelectedPage = navigationPage2;
-
         }
 
         private void labelControl11_Click(object sender, EventArgs e)
         {
-
         }
 
         private void btnAddClient_Click(object sender, EventArgs e)
@@ -111,10 +89,11 @@ namespace Mospuk_1
 
                 // أولاً: تحقق هل client_code موجود مسبقاً
                 string checkQuery = "SELECT COUNT(*) FROM clients WHERE client_code = @client_code";
-                var checkParams = new List<MySqlParameter>
-        {
-            new MySqlParameter("@client_code", clientCode)
-        };
+                // تم التغيير
+                var checkParams = new List<SQLiteParameter>
+                {
+                    new SQLiteParameter("@client_code", clientCode)
+                };
 
                 object result = db.ExecuteScalar(checkQuery, checkParams);
                 int count = Convert.ToInt32(result);
@@ -131,16 +110,17 @@ namespace Mospuk_1
             VALUES 
             (@first_name, @last_name, @client_code, @email, @phone, @address, @notes)";
 
-                var parameters = new List<MySqlParameter>
-        {
-            new MySqlParameter("@first_name", firstName),
-            new MySqlParameter("@last_name", lastName),
-            new MySqlParameter("@client_code", clientCode),
-            new MySqlParameter("@email", email),
-            new MySqlParameter("@phone", phone),
-            new MySqlParameter("@address", address),
-            new MySqlParameter("@notes", notes)
-        };
+                // تم التغيير
+                var parameters = new List<SQLiteParameter>
+                {
+                    new SQLiteParameter("@first_name", firstName),
+                    new SQLiteParameter("@last_name", lastName),
+                    new SQLiteParameter("@client_code", clientCode),
+                    new SQLiteParameter("@email", email),
+                    new SQLiteParameter("@phone", phone),
+                    new SQLiteParameter("@address", address),
+                    new SQLiteParameter("@notes", notes)
+                };
 
                 bool success = db.ExecuteNonQuery(query, parameters);
 
@@ -210,7 +190,6 @@ namespace Mospuk_1
                 txtphone.Text = row.Cells["Phone"].Value.ToString();
                 txtaddress.Text = row.Cells["Address"].Value.ToString();
                 txtnotes.Text = row.Cells["Notes"].Value.ToString();
-               
             }
         }
 
@@ -240,11 +219,12 @@ namespace Mospuk_1
 
                 // تحقق هل client_code موجود في عميل آخر غير الذي نعدله
                 string checkQuery = "SELECT COUNT(*) FROM clients WHERE client_code = @client_code AND client_id != @client_id";
-                var checkParams = new List<MySqlParameter>
-        {
-            new MySqlParameter("@client_code", clientCode),
-            new MySqlParameter("@client_id", selectedClientId)
-        };
+                // تم التغيير
+                var checkParams = new List<SQLiteParameter>
+                {
+                    new SQLiteParameter("@client_code", clientCode),
+                    new SQLiteParameter("@client_id", selectedClientId)
+                };
 
                 object result = db.ExecuteScalar(checkQuery, checkParams);
                 int count = Convert.ToInt32(result);
@@ -265,17 +245,18 @@ namespace Mospuk_1
                          notes = @notes
                          WHERE client_id = @client_id";
 
-                var parameters = new List<MySqlParameter>
-        {
-            new MySqlParameter("@first_name", firstName),
-            new MySqlParameter("@last_name", lastName),
-            new MySqlParameter("@client_code", clientCode),
-            new MySqlParameter("@email", email),
-            new MySqlParameter("@phone", phone),
-            new MySqlParameter("@address", address),
-            new MySqlParameter("@notes", notes),
-            new MySqlParameter("@client_id", selectedClientId)
-        };
+                // تم التغيير
+                var parameters = new List<SQLiteParameter>
+                {
+                    new SQLiteParameter("@first_name", firstName),
+                    new SQLiteParameter("@last_name", lastName),
+                    new SQLiteParameter("@client_code", clientCode),
+                    new SQLiteParameter("@email", email),
+                    new SQLiteParameter("@phone", phone),
+                    new SQLiteParameter("@address", address),
+                    new SQLiteParameter("@notes", notes),
+                    new SQLiteParameter("@client_id", selectedClientId)
+                };
 
                 bool success = db.ExecuteNonQuery(query, parameters);
 
@@ -316,10 +297,11 @@ namespace Mospuk_1
                     int clientId = Convert.ToInt32(DTGVClient.Rows[e.RowIndex].Cells["ID"].Value);
 
                     string deleteQuery = "DELETE FROM clients WHERE client_id = @client_id";
-                    var parameters = new List<MySqlParameter>
-            {
-                new MySqlParameter("@client_id", clientId)
-            };
+                    // تم التغيير
+                    var parameters = new List<SQLiteParameter>
+                    {
+                        new SQLiteParameter("@client_id", clientId)
+                    };
 
                     bool success = db.ExecuteNonQuery(deleteQuery, parameters);
 
@@ -358,14 +340,14 @@ namespace Mospuk_1
             client_code LIKE @search
         ORDER BY client_id DESC";
 
-            var parameters = new List<MySqlParameter>
-    {
-        new MySqlParameter("@search", "%" + searchText + "%")
-    };
+            // تم التغيير
+            var parameters = new List<SQLiteParameter>
+            {
+                new SQLiteParameter("@search", "%" + searchText + "%")
+            };
 
             DataTable dt = db.ExecuteQuery(query, parameters);
             DTGVClient.DataSource = dt;
-
 
             // إعادة إضافة زر الحذف بعد كل بحث
             if (!DTGVClient.Columns.Contains("Delete"))
@@ -382,7 +364,6 @@ namespace Mospuk_1
         private void guna2Button1_Click(object sender, EventArgs e)
         {
             navigationFrame1.SelectedPage = navigationPage3;
-
         }
 
         private void LoadCompaniesToDGV()
@@ -414,7 +395,6 @@ namespace Mospuk_1
             DTGVCompany.Columns.Add(imgCol);
         }
 
-
         private void btnEditCompany_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(txtcodeCompany.Text))
@@ -431,7 +411,7 @@ namespace Mospuk_1
 
             try
             {
-                string name = txtcodeCompany.Text.Trim();
+                string name = txtnamecompany.Text.Trim(); // تم التعديل
                 string code = txtcodeCompany.Text.Trim();
                 string tax = txtTax.Text.Trim();
                 string address = txtaddresCompany.Text.Trim();
@@ -441,12 +421,13 @@ namespace Mospuk_1
 
                 // تحقق هل الكود أو رقم الضريبة مستخدم في شركة أخرى
                 string checkQuery = "SELECT COUNT(*) FROM companies WHERE (company_code = @code OR tax_number = @tax) AND company_id != @id";
-                var checkParams = new List<MySqlParameter>
-        {
-            new MySqlParameter("@code", code),
-            new MySqlParameter("@tax", tax),
-            new MySqlParameter("@id", selectedCompanyId)
-        };
+                // تم التغيير
+                var checkParams = new List<SQLiteParameter>
+                {
+                    new SQLiteParameter("@code", code),
+                    new SQLiteParameter("@tax", tax),
+                    new SQLiteParameter("@id", selectedCompanyId)
+                };
 
                 int count = Convert.ToInt32(db.ExecuteScalar(checkQuery, checkParams));
                 if (count > 0)
@@ -465,17 +446,18 @@ namespace Mospuk_1
                         notes = @notes
                         WHERE company_id = @id";
 
-                var parameters = new List<MySqlParameter>
-        {
-            new MySqlParameter("@name", name),
-            new MySqlParameter("@code", code),
-            new MySqlParameter("@tax", tax),
-            new MySqlParameter("@address", address),
-            new MySqlParameter("@phone", phone),
-            new MySqlParameter("@email", email),
-            new MySqlParameter("@notes", notes),
-            new MySqlParameter("@id", selectedCompanyId)
-        };
+                // تم التغيير
+                var parameters = new List<SQLiteParameter>
+                {
+                    new SQLiteParameter("@name", name),
+                    new SQLiteParameter("@code", code),
+                    new SQLiteParameter("@tax", tax),
+                    new SQLiteParameter("@address", address),
+                    new SQLiteParameter("@phone", phone),
+                    new SQLiteParameter("@email", email),
+                    new SQLiteParameter("@notes", notes),
+                    new SQLiteParameter("@id", selectedCompanyId)
+                };
 
                 bool success = db.ExecuteNonQuery(query, parameters);
                 if (success)
@@ -515,16 +497,17 @@ namespace Mospuk_1
 
                 // تحقق من وجود الكود فقط
                 string checkQuery = "SELECT COUNT(*) FROM companies WHERE company_code = @code";
-                List<MySqlParameter> checkParams = new List<MySqlParameter>
-        {
-            new MySqlParameter("@code", code)
-        };
+                // تم التغيير
+                List<SQLiteParameter> checkParams = new List<SQLiteParameter>
+                {
+                    new SQLiteParameter("@code", code)
+                };
 
                 // إذا كان tax غير فارغ، أضف شرط التحقق منه أيضًا
                 if (!string.IsNullOrWhiteSpace(tax))
                 {
                     checkQuery += " OR tax_number = @tax";
-                    checkParams.Add(new MySqlParameter("@tax", tax));
+                    checkParams.Add(new SQLiteParameter("@tax", tax));
                 }
 
                 int count = Convert.ToInt32(db.ExecuteScalar(checkQuery, checkParams));
@@ -539,16 +522,17 @@ namespace Mospuk_1
         VALUES 
         (@name, @code, @tax, @address, @phone, @email, @notes)";
 
-                var parameters = new List<MySqlParameter>
-        {
-            new MySqlParameter("@name", name),
-            new MySqlParameter("@code", code),
-            new MySqlParameter("@tax", string.IsNullOrWhiteSpace(tax) ? (object)DBNull.Value : tax),
-            new MySqlParameter("@address", address),
-            new MySqlParameter("@phone", phone),
-            new MySqlParameter("@email", email),
-            new MySqlParameter("@notes", notes)
-        };
+                // تم التغيير
+                var parameters = new List<SQLiteParameter>
+                {
+                    new SQLiteParameter("@name", name),
+                    new SQLiteParameter("@code", code),
+                    new SQLiteParameter("@tax", string.IsNullOrWhiteSpace(tax) ? (object)DBNull.Value : tax),
+                    new SQLiteParameter("@address", address),
+                    new SQLiteParameter("@phone", phone),
+                    new SQLiteParameter("@email", email),
+                    new SQLiteParameter("@notes", notes)
+                };
 
                 bool success = db.ExecuteNonQuery(query, parameters);
                 if (success)
@@ -607,10 +591,11 @@ namespace Mospuk_1
                     int companyId = Convert.ToInt32(DTGVCompany.Rows[e.RowIndex].Cells["ID"].Value);
 
                     string deleteQuery = "DELETE FROM companies WHERE company_id = @company_id";
-                    var parameters = new List<MySqlParameter>
-            {
-                new MySqlParameter("@company_id", companyId)
-            };
+                    // تم التغيير
+                    var parameters = new List<SQLiteParameter>
+                    {
+                        new SQLiteParameter("@company_id", companyId)
+                    };
 
                     bool success = db.ExecuteNonQuery(deleteQuery, parameters);
 
@@ -649,10 +634,11 @@ namespace Mospuk_1
             email LIKE @search
         ORDER BY company_id DESC";
 
-            var parameters = new List<MySqlParameter>
-    {
-        new MySqlParameter("@search", "%" + searchText + "%")
-    };
+            // تم التغيير
+            var parameters = new List<SQLiteParameter>
+            {
+                new SQLiteParameter("@search", "%" + searchText + "%")
+            };
 
             DataTable dt = db.ExecuteQuery(query, parameters);
             DTGVCompany.DataSource = dt;
@@ -671,20 +657,17 @@ namespace Mospuk_1
 
         private void DGVChanges_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
-
         }
 
         private void guna2Button3_Click(object sender, EventArgs e)
         {
             navigationFrame1.SelectedPage = navigationPage4;
-
         }
 
         private void add_document_types_Click(object sender, EventArgs e)
         {
             try
             {
-                // 1. Validate that the field is not empty
                 if (string.IsNullOrWhiteSpace(txt_document_types.Text))
                 {
                     MessageBox.Show("Please enter a document type", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -693,12 +676,12 @@ namespace Mospuk_1
 
                 string documentTypeName = txt_document_types.Text.Trim();
 
-                // 2. Check if the document type already exists
                 string checkQuery = "SELECT COUNT(*) FROM document_types WHERE name = @name";
-                var checkParams = new List<MySqlParameter>
-        {
-            new MySqlParameter("@name", documentTypeName)
-        };
+                // تم التغيير
+                var checkParams = new List<SQLiteParameter>
+                {
+                    new SQLiteParameter("@name", documentTypeName)
+                };
 
                 int count = Convert.ToInt32(db.ExecuteScalar(checkQuery, checkParams));
 
@@ -708,19 +691,19 @@ namespace Mospuk_1
                     return;
                 }
 
-                // 3. Add the new document type
                 string insertQuery = "INSERT INTO document_types (name) VALUES (@name)";
-                var insertParams = new List<MySqlParameter>
-        {
-            new MySqlParameter("@name", documentTypeName)
-        };
+                // تم التغيير
+                var insertParams = new List<SQLiteParameter>
+                {
+                    new SQLiteParameter("@name", documentTypeName)
+                };
 
                 bool success = db.ExecuteNonQuery(insertQuery, insertParams);
 
                 if (success)
                 {
                     MessageBox.Show("Document type added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    txt_document_types.Clear(); // Clear the field after adding
+                    txt_document_types.Clear();
                     LoadDocumentTypesToDGV();
                 }
                 else
@@ -745,19 +728,15 @@ namespace Mospuk_1
             DataTable dt = db.ExecuteQuery(query, null);
             DTGVdocument.DataSource = dt;
 
-            // Remove existing Delete column if it exists
             if (DTGVdocument.Columns.Contains("Delete"))
                 DTGVdocument.Columns.Remove("Delete");
 
-            // Add Delete button column
             DataGridViewImageColumn imgCol = new DataGridViewImageColumn();
             imgCol.Name = "Delete";
             imgCol.HeaderText = "";
-            imgCol.Image = Properties.Resources.delete_red; // Make sure you have this image in resources
+            imgCol.Image = Properties.Resources.delete_red;
             imgCol.ImageLayout = DataGridViewImageCellLayout.Zoom;
             DTGVdocument.Columns.Add(imgCol);
-
-          
         }
 
         private void DTGVdocument_CellContentClick(object sender, DataGridViewCellEventArgs e)
@@ -774,10 +753,11 @@ namespace Mospuk_1
                     int documentTypeId = Convert.ToInt32(DTGVdocument.Rows[e.RowIndex].Cells["ID"].Value);
 
                     string deleteQuery = "DELETE FROM document_types WHERE id = @id";
-                    var parameters = new List<MySqlParameter>
-            {
-                new MySqlParameter("@id", documentTypeId)
-            };
+                    // تم التغيير
+                    var parameters = new List<SQLiteParameter>
+                    {
+                        new SQLiteParameter("@id", documentTypeId)
+                    };
 
                     bool success = db.ExecuteNonQuery(deleteQuery, parameters);
 
@@ -785,7 +765,7 @@ namespace Mospuk_1
                     {
                         MessageBox.Show("Document type deleted successfully.", "Success",
                                       MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        LoadDocumentTypesToDGV(); // Refresh the DataGridView
+                        LoadDocumentTypesToDGV();
                     }
                     else
                     {
@@ -795,8 +775,6 @@ namespace Mospuk_1
                 }
             }
         }
-
-       
 
         private void txtsearchdocument_TextChanged(object sender, EventArgs e)
         {
@@ -811,15 +789,15 @@ namespace Mospuk_1
         name LIKE @search
     ORDER BY id DESC";
 
-            var parameters = new List<MySqlParameter>
-    {
-        new MySqlParameter("@search", "%" + searchText + "%")
-    };
+            // تم التغيير
+            var parameters = new List<SQLiteParameter>
+            {
+                new SQLiteParameter("@search", "%" + searchText + "%")
+            };
 
             DataTable dt = db.ExecuteQuery(query, parameters);
             DTGVdocument.DataSource = dt;
 
-            // Re-add delete column if it doesn't exist
             if (!DTGVdocument.Columns.Contains("Delete"))
             {
                 DataGridViewImageColumn imgCol = new DataGridViewImageColumn();
@@ -835,7 +813,6 @@ namespace Mospuk_1
         {
             try
             {
-                // 1. Validate that the field is not empty
                 if (string.IsNullOrWhiteSpace(txt_Language_Pair.Text))
                 {
                     MessageBox.Show("Please enter a language pair", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -844,12 +821,12 @@ namespace Mospuk_1
 
                 string languagePairName = txt_Language_Pair.Text.Trim();
 
-                // 2. Check if the language pair already exists
                 string checkQuery = "SELECT COUNT(*) FROM language_pairs WHERE name = @name";
-                var checkParams = new List<MySqlParameter>
-        {
-            new MySqlParameter("@name", languagePairName)
-        };
+                // تم التغيير
+                var checkParams = new List<SQLiteParameter>
+                {
+                    new SQLiteParameter("@name", languagePairName)
+                };
 
                 int count = Convert.ToInt32(db.ExecuteScalar(checkQuery, checkParams));
 
@@ -859,19 +836,19 @@ namespace Mospuk_1
                     return;
                 }
 
-                // 3. Add the new language pair
                 string insertQuery = "INSERT INTO language_pairs (name) VALUES (@name)";
-                var insertParams = new List<MySqlParameter>
-        {
-            new MySqlParameter("@name", languagePairName)
-        };
+                // تم التغيير
+                var insertParams = new List<SQLiteParameter>
+                {
+                    new SQLiteParameter("@name", languagePairName)
+                };
 
                 bool success = db.ExecuteNonQuery(insertQuery, insertParams);
 
                 if (success)
                 {
                     MessageBox.Show("Language pair added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    txt_Language_Pair.Clear(); // Clear the field after adding
+                    txt_Language_Pair.Clear();
                     LoadLanguagePairsToDGV();
                 }
                 else
@@ -897,22 +874,16 @@ namespace Mospuk_1
             DataTable dt = db.ExecuteQuery(query, null);
             DTGVLanguage.DataSource = dt;
 
-            // Remove existing Delete column if it exists
             if (DTGVLanguage.Columns.Contains("Delete"))
                 DTGVLanguage.Columns.Remove("Delete");
 
-            // Add Delete button column
             DataGridViewImageColumn imgCol = new DataGridViewImageColumn();
             imgCol.Name = "Delete";
             imgCol.HeaderText = "";
             imgCol.Image = Properties.Resources.delete_red;
             imgCol.ImageLayout = DataGridViewImageCellLayout.Zoom;
             DTGVLanguage.Columns.Add(imgCol);
-
-           
         }
-
-        
 
         private void txtsearchLanguage_TextChanged(object sender, EventArgs e)
         {
@@ -927,15 +898,15 @@ namespace Mospuk_1
         name LIKE @search
     ORDER BY id DESC";
 
-            var parameters = new List<MySqlParameter>
-    {
-        new MySqlParameter("@search", "%" + searchText + "%")
-    };
+            // تم التغيير
+            var parameters = new List<SQLiteParameter>
+            {
+                new SQLiteParameter("@search", "%" + searchText + "%")
+            };
 
             DataTable dt = db.ExecuteQuery(query, parameters);
             DTGVLanguage.DataSource = dt;
 
-            // Re-add delete column if it doesn't exist
             if (!DTGVLanguage.Columns.Contains("Delete"))
             {
                 DataGridViewImageColumn imgCol = new DataGridViewImageColumn();
@@ -961,10 +932,11 @@ namespace Mospuk_1
                     int languagePairId = Convert.ToInt32(DTGVLanguage.Rows[e.RowIndex].Cells["ID"].Value);
 
                     string deleteQuery = "DELETE FROM language_pairs WHERE id = @id";
-                    var parameters = new List<MySqlParameter>
-            {
-                new MySqlParameter("@id", languagePairId)
-            };
+                    // تم التغيير
+                    var parameters = new List<SQLiteParameter>
+                    {
+                        new SQLiteParameter("@id", languagePairId)
+                    };
 
                     bool success = db.ExecuteNonQuery(deleteQuery, parameters);
 
@@ -972,7 +944,7 @@ namespace Mospuk_1
                     {
                         MessageBox.Show("Language pair deleted successfully.", "Success",
                                       MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        LoadLanguagePairsToDGV(); // Refresh the DataGridView
+                        LoadLanguagePairsToDGV();
                     }
                     else
                     {
@@ -985,17 +957,13 @@ namespace Mospuk_1
 
         private void btnDirectory_Click(object sender, EventArgs e)
         {
-            SaveDirectory saveDirectory = new SaveDirectory(db, currentUserId);
-
+            SaveDirectory saveDirectory = new SaveDirectory(db);
             saveDirectory.ShowDialog();
         }
 
         private void Home_Load(object sender, EventArgs e)
         {
             LoadProjectsToDGV();
-
         }
-
-      
     }
 }
