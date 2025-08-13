@@ -17,20 +17,19 @@ namespace Mospuk_1
     public partial class AddFile : Form
 
     {
-        private Rectangle selectionRectangle;      // مستطيل التحديد
-        private Point selectionStartPoint;         // نقطة بداية السحب للتحديد
-        private bool isSelecting = false;          // حالة تدل على أننا نقوم برسم مستطيل التحديد
-        private FlowLayoutPanel dragSourcePanel = null;  // لتتبع المصدر
-        private List<PictureBox> selectedPictureBoxesFlow1 = new List<PictureBox>(); // للتحديد المتعدد في flowLayoutPanel1
+        private Rectangle selectionRectangle;      
+        private Point selectionStartPoint;        
+        private bool isSelecting = false;         
+        private FlowLayoutPanel dragSourcePanel = null; 
+        private List<PictureBox> selectedPictureBoxesFlow1 = new List<PictureBox>(); 
         private DateTime lastClickTime = DateTime.MinValue;
-        private List<PictureBox> selectedPictureBoxesFlow2 = new List<PictureBox>(); // للتحديد المتعدد في flowLayoutPanel2
+        private List<PictureBox> selectedPictureBoxesFlow2 = new List<PictureBox>();
         private Point dragStartPoint;
         private bool isDragging = false;
-        private List<PictureBox> selectedPictureBoxes = new List<PictureBox>(); // للتحديد المتعدد
+        private List<PictureBox> selectedPictureBoxes = new List<PictureBox>(); 
         SQLiteDatabase db;
-        // *** إضافة جديدة 1: متغيرات للتحكم في خط الإدراج ***
-        private int _insertionIndex = -1; // مؤشر يحدد مكان إدراج الصورة، -1 يعني لا يوجد مكان محدد
-        private readonly Pen _insertionLinePen = new Pen(Color.DodgerBlue, 2); // قلم لرسم الخط العمودي
+        private int _insertionIndex = -1; 
+        private readonly Pen _insertionLinePen = new Pen(Color.DodgerBlue, 2); 
         public AddFile(SQLiteDatabase database)
         {
             InitializeComponent();
@@ -101,17 +100,12 @@ namespace Mospuk_1
                 List<PictureBox> allSelectedPictures = new List<PictureBox>();
                 allSelectedPictures.AddRange(selectedPictureBoxesFlow1);
                 allSelectedPictures.AddRange(selectedPictureBoxesFlow2);
-                allSelectedPictures.AddRange(selectedPictureBoxes);
+                allSelectedPictures.AddRange(selectedPictureBoxes); //  <<-- الآن imageApostille ستكون هنا إذا كانت محددة
 
-                // إضافة صورة imageApostille إذا كانت محددة
-                PictureBox apostilleBox = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
-                if (apostilleBox != null && apostilleBox.Image != null && apostilleBox.BorderStyle == BorderStyle.FixedSingle)
-                {
-                    allSelectedPictures.Add(apostilleBox);
-                }
+                // *** تم حذف الكتلة البرمجية القديمة التي كانت تتحقق من BorderStyle ***
 
                 // إذا كان هناك أي صور محددة، عرض رسالة تأكيد
-                if (allSelectedPictures.Count > 0)  
+                if (allSelectedPictures.Count > 0)
                 {
                     var confirmResult = MessageBox.Show(
                         $"Are you sure you want to delete {allSelectedPictures.Count} selected images?",
@@ -127,16 +121,19 @@ namespace Mospuk_1
                             if (pb.Parent == flowLayoutPanel1)
                             {
                                 flowLayoutPanel1.Controls.Remove(pb);
+                                selectedPictureBoxesFlow1.Remove(pb); // ضمان الحذف من القائمة
                                 pb.Dispose();
                             }
                             else if (pb.Parent == flowLayoutPanel2)
                             {
                                 flowLayoutPanel2.Controls.Remove(pb);
+                                selectedPictureBoxesFlow2.Remove(pb); // ضمان الحذف من القائمة
                                 pb.Dispose();
                             }
                             else if (pb.Parent == panel1)
                             {
                                 panel1.Controls.Remove(pb);
+                                selectedPictureBoxes.Remove(pb); // ضمان الحذف من القائمة
                                 pb.Dispose();
                                 ReArrangeImages(); // إعادة ترتيب الصور المتبقية
                             }
@@ -145,7 +142,7 @@ namespace Mospuk_1
                                 pb.Image?.Dispose();
                                 pb.Image = null;
                                 pb.Tag = null;
-                                pb.BorderStyle = BorderStyle.None;
+                                // لم نعد نستخدم BorderStyle، لذا لا حاجة لتغييره هنا
                             }
                         }
 
@@ -158,7 +155,6 @@ namespace Mospuk_1
             }
             else if (e.KeyCode == Keys.Enter)
             {
-
                 if (AreAnyImagesSelected())
                 {
                     OpenSelectedImages();
@@ -635,8 +631,6 @@ namespace Mospuk_1
             }
         }
 
-        // أحداث panel1 - تم تحديث الأسماء والوظائف للتحديد المتعدد
-        // دالة Pb_Click_Panel1 المعدّلة
         private void Pb_Click_Panel1(object sender, EventArgs e)
         {
             PictureBox pb = sender as PictureBox;
@@ -783,13 +777,7 @@ namespace Mospuk_1
                 isDragging = false;
             }
         }
-
-
-
-    
-
-    
-        private void ReArrangeImages()
+       private void ReArrangeImages()
         {
             int padding = 10;
             int maxWidth = 120;
@@ -809,18 +797,15 @@ namespace Mospuk_1
                 }
             }
         }
-        // *** تعديل 2: تعديل دالة تهيئة FlowLayoutPanel1 لإضافة الأحداث الجديدة ***
         private void SetupFlowLayoutPanel1()
         {
             flowLayoutPanel1.AllowDrop = true;
             flowLayoutPanel1.DragEnter += FlowLayoutPanel1_DragEnter;
             flowLayoutPanel1.DragDrop += FlowLayoutPanel1_DragDrop;
 
-            // *** إضافة جديدة: ربط أحداث السحب فوق اللوحة ورسم المؤشر ***
             flowLayoutPanel1.DragOver += FlowLayoutPanel1_DragOver;
             flowLayoutPanel1.DragLeave += FlowLayoutPanel1_DragLeave;
 
-            // الأحداث الأصلية للتحديد
             flowLayoutPanel1.MouseDown += FlowLayoutPanel1_MouseDown_ForSelection;
             flowLayoutPanel1.MouseMove += FlowLayoutPanel1_MouseMove_ForSelection;
             flowLayoutPanel1.MouseUp += FlowLayoutPanel1_MouseUp_ForSelection;
@@ -828,59 +813,74 @@ namespace Mospuk_1
         }
         private void FlowLayoutPanel1_DragOver(object sender, DragEventArgs e)
         {
-            // هذا السلوك يعمل فقط عند إعادة الترتيب داخل اللوحة
             if (!e.Data.GetDataPresent("FlowPanelReorder"))
             {
-                // إذا لم تكن عملية إعادة ترتيب، تأكد من مسح المؤشر
                 if (_insertionIndex != -1)
                 {
                     _insertionIndex = -1;
                     flowLayoutPanel1.Invalidate();
                 }
-                return; // اخرج إذا لم تكن عملية إعادة ترتيب
+                return;
             }
 
             e.Effect = DragDropEffects.Move;
-
             Point clientPoint = flowLayoutPanel1.PointToClient(new Point(e.X, e.Y));
-            PictureBox draggedPic = (PictureBox)e.Data.GetData("FlowPanelReorder");
 
-            // ابحث عن مكان الإدراج الجديد
-            int newIndex = -1;
-            for (int i = 0; i < flowLayoutPanel1.Controls.Count; i++)
-            {
-                Control c = flowLayoutPanel1.Controls[i];
-                // تجاهل الصورة التي يتم سحبها حالياً
-                if (c == draggedPic) continue;
+            // حساب جديد يأخذ في الاعتبار اتجاه التدفق
+            int newIndex = CalculateInsertionIndex(clientPoint);
 
-                // هل مؤشر الفأرة على يسار منتصف الصورة الحالية؟
-                if (clientPoint.X < c.Bounds.Left + (c.Bounds.Width / 2))
-                {
-                    newIndex = i;
-                    break;
-                }
-            }
-
-            // إذا لم يتم العثور على مؤشر (يعني أننا في نهاية اللوحة)
-            if (newIndex == -1)
-            {
-                // تجاهل الصورة المسحوبة من العد لوضعها في النهاية
-                newIndex = flowLayoutPanel1.Controls.Count;
-            }
-
-            // إذا كان المؤشر الجديد يقع بعد الموقع الأصلي للصورة المسحوبة، يجب تعديله
-            int originalIndex = flowLayoutPanel1.Controls.GetChildIndex(draggedPic);
-            if (newIndex > originalIndex)
-            {
-                newIndex--;
-            }
-
-            // إذا تغير مكان المؤشر، أعد رسم اللوحة
             if (newIndex != _insertionIndex)
             {
                 _insertionIndex = newIndex;
-                flowLayoutPanel1.Invalidate(); // هذا يسبب استدعاء حدث الـ Paint
+                flowLayoutPanel1.Invalidate();
             }
+        }
+
+        private int CalculateInsertionIndex(Point clientPoint)
+        {
+            // البحث عن المكان المناسب لإدراج العنصر
+            for (int i = 0; i < flowLayoutPanel1.Controls.Count; i++)
+            {
+                Control c = flowLayoutPanel1.Controls[i];
+
+                // لا تقارن العنصر مع نفسه
+                if (c == draggedPictureBox)
+                {
+                    continue;
+                }
+
+                Rectangle bounds = c.Bounds;
+
+                // التحقق بناءً على اتجاه اللوحة
+                if (flowLayoutPanel1.FlowDirection == FlowDirection.LeftToRight)
+                {
+                    // إذا كان مؤشر الفأرة في النصف الأول من العنصر، فالإدراج يجب أن يكون قبله
+                    if (clientPoint.X < bounds.Left + (bounds.Width / 2))
+                    {
+                        return i;
+                    }
+                }
+                else if (flowLayoutPanel1.FlowDirection == FlowDirection.RightToLeft)
+                {
+                    // في وضع اليمين لليسار، "البداية" هي الحافة اليمنى
+                    // إذا كان مؤشر الفأرة في النصف "الأول" (أي الأيمن) من العنصر، فالإدراج قبله
+                    if (clientPoint.X > bounds.Right - (bounds.Width / 2))
+                    {
+                        return i;
+                    }
+                }
+                // يمكن إضافة منطق لـ TopDown و BottomUp إذا احتجت لذلك
+                else if (flowLayoutPanel1.FlowDirection == FlowDirection.TopDown)
+                {
+                    if (clientPoint.Y < bounds.Top + (bounds.Height / 2))
+                    {
+                        return i;
+                    }
+                }
+            }
+
+            // إذا لم يتم العثور على مكان (المؤشر بعد كل العناصر)، فالإدراج يكون في النهاية
+            return flowLayoutPanel1.Controls.Count;
         }
         private void FlowLayoutPanel1_DragLeave(object sender, EventArgs e)
         {
@@ -925,25 +925,77 @@ namespace Mospuk_1
                 e.Effect = DragDropEffects.None;
             }
         }
-
-        // *** تعديل 5: تعديل حدث DragDrop الخاص باللوحة نفسها ***
+        //****************
         private void FlowLayoutPanel1_DragDrop(object sender, DragEventArgs e)
         {
             try
             {
-                // *** تعديل: التعامل مع عملية إعادة الترتيب أولاً ***
+                FlowLayoutPanel panel = sender as FlowLayoutPanel;
+                if (panel == null) return;
+
+                // *** بداية الإضافة الجديدة: التعامل مع إعادة ترتيب السحب المتعدد ***
+                if (e.Data.GetDataPresent("MultiDragFlow1") && e.Data.GetData("DragSource")?.ToString() == panel.Name)
+                {
+                    var picturesToMove = (PictureBox[])e.Data.GetData("MultiDragFlow1");
+
+                    // الحصول على الصور المحددة بترتيبها الحالي في اللوحة للحفاظ على الترتيب
+                    var orderedPicturesToMove = panel.Controls.OfType<PictureBox>()
+                                                     .Where(p => picturesToMove.Contains(p))
+                                                     .ToList();
+
+                    if (_insertionIndex != -1 && orderedPicturesToMove.Any())
+                    {
+                        int targetIndex = _insertionIndex;
+
+                        // حساب عدد العناصر التي يتم نقلها من موضع "قبل" نقطة الإدراج
+                        // هذا ضروري لضبط فهرس الإدراج بشكل صحيح
+                        int shift = orderedPicturesToMove.Count(p => panel.Controls.GetChildIndex(p) < targetIndex);
+                        targetIndex -= shift;
+
+                        // التأكد من أن الفهرس ضمن النطاق الصحيح
+                        if (targetIndex < 0) targetIndex = 0;
+
+                        // نقل كل صورة إلى الموقع الجديد بالتسلسل
+                        foreach (var pic in orderedPicturesToMove)
+                        {
+                            panel.Controls.SetChildIndex(pic, targetIndex);
+                            targetIndex++; // زيادة الفهرس للصورة التالية في المجموعة
+                        }
+                        panel.PerformLayout();
+                    }
+
+                    // تنظيف وإنهاء
+                    _insertionIndex = -1;
+                    panel.Invalidate();
+                    return; // مهم: الخروج بعد معالجة إعادة الترتيب المتعدد
+                }
+                // *** نهاية الإضافة الجديدة ***
+
+
+                // التعامل مع إعادة ترتيب عنصر واحد (الكود الأصلي)
                 if (e.Data.GetDataPresent("FlowPanelReorder"))
                 {
                     PictureBox sourcePic = (PictureBox)e.Data.GetData("FlowPanelReorder");
-                    FlowLayoutPanel panel = sender as FlowLayoutPanel;
 
-                    // إذا كان هناك مكان إدراج صالح، انقل الصورة إليه
-                    if (sourcePic != null && panel != null && _insertionIndex != -1)
+                    if (sourcePic != null && _insertionIndex != -1)
                     {
-                        panel.Controls.SetChildIndex(sourcePic, _insertionIndex);
+                        int sourceIndex = panel.Controls.GetChildIndex(sourcePic);
+                        int targetIndex = _insertionIndex;
+
+                        if (sourceIndex < targetIndex)
+                        {
+                            targetIndex--;
+                        }
+
+                        if (targetIndex < 0) targetIndex = 0;
+                        if (targetIndex >= panel.Controls.Count) targetIndex = panel.Controls.Count - 1;
+
+                        panel.Controls.SetChildIndex(sourcePic, targetIndex);
                         panel.PerformLayout();
                     }
-                    return; // الخروج بعد معالجة إعادة الترتيب
+                    _insertionIndex = -1;
+                    panel.Invalidate();
+                    return;
                 }
 
                 // باقي الكود الأصلي للتعامل مع السحب من المصادر الأخرى يبقى كما هو
@@ -974,15 +1026,16 @@ namespace Mospuk_1
                         sourceApostille.Image?.Dispose();
                         sourceApostille.Image = null;
                         sourceApostille.Tag = null;
+                        selectedPictureBoxes.Remove(sourceApostille); // ضمان إزالته من التحديد
                         return;
                     }
                 }
 
                 if (e.Data.GetDataPresent("MultiDragFlow2"))
                 {
-                    PictureBox[] selectedPictureBoxes = (PictureBox[])e.Data.GetData("MultiDragFlow2");
+                    PictureBox[] selectedPictureBoxesFromFlow2 = (PictureBox[])e.Data.GetData("MultiDragFlow2");
 
-                    foreach (PictureBox sourcePb in selectedPictureBoxes)
+                    foreach (PictureBox sourcePb in selectedPictureBoxesFromFlow2)
                     {
                         if (sourcePb?.Tag != null && sourcePb.Image != null)
                         {
@@ -1004,7 +1057,7 @@ namespace Mospuk_1
                         }
                     }
 
-                    foreach (PictureBox sourcePb in selectedPictureBoxes)
+                    foreach (PictureBox sourcePb in selectedPictureBoxesFromFlow2)
                     {
                         if (sourcePb.Parent != null) sourcePb.Parent.Controls.Remove(sourcePb);
                         sourcePb.Dispose();
@@ -1049,13 +1102,6 @@ namespace Mospuk_1
                         if (isInternalDrag)
                         {
                             RemoveImageFromPanel1(filePath);
-                            PictureBox apostilleBox = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
-                            if (apostilleBox != null && apostilleBox.Tag?.ToString() == filePath)
-                            {
-                                apostilleBox.Image?.Dispose();
-                                apostilleBox.Image = null;
-                                apostilleBox.Tag = null;
-                            }
                             RemoveImageFromFlowLayoutPanel(flowLayoutPanel2, filePath);
                         }
                     }
@@ -1070,7 +1116,6 @@ namespace Mospuk_1
             }
             finally
             {
-                // *** تنظيف أخير لضمان إخفاء الخط ***
                 if (_insertionIndex != -1)
                 {
                     _insertionIndex = -1;
@@ -1090,7 +1135,6 @@ namespace Mospuk_1
             return null;
         }
 
-        // إنشاء PictureBox جديد مع إعدادات السحب والإفلات وإعادة الترتيب
         private PictureBox CreateNewPictureBox()
         {
             var pic = new Guna.UI2.WinForms.Guna2PictureBox();
@@ -1207,14 +1251,11 @@ namespace Mospuk_1
                     {
                         isDragging = true;
 
-                        // *** تعديل جديد: دعم السحب المتعدد من flowLayoutPanel2 ***
                         DataObject dataObject = new DataObject();
                         List<string> filePathsToTransfer = new List<string>();
 
-                        // إذا كانت الصورة المسحوبة ضمن التحديد المتعدد وهناك أكثر من صورة محددة
                         if (selectedPictureBoxesFlow2.Count > 1 && selectedPictureBoxesFlow2.Contains(draggedPictureBoxPanel2))
                         {
-                            // سحب جميع الصور المحددة
                             foreach (var selectedPb in selectedPictureBoxesFlow2)
                             {
                                 if (selectedPb.Tag != null && selectedPb.Image != null)
@@ -1222,24 +1263,21 @@ namespace Mospuk_1
                                     filePathsToTransfer.Add(selectedPb.Tag.ToString());
                                 }
                             }
-                            // إضافة معرف خاص للسحب المتعدد من flowLayoutPanel2
                             dataObject.SetData("MultiDragFlow2", selectedPictureBoxesFlow2.ToArray());
                         }
                         else
                         {
-                            // سحب الصورة الحالية فقط
                             if (draggedPictureBoxPanel2.Tag != null)
                             {
                                 filePathsToTransfer.Add(draggedPictureBoxPanel2.Tag.ToString());
                             }
                         }
 
-                        // إعداد البيانات للسحب
-                        dataObject.SetData("FlowPanel2Reorder", draggedPictureBoxPanel2); // لإعادة الترتيب الداخلي
-                        dataObject.SetData("ReturnToPanel1", draggedPictureBoxPanel2);      // للإرجاع إلى panel1
+                        // *** تعديل مهم: استخدم FlowPanel2Reorder ***
+                        dataObject.SetData("FlowPanel2Reorder", draggedPictureBoxPanel2);
+                        dataObject.SetData("ReturnToPanel1", draggedPictureBoxPanel2);
                         dataObject.SetData("DragSource", dragSourcePanel?.Name ?? "unknown");
 
-                        // إرسال مسارات الملفات
                         if (filePathsToTransfer.Count > 0)
                         {
                             string dataToTransfer = string.Join("|", filePathsToTransfer);
@@ -1250,8 +1288,7 @@ namespace Mospuk_1
                     }
                 }
             }
-        }
-        // أحداث السحب والإفلات في flowLayoutPanel1
+        }      
         private void Pic_DragEnter_FlowPanel(object sender, DragEventArgs e)
         {
             // *** إضافة جديدة: منع السحب داخل نفس الـ FlowLayoutPanel ***
@@ -1289,31 +1326,6 @@ namespace Mospuk_1
             {
                 e.Effect = DragDropEffects.None;
             }
-        }
-        private void ReorderPictureBoxInFlowPanel(PictureBox sourcePic, PictureBox targetPic)
-        {
-            if (sourcePic == null || targetPic == null || sourcePic == targetPic)
-            {
-                return;
-            }
-
-            FlowLayoutPanel panel = targetPic.Parent as FlowLayoutPanel;
-            if (panel == null || sourcePic.Parent != panel)
-            {
-                // تأكد من أن كلا الصورتين في نفس اللوحة
-                return;
-            }
-
-            // الحصول على فهرس الهدف الذي سيتم الإفلات فيه
-            int targetIndex = panel.Controls.GetChildIndex(targetPic);
-
-            // نقل الصورة المسحوبة إلى موضع الهدف
-            // سيقوم FlowLayoutPanel تلقائيًا بإعادة ترتيب باقي العناصر
-            panel.Controls.SetChildIndex(sourcePic, targetIndex);
-
-            // إجبار اللوحة على تحديث تخطيطها
-            panel.PerformLayout();
-            panel.Invalidate();
         }
         private void Pic_DragDrop_FlowPanel(object sender, DragEventArgs e)
         {
@@ -1452,7 +1464,6 @@ namespace Mospuk_1
                 MessageBox.Show($"Error swapping images: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-        // أحداث إعادة الترتيب في flowLayoutPanel1
         private PictureBox draggedPictureBox = null;
 
         private void Pic_MouseDown_FlowPanel(object sender, MouseEventArgs e)
@@ -1462,12 +1473,11 @@ namespace Mospuk_1
                 dragStartPoint = e.Location;
                 isDragging = false;
                 draggedPictureBox = sender as PictureBox;
+                dragSourcePanel = flowLayoutPanel1;
 
-                // *** إضافة جديدة: تحديد مصدر السحب ***
-                if (draggedPictureBox != null)
-                {
-                    dragSourcePanel = draggedPictureBox.Parent as FlowLayoutPanel;
-                }
+                // إعادة تعيين مؤشر الإدراج
+                _insertionIndex = -1;
+                flowLayoutPanel1.Invalidate();
             }
         }
 
@@ -1475,28 +1485,15 @@ namespace Mospuk_1
         {
             isDragging = false;
             draggedPictureBox = null;
-            dragSourcePanel = null; // *** إضافة جديدة: مسح مصدر السحب ***
+            dragSourcePanel = null;
+
+            // إخفاء خط الإدراج عند الانتهاء
+            if (_insertionIndex != -1)
+            {
+                _insertionIndex = -1;
+                flowLayoutPanel1.Invalidate();
+            }
         }
-        // دالة تبديل مواضع الصور في flowLayoutPanel1
-        private void SwapPictureBoxes(PictureBox source, PictureBox target)
-        {
-            // حفظ بيانات الصورة المصدر
-            Image sourceImage = source.Image;
-            object sourceTag = source.Tag;
-
-            // حفظ بيانات الصورة الهدف
-            Image targetImage = target.Image;
-            object targetTag = target.Tag;
-
-            // تبديل الصور
-            source.Image = targetImage;
-            source.Tag = targetTag;
-
-            target.Image = sourceImage;
-            target.Tag = sourceTag;
-        }
-
-     
 
         private void savebtn_Click(object sender, EventArgs e)
         {
@@ -2137,13 +2134,55 @@ namespace Mospuk_1
         private void SetupFlowLayoutPanel2()
         {
             flowLayoutPanel2.AllowDrop = true;
+
+            // أحداث السحب والإفلات الأساسية
             flowLayoutPanel2.DragEnter += FlowLayoutPanel2_DragEnter;
             flowLayoutPanel2.DragDrop += FlowLayoutPanel2_DragDrop;
+
+            // أحداث جديدة لإعادة الترتيب (رسم خط الإدراج)
+            flowLayoutPanel2.DragOver += FlowLayoutPanel2_DragOver;
+            flowLayoutPanel2.DragLeave += FlowLayoutPanel2_DragLeave;
+
+            // أحداث التحديد ورسم المستطيل
             flowLayoutPanel2.MouseDown += FlowLayoutPanel2_MouseDown_ForSelection;
             flowLayoutPanel2.MouseMove += FlowLayoutPanel2_MouseMove_ForSelection;
             flowLayoutPanel2.MouseUp += FlowLayoutPanel2_MouseUp_ForSelection;
             flowLayoutPanel2.Paint += FlowLayoutPanel2_Paint_SelectionRectangle;
+        }
+        private void FlowLayoutPanel2_DragOver(object sender, DragEventArgs e)
+        {
+            // تحقق من أننا نقوم بإعادة ترتيب عنصر داخل flowLayoutPanel2
+            if (!e.Data.GetDataPresent("FlowPanel2Reorder"))
+            {
+                if (_insertionIndex != -1)
+                {
+                    _insertionIndex = -1;
+                    flowLayoutPanel2.Invalidate();
+                }
+                return;
+            }
 
+            e.Effect = DragDropEffects.Move;
+            Point clientPoint = flowLayoutPanel2.PointToClient(new Point(e.X, e.Y));
+
+            // استخدم دالة حساب مخصصة لـ flowLayoutPanel2
+            int newIndex = CalculateInsertionIndexForPanel2(clientPoint);
+
+            if (newIndex != _insertionIndex)
+            {
+                _insertionIndex = newIndex;
+                flowLayoutPanel2.Invalidate();
+            }
+        }
+
+        private void FlowLayoutPanel2_DragLeave(object sender, EventArgs e)
+        {
+            // عند مغادرة الفأرة، قم بإخفاء الخط
+            if (_insertionIndex != -1)
+            {
+                _insertionIndex = -1;
+                flowLayoutPanel2.Invalidate();
+            }
         }
         private void FlowLayoutPanel2_MouseDown_ForSelection(object sender, MouseEventArgs e)
         {
@@ -2279,6 +2318,7 @@ namespace Mospuk_1
 
         private void FlowLayoutPanel2_Paint_SelectionRectangle(object sender, PaintEventArgs e)
         {
+            // 1. رسم مستطيل التحديد (الكود الأصلي)
             if (isSelecting)
             {
                 using (Brush brush = new SolidBrush(Color.FromArgb(70, 0, 120, 215)))
@@ -2289,6 +2329,58 @@ namespace Mospuk_1
                 {
                     e.Graphics.DrawRectangle(pen, selectionRectangle);
                 }
+            }
+
+            // 2. إضافة رسم خط الإدراج (الكود الجديد)
+            // تحقق من أن السحب بدأ من اللوحة الثانية
+            if (_insertionIndex != -1 && draggedPictureBoxPanel2 != null)
+            {
+                Point lineStart, lineEnd;
+                int margin = 3;
+
+                if (_insertionIndex < flowLayoutPanel2.Controls.Count)
+                {
+                    Control targetControl = flowLayoutPanel2.Controls[_insertionIndex];
+                    if (flowLayoutPanel2.FlowDirection == FlowDirection.LeftToRight)
+                    {
+                        lineStart = new Point(targetControl.Left - margin, targetControl.Top);
+                        lineEnd = new Point(targetControl.Left - margin, targetControl.Bottom);
+                    }
+                    else // RightToLeft
+                    {
+                        lineStart = new Point(targetControl.Right + margin, targetControl.Top);
+                        lineEnd = new Point(targetControl.Right + margin, targetControl.Bottom);
+                    }
+                }
+                else if (flowLayoutPanel2.Controls.Count > 0)
+                {
+                    Control lastControl = flowLayoutPanel2.Controls[flowLayoutPanel2.Controls.Count - 1];
+                    if (flowLayoutPanel2.FlowDirection == FlowDirection.LeftToRight)
+                    {
+                        lineStart = new Point(lastControl.Right + margin, lastControl.Top);
+                        lineEnd = new Point(lastControl.Right + margin, lastControl.Bottom);
+                    }
+                    else // RightToLeft
+                    {
+                        lineStart = new Point(lastControl.Left - margin, lastControl.Top);
+                        lineEnd = new Point(lastControl.Left - margin, lastControl.Bottom);
+                    }
+                }
+                else
+                {
+                    if (flowLayoutPanel2.FlowDirection == FlowDirection.LeftToRight)
+                    {
+                        lineStart = new Point(flowLayoutPanel2.Padding.Left, flowLayoutPanel2.Padding.Top);
+                        lineEnd = new Point(flowLayoutPanel2.Padding.Left, flowLayoutPanel2.ClientSize.Height - flowLayoutPanel2.Padding.Bottom);
+                    }
+                    else // RightToLeft
+                    {
+                        lineStart = new Point(flowLayoutPanel2.ClientSize.Width - flowLayoutPanel2.Padding.Right, flowLayoutPanel2.Padding.Top);
+                        lineEnd = new Point(flowLayoutPanel2.ClientSize.Width - flowLayoutPanel2.Padding.Right, flowLayoutPanel2.ClientSize.Height - flowLayoutPanel2.Padding.Bottom);
+                    }
+                }
+
+                e.Graphics.DrawLine(_insertionLinePen, lineStart, lineEnd);
             }
         }
         private void FlowLayoutPanel2_DragEnter(object sender, DragEventArgs e)
@@ -2318,9 +2410,72 @@ namespace Mospuk_1
         {
             try
             {
+                FlowLayoutPanel panel = sender as FlowLayoutPanel;
+                if (panel == null) return;
+
+                // *** بداية الإضافة الجديدة: التعامل مع إعادة ترتيب السحب المتعدد ***
+                if (e.Data.GetDataPresent("MultiDragFlow2") && e.Data.GetData("DragSource")?.ToString() == panel.Name)
+                {
+                    var picturesToMove = (PictureBox[])e.Data.GetData("MultiDragFlow2");
+
+                    var orderedPicturesToMove = panel.Controls.OfType<PictureBox>()
+                                                     .Where(p => picturesToMove.Contains(p))
+                                                     .ToList();
+
+                    if (_insertionIndex != -1 && orderedPicturesToMove.Any())
+                    {
+                        int targetIndex = _insertionIndex;
+                        int shift = orderedPicturesToMove.Count(p => panel.Controls.GetChildIndex(p) < targetIndex);
+                        targetIndex -= shift;
+
+                        if (targetIndex < 0) targetIndex = 0;
+
+                        foreach (var pic in orderedPicturesToMove)
+                        {
+                            panel.Controls.SetChildIndex(pic, targetIndex);
+                            targetIndex++;
+                        }
+                        panel.PerformLayout();
+                    }
+
+                    _insertionIndex = -1;
+                    panel.Invalidate();
+                    return;
+                }
+                // *** نهاية الإضافة الجديدة ***
+
+
+                // التعامل مع إعادة ترتيب عنصر واحد (الكود الأصلي)
+                if (e.Data.GetDataPresent("FlowPanel2Reorder"))
+                {
+                    PictureBox sourcePic = (PictureBox)e.Data.GetData("FlowPanel2Reorder");
+
+                    if (sourcePic != null && _insertionIndex != -1)
+                    {
+                        int sourceIndex = panel.Controls.GetChildIndex(sourcePic);
+                        int targetIndex = _insertionIndex;
+
+                        if (sourceIndex < targetIndex)
+                        {
+                            targetIndex--;
+                        }
+
+                        if (targetIndex < 0) targetIndex = 0;
+                        if (targetIndex >= panel.Controls.Count) targetIndex = panel.Controls.Count - 1;
+
+                        panel.Controls.SetChildIndex(sourcePic, targetIndex);
+                        panel.PerformLayout();
+                    }
+
+                    _insertionIndex = -1;
+                    panel.Invalidate();
+                    return;
+                }
+
+                // باقي الكود الأصلي للسحب من لوحات أخرى
                 List<string> filePaths = new List<string>();
                 bool isInternalDrag = e.Data.GetDataPresent(DataFormats.StringFormat);
-                bool isMultiDrag = e.Data.GetDataPresent("MultiDragFlow1");
+
                 if (e.Data.GetDataPresent("ReturnToPanel1") && e.Data.GetDataPresent("FromImageApostille"))
                 {
                     PictureBox sourceApostille = (PictureBox)e.Data.GetData("ReturnToPanel1");
@@ -2337,9 +2492,7 @@ namespace Mospuk_1
 
                         using (var imgTemp = Image.FromFile(apostilleFilePath))
                         {
-                            if (targetPic.Image != null)
-                                targetPic.Image.Dispose();
-
+                            targetPic.Image?.Dispose();
                             targetPic.Image = new Bitmap(imgTemp);
                             targetPic.Tag = apostilleFilePath;
                         }
@@ -2347,16 +2500,42 @@ namespace Mospuk_1
                         sourceApostille.Image?.Dispose();
                         sourceApostille.Image = null;
                         sourceApostille.Tag = null;
+                        selectedPictureBoxes.Remove(sourceApostille);
                         return;
                     }
                 }
-                if (e.Data.GetDataPresent("DragSource"))
+
+                if (e.Data.GetDataPresent("MultiDragFlow1"))
                 {
-                    string dragSource = e.Data.GetData("DragSource").ToString();
-                    FlowLayoutPanel targetPanel = sender as FlowLayoutPanel;
-                    if (dragSource == targetPanel?.Name)
-                        return;
+                    PictureBox[] selectedPictureBoxesFromFlow1 = (PictureBox[])e.Data.GetData("MultiDragFlow1");
+                    foreach (var sourcePb in selectedPictureBoxesFromFlow1)
+                    {
+                        if (sourcePb?.Tag != null && sourcePb.Image != null)
+                        {
+                            string filePath = sourcePb.Tag.ToString();
+                            PictureBox targetPic = FindEmptyPictureBoxInPanel2();
+                            if (targetPic == null)
+                            {
+                                targetPic = CreateNewPictureBoxForPanel2();
+                                panel.Controls.Add(targetPic);
+                            }
+                            using (var imgTemp = Image.FromFile(filePath))
+                            {
+                                targetPic.Image?.Dispose();
+                                targetPic.Image = new Bitmap(imgTemp);
+                                targetPic.Tag = filePath;
+                            }
+                        }
+                    }
+                    foreach (var sourcePb in selectedPictureBoxesFromFlow1)
+                    {
+                        if (sourcePb.Parent != null) sourcePb.Parent.Controls.Remove(sourcePb);
+                        sourcePb.Dispose();
+                    }
+                    ClearSelectionFlow1();
+                    return;
                 }
+
 
                 if (e.Data.GetDataPresent(DataFormats.FileDrop))
                 {
@@ -2368,6 +2547,7 @@ namespace Mospuk_1
                     string data = (string)e.Data.GetData(DataFormats.StringFormat);
                     filePaths.AddRange(data.Split('|'));
                 }
+
                 foreach (string filePath in filePaths)
                 {
                     if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) continue;
@@ -2392,20 +2572,9 @@ namespace Mospuk_1
                         if (isInternalDrag)
                         {
                             RemoveImageFromPanel1(filePath);
-                            PictureBox apostilleBox = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
-                            if (apostilleBox != null && apostilleBox.Tag?.ToString() == filePath)
-                            {
-                                apostilleBox.Image?.Dispose();
-                                apostilleBox.Image = null;
-                                apostilleBox.Tag = null;
-                            }
                             RemoveImageFromFlowLayoutPanel(flowLayoutPanel1, filePath);
                         }
                     }
-                }
-                if (isMultiDrag)
-                {
-                    ClearSelectionFlow1();
                 }
 
                 ClearSelection();
@@ -2415,6 +2584,47 @@ namespace Mospuk_1
             {
                 MessageBox.Show("An error occurred while processing drag and drop:\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+            finally
+            {
+                if (_insertionIndex != -1)
+                {
+                    _insertionIndex = -1;
+                    flowLayoutPanel2.Invalidate();
+                }
+            }
+        }
+        private int CalculateInsertionIndexForPanel2(Point clientPoint)
+        {
+            for (int i = 0; i < flowLayoutPanel2.Controls.Count; i++)
+            {
+                Control c = flowLayoutPanel2.Controls[i];
+                if (c == draggedPictureBoxPanel2) continue; // استخدم المتغير الخاص باللوحة الثانية
+
+                Rectangle bounds = c.Bounds;
+
+                if (flowLayoutPanel2.FlowDirection == FlowDirection.LeftToRight)
+                {
+                    if (clientPoint.X < bounds.Left + (bounds.Width / 2))
+                    {
+                        return i;
+                    }
+                }
+                else if (flowLayoutPanel2.FlowDirection == FlowDirection.RightToLeft)
+                {
+                    if (clientPoint.X > bounds.Right - (bounds.Width / 2))
+                    {
+                        return i;
+                    }
+                }
+                else if (flowLayoutPanel2.FlowDirection == FlowDirection.TopDown)
+                {
+                    if (clientPoint.Y < bounds.Top + (bounds.Height / 2))
+                    {
+                        return i;
+                    }
+                }
+            }
+            return flowLayoutPanel2.Controls.Count;
         }
         private PictureBox FindEmptyPictureBoxInPanel2()
         {
@@ -2576,7 +2786,7 @@ namespace Mospuk_1
             {
                 MessageBox.Show("An error occurred while loading the image:\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }        // سابعاً: أحداث إعادة الترتيب داخل flowLayoutPanel2
+        }       
         private PictureBox draggedPictureBoxPanel2 = null;
 
         private void Pic_MouseDown_Panel2(object sender, MouseEventArgs e)
@@ -2585,21 +2795,31 @@ namespace Mospuk_1
             {
                 dragStartPoint = e.Location;
                 isDragging = false;
-                draggedPictureBoxPanel2 = sender as PictureBox;
+                draggedPictureBoxPanel2 = sender as PictureBox; // استخدم المتغير الصحيح
 
-                // *** إضافة جديدة: تحديد مصدر السحب ***
                 if (draggedPictureBoxPanel2 != null)
                 {
                     dragSourcePanel = draggedPictureBoxPanel2.Parent as FlowLayoutPanel;
                 }
+
+                // إعادة تعيين مؤشر الإدراج
+                _insertionIndex = -1;
+                flowLayoutPanel2.Invalidate();
             }
         }
 
         private void Pic_MouseUp_Panel2(object sender, MouseEventArgs e)
         {
             isDragging = false;
-            draggedPictureBoxPanel2 = null;
-            dragSourcePanel = null; // *** إضافة جديدة: مسح مصدر السحب ***
+            draggedPictureBoxPanel2 = null; // نظّف المتغير الصحيح
+            dragSourcePanel = null;
+
+            // إخفاء خط الإدراج عند الانتهاء
+            if (_insertionIndex != -1)
+            {
+                _insertionIndex = -1;
+                flowLayoutPanel2.Invalidate();
+            }
         }
         private void SwapPictureBoxesPanel2(PictureBox source, PictureBox target)
         {
@@ -2616,9 +2836,6 @@ namespace Mospuk_1
             target.Tag = sourceTag;
         }
 
-       
-
-      
         private void SetupImageApostille()
         {
             PictureBox imageApostille = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
@@ -2626,7 +2843,7 @@ namespace Mospuk_1
             {
                 imageApostille.AllowDrop = true;
                 imageApostille.SizeMode = PictureBoxSizeMode.StretchImage;
-                imageApostille.BorderStyle = BorderStyle.None;
+                imageApostille.BorderStyle = BorderStyle.None; //  <<-- سيبقى دائمًا بدون إطار
 
                 imageApostille.DragEnter += ImageApostille_DragEnter;
                 imageApostille.DragDrop += ImageApostille_DragDrop;
@@ -2638,8 +2855,10 @@ namespace Mospuk_1
                 imageApostille.MouseMove += imageApostille_MouseMove;
                 imageApostille.MouseUp += imageApostille_MouseUp;
                 imageApostille.Click += imageApostille_Click;
-            }
 
+                // *** الإضافة الجديدة والمهمة هنا ***
+                imageApostille.Paint += PictureBox_Paint_Selection;
+            }
         }
         private void imageApostille_MouseDown(object sender, MouseEventArgs e)
         {
@@ -2735,11 +2954,13 @@ namespace Mospuk_1
         {
             ImageApostille_DragEnter(sender, e);
         }
+        // استبدل الدالة القديمة بهذه النسخة الجديدة
         private void imageApostille_Click(object sender, EventArgs e)
         {
             PictureBox pb = sender as PictureBox;
-            if (pb?.Image == null) return; 
+            if (pb?.Image == null) return;
 
+            // منع معالجة النقر المزدوج كنقرة فردية
             if ((DateTime.Now - lastClickTime).TotalMilliseconds < SystemInformation.DoubleClickTime)
             {
                 return;
@@ -2748,31 +2969,31 @@ namespace Mospuk_1
 
             if (Control.ModifierKeys == Keys.Control)
             {
-                if (pb.BorderStyle == BorderStyle.FixedSingle)
+                // Ctrl + Click: تبديل حالة التحديد
+                if (selectedPictureBoxes.Contains(pb))
                 {
-                    pb.BorderStyle = BorderStyle.None;
+                    selectedPictureBoxes.Remove(pb);
                 }
                 else
                 {
-                    pb.BorderStyle = BorderStyle.FixedSingle;
+                    selectedPictureBoxes.Add(pb);
                 }
             }
             else
             {
-                              bool onlyApostilleIsSelected = pb.BorderStyle == BorderStyle.FixedSingle
-                                             && !selectedPictureBoxes.Any()
-                                             && !selectedPictureBoxesFlow1.Any()
-                                             && !selectedPictureBoxesFlow2.Any();
-
-                if (!onlyApostilleIsSelected)
+                // النقر العادي: تحديد هذا العنصر فقط
+                // التحقق مما إذا كان هذا هو العنصر الوحيد المحدد بالفعل
+                bool onlyThisIsSelected = selectedPictureBoxes.Count == 1 && selectedPictureBoxes.Contains(pb);
+                if (!onlyThisIsSelected)
                 {
                     ClearAllSelections();
-
-                    pb.BorderStyle = BorderStyle.FixedSingle;
+                    selectedPictureBoxes.Add(pb);
                 }
             }
-        }
 
+            // إعادة رسم الصورة لتحديث مظهر التحديد
+            pb.Invalidate();
+        }
         private void ImageApostille_DragDrop(object sender, DragEventArgs e)
         {
             PictureBox targetPic = sender as PictureBox;
@@ -2954,7 +3175,6 @@ namespace Mospuk_1
                 pbToRemove.Dispose();
             }
         }
-        // ***************************************************************
         private void UpdateExistingPictureBoxEvents()
         {
             foreach (Control control in flowLayoutPanel1.Controls)
@@ -3028,7 +3248,7 @@ namespace Mospuk_1
         // *** تعديل 7: دمج رسم مستطيل التحديد مع رسم خط الإدراج ***
         private void FlowLayoutPanel1_Paint_SelectionRectangle(object sender, PaintEventArgs e)
         {
-            // أولاً: رسم مستطيل التحديد (الكود الأصلي)
+            // رسم مستطيل التحديد (الكود الأصلي)
             if (isSelecting)
             {
                 using (Brush brush = new SolidBrush(Color.FromArgb(70, 0, 120, 215)))
@@ -3041,31 +3261,57 @@ namespace Mospuk_1
                 }
             }
 
-            // ثانياً: رسم خط الإدراج العمودي (الكود الجديد)
-            if (_insertionIndex != -1)
+            // رسم خط الإدراج العمودي
+            if (_insertionIndex != -1 && draggedPictureBox != null)
             {
                 Point lineStart, lineEnd;
+                int margin = 3; // هامش صغير ليبدو الخط أفضل
 
-                // هل سيتم الإدراج قبل عنصر موجود؟
+                // إذا كان الإدراج ليس في نهاية القائمة
                 if (_insertionIndex < flowLayoutPanel1.Controls.Count)
                 {
                     Control targetControl = flowLayoutPanel1.Controls[_insertionIndex];
-                    // نرسم الخط على يسار العنصر الهدف، مع أخذ الهوامش في الاعتبار
-                    lineStart = new Point(targetControl.Left - (targetControl.Margin.Left / 2), targetControl.Top);
-                    lineEnd = new Point(targetControl.Left - (targetControl.Margin.Left / 2), targetControl.Bottom);
+                    if (flowLayoutPanel1.FlowDirection == FlowDirection.LeftToRight)
+                    {
+                        lineStart = new Point(targetControl.Left - margin, targetControl.Top);
+                        lineEnd = new Point(targetControl.Left - margin, targetControl.Bottom);
+                    }
+                    else // RightToLeft
+                    {
+                        lineStart = new Point(targetControl.Right + margin, targetControl.Top);
+                        lineEnd = new Point(targetControl.Right + margin, targetControl.Bottom);
+                    }
                 }
-                else // سيتم الإدراج في نهاية اللوحة
+                // إذا كان الإدراج في نهاية القائمة
+                else if (flowLayoutPanel1.Controls.Count > 0)
                 {
-                    // إذا كانت اللوحة فارغة، لا ترسم شيئاً
-                    if (flowLayoutPanel1.Controls.Count == 0) return;
-
                     Control lastControl = flowLayoutPanel1.Controls[flowLayoutPanel1.Controls.Count - 1];
-                    // نرسم الخط على يمين آخر عنصر
-                    lineStart = new Point(lastControl.Right + (lastControl.Margin.Right / 2), lastControl.Top);
-                    lineEnd = new Point(lastControl.Right + (lastControl.Margin.Right / 2), lastControl.Bottom);
+                    if (flowLayoutPanel1.FlowDirection == FlowDirection.LeftToRight)
+                    {
+                        lineStart = new Point(lastControl.Right + margin, lastControl.Top);
+                        lineEnd = new Point(lastControl.Right + margin, lastControl.Bottom);
+                    }
+                    else // RightToLeft
+                    {
+                        lineStart = new Point(lastControl.Left - margin, lastControl.Top);
+                        lineEnd = new Point(lastControl.Left - margin, lastControl.Bottom);
+                    }
+                }
+                else // إذا كانت اللوحة فارغة
+                {
+                    if (flowLayoutPanel1.FlowDirection == FlowDirection.LeftToRight)
+                    {
+                        lineStart = new Point(flowLayoutPanel1.Padding.Left, flowLayoutPanel1.Padding.Top);
+                        lineEnd = new Point(flowLayoutPanel1.Padding.Left, flowLayoutPanel1.ClientSize.Height - flowLayoutPanel1.Padding.Bottom);
+                    }
+                    else // RightToLeft
+                    {
+                        lineStart = new Point(flowLayoutPanel1.ClientSize.Width - flowLayoutPanel1.Padding.Right, flowLayoutPanel1.Padding.Top);
+                        lineEnd = new Point(flowLayoutPanel1.ClientSize.Width - flowLayoutPanel1.Padding.Right, flowLayoutPanel1.ClientSize.Height - flowLayoutPanel1.Padding.Bottom);
+                    }
                 }
 
-                // ارسم الخط
+                // ارسم الخط باستخدام القلم المحدد
                 e.Graphics.DrawLine(_insertionLinePen, lineStart, lineEnd);
             }
         }
@@ -3082,29 +3328,10 @@ namespace Mospuk_1
 
             foreach (var pb in picturesToInvalidate)
             {
-                pb.Invalidate();
+                pb.Invalidate(); // هذا سيقوم بإعادة رسم الصورة بدون التحديد
             }
 
-            foreach (var pb in selectedPictureBoxesFlow1.ToList()) // Use ToList to avoid modification issues
-            {
-                pb.BackColor = Color.Transparent;
-                pb.BorderStyle = BorderStyle.None;
-            }
-            selectedPictureBoxesFlow1.Clear();
-
-            foreach (var pb in selectedPictureBoxesFlow2.ToList())
-            {
-                pb.BackColor = Color.Transparent;
-                pb.BorderStyle = BorderStyle.None;
-            }
-            selectedPictureBoxesFlow2.Clear();
-
-
-            PictureBox apostilleBox = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
-            if (apostilleBox != null)
-            {
-                apostilleBox.BorderStyle = BorderStyle.None;
-            }
+            // *** تم حذف الكتلة البرمجية القديمة التي كانت تتعامل مع apostilleBox.BorderStyle ***
         }
         private void OpenSelectedImages()
         {
@@ -3152,19 +3379,9 @@ namespace Mospuk_1
         }
         private bool AreAnyImagesSelected()
         {
-            if (selectedPictureBoxes.Any()) return true;
-
-            if (selectedPictureBoxesFlow1.Any()) return true;
-
-            if (selectedPictureBoxesFlow2.Any()) return true;
-
-            PictureBox apostilleBox = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
-            if (apostilleBox != null && apostilleBox.Image != null && apostilleBox.BorderStyle == BorderStyle.FixedSingle)
-            {
-                return true;
-            }
-
-            return false;
+            return selectedPictureBoxes.Any() ||
+                   selectedPictureBoxesFlow1.Any() ||
+                   selectedPictureBoxesFlow2.Any();
         }
         private void EmptySpace_Click(object sender, EventArgs e)
         {
@@ -3392,23 +3609,22 @@ namespace Mospuk_1
             if (pb == null) return;
 
             // التحقق مما إذا كان هذا الـ PictureBox محدداً حالياً في أي من قوائم التحديد
-            bool isSelected = selectedPictureBoxesFlow1.Contains(pb) ||
-                              selectedPictureBoxesFlow2.Contains(pb) ||
-                              selectedPictureBoxes.Contains(pb);
+            bool isSelected = selectedPictureBoxes.Contains(pb) ||
+                              selectedPictureBoxesFlow1.Contains(pb) ||
+                              selectedPictureBoxesFlow2.Contains(pb);
+
+            // *** تم حذف الشرط الخاص بـ imageApostille لأنه لم يعد ضرورياً ***
 
             // إذا كان محدداً، ارسم الطبقة الزرقاء الشفافة
             if (isSelected)
             {
                 Color overlayColor = Color.FromArgb(100, SystemColors.Highlight);
-
                 using (Brush overlayBrush = new SolidBrush(overlayColor))
                 {
-                    // املأ مساحة الـ PictureBox بالكامل باللون الشفاف
                     e.Graphics.FillRectangle(overlayBrush, pb.ClientRectangle);
                 }
             }
         }
-        //**************
     }
-
+    //************
 }
