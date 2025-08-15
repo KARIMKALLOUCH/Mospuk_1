@@ -9,8 +9,7 @@ using System.Linq;
 
 using System.Windows.Forms;
 using PdfiumViewer;
-using System.Data.SQLite;       
-
+using System.Data.SQLite;
 namespace Mospuk_1
 {
 
@@ -46,7 +45,15 @@ namespace Mospuk_1
             catch (Exception ex)
             {
             }
+            this.KeyPreview = true;
+      
+            panel1.KeyDown += HandleSelectAll;
+            flowLayoutPanel1.KeyDown += HandleSelectAll;
+            flowLayoutPanel2.KeyDown += HandleSelectAll;
 
+            panel1.MouseDown += panel1_MouseDown;
+            flowLayoutPanel1.MouseDown += flowLayoutPanel1_MouseDown;
+            flowLayoutPanel2.MouseDown += flowLayoutPanel2_MouseDown;
             panel1.AutoScroll = true; // AutoScroll ON
 
             panel1.Padding = new Padding(10);
@@ -96,15 +103,11 @@ namespace Mospuk_1
         {
             if (e.KeyCode == Keys.Delete)
             {
-                // إنشاء قائمة بجميع الصور المحددة من جميع الأماكن
                 List<PictureBox> allSelectedPictures = new List<PictureBox>();
                 allSelectedPictures.AddRange(selectedPictureBoxesFlow1);
                 allSelectedPictures.AddRange(selectedPictureBoxesFlow2);
-                allSelectedPictures.AddRange(selectedPictureBoxes); //  <<-- الآن imageApostille ستكون هنا إذا كانت محددة
+                allSelectedPictures.AddRange(selectedPictureBoxes); 
 
-                // *** تم حذف الكتلة البرمجية القديمة التي كانت تتحقق من BorderStyle ***
-
-                // إذا كان هناك أي صور محددة، عرض رسالة تأكيد
                 if (allSelectedPictures.Count > 0)
                 {
                     var confirmResult = MessageBox.Show(
@@ -433,17 +436,27 @@ namespace Mospuk_1
 
         private void DisplayFiles(string directory)
         {
-        
+
+            // *** بداية التعديل: جمع كل مسارات الملفات المعروضة حالياً في كل اللوحات ***
+            var allPictureBoxes = panel1.Controls.OfType<PictureBox>()
+                .Concat(flowLayoutPanel1.Controls.OfType<PictureBox>())
+                .Concat(flowLayoutPanel2.Controls.OfType<PictureBox>());
+
             var existingFilePaths = new HashSet<string>(
-                panel1.Controls.OfType<PictureBox>()
-                               .Where(pb => pb.Tag != null)
-                               .Select(pb => pb.Tag.ToString())
+                allPictureBoxes
+                    .Where(pb => pb != null && pb.Tag != null)
+                    .Select(pb => pb.Tag.ToString())
             );
+
+            PictureBox imageApostille = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
+            if (imageApostille != null && imageApostille.Tag != null)
+            {
+                existingFilePaths.Add(imageApostille.Tag.ToString());
+            }
             int padding = 10;
             int maxWidth = 120;
             int maxHeight = 120;
             int itemsPerRow = Math.Max(1, (panel1.ClientSize.Width - padding) / (maxWidth + padding));
-            // نحدد كم عدد الصور القديمة بالفعل لحساب موضع الصور الجديدة
             int count = panel1.Controls.Count;
             int x = padding + (count % itemsPerRow) * (maxWidth + padding);
             int y = padding + (count / itemsPerRow) * (maxHeight + padding);
@@ -521,11 +534,9 @@ namespace Mospuk_1
                                         }
                                     }
                                 }
-                                // --- نهاية التعديل ---
                             }
                         }
 
-                        // --- بداية التعديل: نعيد فلترة صور الـ PDF أيضاً ---
                         string[] pdfImages = Directory.GetFiles(pdfImagesDir, "*.png");
                         var newPdfImages = pdfImages.Where(imgFile => !existingFilePaths.Contains(imgFile));
 
@@ -633,6 +644,7 @@ namespace Mospuk_1
 
         private void Pb_Click_Panel1(object sender, EventArgs e)
         {
+          
             PictureBox pb = sender as PictureBox;
             if (pb == null) return;
 
@@ -687,8 +699,7 @@ namespace Mospuk_1
             }
             else
             {
-                // النقر العادي: تحديد عنصر واحد (يمسح التحديدات السابقة)
-                ClearSelection();
+                ClearAllSelections(); // مسح جميع التحديدات في كل اللوحات
                 selectedPictureBoxes.Add(pb);
                 pb.Invalidate(); // إعادة رسم الصورة المحددة
             }
@@ -925,7 +936,7 @@ namespace Mospuk_1
                 e.Effect = DragDropEffects.None;
             }
         }
-        //****************
+      
         private void FlowLayoutPanel1_DragDrop(object sender, DragEventArgs e)
         {
             try
@@ -933,50 +944,57 @@ namespace Mospuk_1
                 FlowLayoutPanel panel = sender as FlowLayoutPanel;
                 if (panel == null) return;
 
-                // *** بداية الإضافة الجديدة: التعامل مع إعادة ترتيب السحب المتعدد ***
+                // *** بداية الكود الجديد: التعامل مع إعادة ترتيب السحب المتعدد ***
                 if (e.Data.GetDataPresent("MultiDragFlow1") && e.Data.GetData("DragSource")?.ToString() == panel.Name)
                 {
-                    var picturesToMove = (PictureBox[])e.Data.GetData("MultiDragFlow1");
+                    var picturesToMove = ((PictureBox[])e.Data.GetData("MultiDragFlow1")).ToList();
 
-                    // الحصول على الصور المحددة بترتيبها الحالي في اللوحة للحفاظ على الترتيب
+                    // نحصل على الصور المراد نقلها بالترتيب التي تظهر به حاليًا في اللوحة
                     var orderedPicturesToMove = panel.Controls.OfType<PictureBox>()
                                                      .Where(p => picturesToMove.Contains(p))
                                                      .ToList();
 
                     if (_insertionIndex != -1 && orderedPicturesToMove.Any())
                     {
-                        int targetIndex = _insertionIndex;
+                        int finalInsertIndex = _insertionIndex;
 
-                        // حساب عدد العناصر التي يتم نقلها من موضع "قبل" نقطة الإدراج
-                        // هذا ضروري لضبط فهرس الإدراج بشكل صحيح
-                        int shift = orderedPicturesToMove.Count(p => panel.Controls.GetChildIndex(p) < targetIndex);
-                        targetIndex -= shift;
+                        // **الخطوة الحاسمة**: نحدد العنصر الذي سيتم الإدراج "قبله"
+                        Control insertionMarker = null;
+                        if (finalInsertIndex < panel.Controls.Count)
+                        {
+                            insertionMarker = panel.Controls[finalInsertIndex];
+                        }
 
-                        // التأكد من أن الفهرس ضمن النطاق الصحيح
-                        if (targetIndex < 0) targetIndex = 0;
-
-                        // نقل كل صورة إلى الموقع الجديد بالتسلسل
+                        // **الخطوة الثانية**: نقوم بإزالة جميع العناصر التي يتم نقلها
+                        // هذا يمنع أي مشاكل في تغيير المؤشرات
                         foreach (var pic in orderedPicturesToMove)
                         {
-                            panel.Controls.SetChildIndex(pic, targetIndex);
-                            targetIndex++; // زيادة الفهرس للصورة التالية في المجموعة
+                            panel.Controls.Remove(pic);
                         }
-                        panel.PerformLayout();
+
+                        // **الخطوة الثالثة**: نحسب المؤشر الجديد بناءً على العنصر الذي حددناه سابقًا
+                        int newIndex = (insertionMarker != null && insertionMarker.Parent != null)
+                                        ? panel.Controls.GetChildIndex(insertionMarker)
+                                        : panel.Controls.Count;
+
+                        // **الخطوة الرابعة**: نعيد إدراج العناصر بالترتيب في الموقع الصحيح
+                        foreach (var pic in orderedPicturesToMove.AsEnumerable().Reverse()) // نعكس الترتيب لضمان الإدراج الصحيح
+                        {
+                            panel.Controls.Add(pic); // إضافتها في النهاية مؤقتاً
+                            panel.Controls.SetChildIndex(pic, newIndex); // نقلها للمكان الصحيح
+                        }
+
+                        panel.PerformLayout(); // تحديث تخطيط اللوحة
                     }
 
-                    // تنظيف وإنهاء
-                    _insertionIndex = -1;
-                    panel.Invalidate();
-                    return; // مهم: الخروج بعد معالجة إعادة الترتيب المتعدد
+                    return; // الخروج بعد معالجة إعادة الترتيب
                 }
-                // *** نهاية الإضافة الجديدة ***
+                // *** نهاية الكود الجديد ***
 
-
-                // التعامل مع إعادة ترتيب عنصر واحد (الكود الأصلي)
+                // التعامل مع إعادة ترتيب عنصر واحد (يبقى كما هو)
                 if (e.Data.GetDataPresent("FlowPanelReorder"))
                 {
                     PictureBox sourcePic = (PictureBox)e.Data.GetData("FlowPanelReorder");
-
                     if (sourcePic != null && _insertionIndex != -1)
                     {
                         int sourceIndex = panel.Controls.GetChildIndex(sourcePic);
@@ -986,19 +1004,17 @@ namespace Mospuk_1
                         {
                             targetIndex--;
                         }
-
                         if (targetIndex < 0) targetIndex = 0;
                         if (targetIndex >= panel.Controls.Count) targetIndex = panel.Controls.Count - 1;
 
                         panel.Controls.SetChildIndex(sourcePic, targetIndex);
                         panel.PerformLayout();
                     }
-                    _insertionIndex = -1;
-                    panel.Invalidate();
                     return;
                 }
 
-                // باقي الكود الأصلي للتعامل مع السحب من المصادر الأخرى يبقى كما هو
+                // باقي الكود للتعامل مع السحب من لوحات أخرى (يبقى كما هو)
+                // ... (هنا يأتي باقي الكود الأصلي للدالة بدون تغيير) ...
                 List<string> filePaths = new List<string>();
                 bool isInternalDrag = e.Data.GetDataPresent(DataFormats.StringFormat);
 
@@ -1026,7 +1042,7 @@ namespace Mospuk_1
                         sourceApostille.Image?.Dispose();
                         sourceApostille.Image = null;
                         sourceApostille.Tag = null;
-                        selectedPictureBoxes.Remove(sourceApostille); // ضمان إزالته من التحديد
+                        selectedPictureBoxes.Remove(sourceApostille);
                         return;
                     }
                 }
@@ -1034,20 +1050,17 @@ namespace Mospuk_1
                 if (e.Data.GetDataPresent("MultiDragFlow2"))
                 {
                     PictureBox[] selectedPictureBoxesFromFlow2 = (PictureBox[])e.Data.GetData("MultiDragFlow2");
-
                     foreach (PictureBox sourcePb in selectedPictureBoxesFromFlow2)
                     {
                         if (sourcePb?.Tag != null && sourcePb.Image != null)
                         {
                             string filePath = sourcePb.Tag.ToString();
                             PictureBox targetPic = FindEmptyPictureBox();
-
                             if (targetPic == null)
                             {
                                 targetPic = CreateNewPictureBox();
                                 flowLayoutPanel1.Controls.Add(targetPic);
                             }
-
                             using (var imgTemp = Image.FromFile(filePath))
                             {
                                 targetPic.Image?.Dispose();
@@ -1056,7 +1069,6 @@ namespace Mospuk_1
                             }
                         }
                     }
-
                     foreach (PictureBox sourcePb in selectedPictureBoxesFromFlow2)
                     {
                         if (sourcePb.Parent != null) sourcePb.Parent.Controls.Remove(sourcePb);
@@ -1080,25 +1092,21 @@ namespace Mospuk_1
                 foreach (string filePath in filePaths)
                 {
                     if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) continue;
-
                     string ext = Path.GetExtension(filePath).ToLower();
                     if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".gif")
                     {
                         PictureBox targetPic = FindEmptyPictureBox();
-
                         if (targetPic == null)
                         {
                             targetPic = CreateNewPictureBox();
                             flowLayoutPanel1.Controls.Add(targetPic);
                         }
-
                         using (var imgTemp = Image.FromFile(filePath))
                         {
                             targetPic.Image?.Dispose();
                             targetPic.Image = new Bitmap(imgTemp);
                             targetPic.Tag = filePath;
                         }
-
                         if (isInternalDrag)
                         {
                             RemoveImageFromPanel1(filePath);
@@ -1106,7 +1114,6 @@ namespace Mospuk_1
                         }
                     }
                 }
-
                 ClearSelection();
                 dragSourcePanel = null;
             }
@@ -1167,6 +1174,7 @@ namespace Mospuk_1
         }
         private void Pic_Click_FlowPanel1(object sender, EventArgs e)
         {
+           
             PictureBox pb = sender as PictureBox;
             if (pb == null || pb.Image == null) return;
 
@@ -1208,6 +1216,7 @@ namespace Mospuk_1
                         PictureBox picture = allPictures[i];
                         if (!selectedPictureBoxesFlow1.Contains(picture))
                         {
+
                             selectedPictureBoxesFlow1.Add(picture);
                             picture.Invalidate(); // <<<--- إضافة: إعادة رسم الصورة
                         }
@@ -1216,7 +1225,7 @@ namespace Mospuk_1
             }
             else
             {
-                ClearSelectionFlow1(); // هذه الدالة ستعيد رسم العناصر القديمة
+                ClearAllSelections(); // مسح جميع التحديدات في كل اللوحات
                 selectedPictureBoxesFlow1.Add(pb);
                 pb.Invalidate(); // <<<--- إضافة: إعادة رسم الصورة المحددة
             }
@@ -1632,7 +1641,7 @@ namespace Mospuk_1
                 MessageBox.Show("Please set a save directory first.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }
-            // إنشاء مجلد للمشروع إذا لم يكن موجوداً
+
             if (!Directory.Exists(projectFolder))
             {
                 Directory.CreateDirectory(projectFolder);
@@ -1669,25 +1678,21 @@ namespace Mospuk_1
                         string fullImageName = imageName + extension;
                         string imagePath = Path.Combine(projectFolder, fullImageName);
 
-                        if (File.Exists(originalPath))
-                        {
-                            File.Copy(originalPath, imagePath, true);
-                        }
-                        else
-                        {
-                            pb.Image.Save(imagePath);
-                        }
+                        // حفظ الصورة مع تعديل التاريخ
+                        pb.Image.Save(imagePath);
+                        File.SetCreationTime(imagePath, DateTime.Now);
+                        File.SetLastWriteTime(imagePath, DateTime.Now);
 
                         string insertImageQuery = @"INSERT INTO items (project_id, image_name, image_path, registration_date, last_update_date) 
-                                                  VALUES (@project_id, @image_name, @image_path, CURRENT_DATE, CURRENT_TIMESTAMP)";
+                                          VALUES (@project_id, @image_name, @image_path, CURRENT_DATE, CURRENT_TIMESTAMP)";
 
-                        // تغيير: استخدام SQLiteParameter
                         List<SQLiteParameter> imageParameters = new List<SQLiteParameter>
-                        {
-                            new SQLiteParameter("@project_id", projectId),
-                            new SQLiteParameter("@image_name", fullImageName),
-                            new SQLiteParameter("@image_path", imagePath)
-                        };
+                {
+                    new SQLiteParameter("@project_id", projectId),
+                    new SQLiteParameter("@image_name", fullImageName),
+                    new SQLiteParameter("@image_path", imagePath)
+                };
+
                         bool imageSaved = db.ExecuteNonQuery(insertImageQuery, imageParameters);
                         if (!imageSaved)
                         {
@@ -1696,7 +1701,6 @@ namespace Mospuk_1
                         }
                         else
                         {
-                            // زيادة العداد فقط عند النجاح
                             imageCounter++;
                         }
                     }
@@ -1720,25 +1724,22 @@ namespace Mospuk_1
                     string fullImageName = imageName + extension;
                     string imagePath = Path.Combine(projectFolder, fullImageName);
 
-                    if (File.Exists(originalPath))
-                    {
-                        File.Copy(originalPath, imagePath, true);
-                    }
-                    else
-                    {
-                        imageApostille.Image.Save(imagePath);
-                    }
-                    string insertImageQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
-                                              VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
+                    // حفظ الصورة مع تعديل التاريخ
+                    imageApostille.Image.Save(imagePath);
+                    File.SetCreationTime(imagePath, DateTime.Now);
+                    File.SetLastWriteTime(imagePath, DateTime.Now);
 
-                    // تغيير: استخدام SQLiteParameter
+                    string insertImageQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
+                                      VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
+
                     List<SQLiteParameter> imageParameters = new List<SQLiteParameter>
-                    {
-                        new SQLiteParameter("@project_id", projectId),
-                        new SQLiteParameter("@image_name", fullImageName),
-                        new SQLiteParameter("@image_path", imagePath),
-                        new SQLiteParameter("@attachment_type", "Apostille")
-                    };
+            {
+                new SQLiteParameter("@project_id", projectId),
+                new SQLiteParameter("@image_name", fullImageName),
+                new SQLiteParameter("@image_path", imagePath),
+                new SQLiteParameter("@attachment_type", "Apostille")
+            };
+
                     bool imageSaved = db.ExecuteNonQuery(insertImageQuery, imageParameters);
                     if (!imageSaved)
                     {
@@ -1771,24 +1772,22 @@ namespace Mospuk_1
                         string fullImageName = imageName + extension;
                         string imagePath = Path.Combine(projectFolder, fullImageName);
 
-                        if (File.Exists(originalPath))
-                        {
-                            File.Copy(originalPath, imagePath, true);
-                        }
-                        else
-                        {
-                            pb.Image.Save(imagePath);
-                        }
+                        // حفظ الصورة مع تعديل التاريخ
+                        pb.Image.Save(imagePath);
+                        File.SetCreationTime(imagePath, DateTime.Now);
+                        File.SetLastWriteTime(imagePath, DateTime.Now);
 
                         string insertImageQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
-                      VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
+                                          VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
+
                         List<SQLiteParameter> imageParameters = new List<SQLiteParameter>
-                        {
-                            new SQLiteParameter("@project_id", projectId),
-                            new SQLiteParameter("@image_name", fullImageName),
-                            new SQLiteParameter("@image_path", imagePath),
-                            new SQLiteParameter("@attachment_type", attachmentType)
-                        };
+                {
+                    new SQLiteParameter("@project_id", projectId),
+                    new SQLiteParameter("@image_name", fullImageName),
+                    new SQLiteParameter("@image_path", imagePath),
+                    new SQLiteParameter("@attachment_type", attachmentType)
+                };
+
                         bool imageSaved = db.ExecuteNonQuery(insertImageQuery, imageParameters);
                         if (!imageSaved)
                         {
@@ -1807,11 +1806,11 @@ namespace Mospuk_1
                     }
                 }
             }
-            // 4. حجز رقم لملف OCR وزيادة العداد الرئيسي فوراً
+
+            // 4. حفظ ملفات Word المرفوعة (OCR)
             int ocrFileNumber = imageCounter;
             imageCounter++;
 
-            // 5. حفظ ملفات Word المرفوعة (OCR) باستخدام الرقم المحجوز
             foreach (Control control in panelDocx.Controls)
             {
                 if (control is Label lbl && lbl.Tag != null)
@@ -1827,17 +1826,21 @@ namespace Mospuk_1
                         if (File.Exists(originalPath))
                         {
                             File.Copy(originalPath, wordPath, true);
+                            // تعديل تواريخ الملف
+                            File.SetCreationTime(wordPath, DateTime.Now);
+                            File.SetLastWriteTime(wordPath, DateTime.Now);
 
                             string insertWordQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
-                                      VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-                    
+                                            VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
+
                             List<SQLiteParameter> wordParameters = new List<SQLiteParameter>
-                        {
-                            new SQLiteParameter("@project_id", projectId),
-                            new SQLiteParameter("@image_name", fullWordFileName),
-                            new SQLiteParameter("@image_path", wordPath),
-                            new SQLiteParameter("@attachment_type", "WORD")
-                        };
+                    {
+                        new SQLiteParameter("@project_id", projectId),
+                        new SQLiteParameter("@image_name", fullWordFileName),
+                        new SQLiteParameter("@image_path", wordPath),
+                        new SQLiteParameter("@attachment_type", "WORD")
+                    };
+
                             bool wordSaved = db.ExecuteNonQuery(insertWordQuery, wordParameters);
                             if (!wordSaved)
                             {
@@ -1858,23 +1861,29 @@ namespace Mospuk_1
                     }
                 }
             }
-            // 6. إنشاء ملف Word جديد بإسم Google Driver
+
+            // 5. إنشاء ملف Word جديد بإسم Google Driver
             try
             {
                 string googleDriverFileName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_Google Driver.docx";
                 string googleDriverPath = Path.Combine(projectFolder, googleDriverFileName);
                 using (var fs = File.Create(googleDriverPath)) { }
 
+                // تعديل تواريخ الملف
+                File.SetCreationTime(googleDriverPath, DateTime.Now);
+                File.SetLastWriteTime(googleDriverPath, DateTime.Now);
+
                 string insertGoogleDriverQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
-              VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-             
+                                        VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
+
                 List<SQLiteParameter> googleDriverParams = new List<SQLiteParameter>
-                        {
-                            new SQLiteParameter("@project_id", projectId),
-                            new SQLiteParameter("@image_name", googleDriverFileName),
-                            new SQLiteParameter("@image_path", googleDriverPath),
-                            new SQLiteParameter("@attachment_type", "Google Driver")
-                        };
+        {
+            new SQLiteParameter("@project_id", projectId),
+            new SQLiteParameter("@image_name", googleDriverFileName),
+            new SQLiteParameter("@image_path", googleDriverPath),
+            new SQLiteParameter("@attachment_type", "Google Driver")
+        };
+
                 bool googleDriverSaved = db.ExecuteNonQuery(insertGoogleDriverQuery, googleDriverParams);
                 if (!googleDriverSaved)
                 {
@@ -1892,23 +1901,28 @@ namespace Mospuk_1
                 MessageBox.Show($"❌ Error creating Google Driver file {imageCounter}: {ex.Message}");
             }
 
-            // 7. إنشاء ملف Word جديد بإسم Traducción Preliminar
+            // 6. إنشاء ملف Word جديد بإسم Traducción Preliminar
             try
             {
                 string traduccionFileName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_Traducción Preliminar.docx";
                 string traduccionPath = Path.Combine(projectFolder, traduccionFileName);
                 using (var fs = File.Create(traduccionPath)) { }
 
+                // تعديل تواريخ الملف
+                File.SetCreationTime(traduccionPath, DateTime.Now);
+                File.SetLastWriteTime(traduccionPath, DateTime.Now);
+
                 string insertTraduccionQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
-                  VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-            
+                                      VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
+
                 List<SQLiteParameter> traduccionParams = new List<SQLiteParameter>
-                        {
-                            new SQLiteParameter("@project_id", projectId),
-                            new SQLiteParameter("@image_name", traduccionFileName),
-                            new SQLiteParameter("@image_path", traduccionPath),
-                            new SQLiteParameter("@attachment_type", "Traducción Preliminar")
-                        };
+        {
+            new SQLiteParameter("@project_id", projectId),
+            new SQLiteParameter("@image_name", traduccionFileName),
+            new SQLiteParameter("@image_path", traduccionPath),
+            new SQLiteParameter("@attachment_type", "Traducción Preliminar")
+        };
+
                 bool traduccionSaved = db.ExecuteNonQuery(insertTraduccionQuery, traduccionParams);
                 if (!traduccionSaved)
                 {
@@ -1925,22 +1939,29 @@ namespace Mospuk_1
                 allSaved = false;
                 MessageBox.Show($"❌ Error creating Traducción Preliminar file {imageCounter}: {ex.Message}");
             }
+
+            // 7. إنشاء ملف Word جديد بإسم Informe revisión
             try
             {
                 string informeFileName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_Informe revisión.docx";
                 string informePath = Path.Combine(projectFolder, informeFileName);
                 using (var fs = File.Create(informePath)) { }
 
+                // تعديل تواريخ الملف
+                File.SetCreationTime(informePath, DateTime.Now);
+                File.SetLastWriteTime(informePath, DateTime.Now);
+
                 string insertInformeQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
-          VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-        
+                                  VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
+
                 List<SQLiteParameter> informeParams = new List<SQLiteParameter>
-                        {
-                            new SQLiteParameter("@project_id", projectId),
-                            new SQLiteParameter("@image_name", informeFileName),
-                            new SQLiteParameter("@image_path", informePath),
-                            new SQLiteParameter("@attachment_type", attachmentType)
-                        };
+        {
+            new SQLiteParameter("@project_id", projectId),
+            new SQLiteParameter("@image_name", informeFileName),
+            new SQLiteParameter("@image_path", informePath),
+            new SQLiteParameter("@attachment_type", attachmentType)
+        };
+
                 bool informeSaved = db.ExecuteNonQuery(insertInformeQuery, informeParams);
                 if (!informeSaved)
                 {
@@ -1957,6 +1978,7 @@ namespace Mospuk_1
                 allSaved = false;
                 MessageBox.Show($"❌ Error creating Informe revisión file {imageCounter}: {ex.Message}");
             }
+
             return allSaved;
         }
         private void RemoveImageFromPanel1(string filePath)
@@ -2256,6 +2278,7 @@ namespace Mospuk_1
         }
         private void Pic_Click_FlowPanel2(object sender, EventArgs e)
         {
+         
             PictureBox pb = sender as PictureBox;
             if (pb == null || pb.Image == null) return;
 
@@ -2308,6 +2331,8 @@ namespace Mospuk_1
                 ClearSelectionFlow2();
                 if (pb.Image != null)
                 {
+                    ClearAllSelections(); // مسح جميع التحديدات في كل اللوحات
+
                     selectedPictureBoxesFlow2.Add(pb);
                     pb.Invalidate(); // <<<--- إضافة: إعادة رسم الصورة
                 }
@@ -2413,10 +2438,10 @@ namespace Mospuk_1
                 FlowLayoutPanel panel = sender as FlowLayoutPanel;
                 if (panel == null) return;
 
-                // *** بداية الإضافة الجديدة: التعامل مع إعادة ترتيب السحب المتعدد ***
+                // *** بداية الكود الجديد: التعامل مع إعادة ترتيب السحب المتعدد ***
                 if (e.Data.GetDataPresent("MultiDragFlow2") && e.Data.GetData("DragSource")?.ToString() == panel.Name)
                 {
-                    var picturesToMove = (PictureBox[])e.Data.GetData("MultiDragFlow2");
+                    var picturesToMove = ((PictureBox[])e.Data.GetData("MultiDragFlow2")).ToList();
 
                     var orderedPicturesToMove = panel.Controls.OfType<PictureBox>()
                                                      .Where(p => picturesToMove.Contains(p))
@@ -2424,32 +2449,40 @@ namespace Mospuk_1
 
                     if (_insertionIndex != -1 && orderedPicturesToMove.Any())
                     {
-                        int targetIndex = _insertionIndex;
-                        int shift = orderedPicturesToMove.Count(p => panel.Controls.GetChildIndex(p) < targetIndex);
-                        targetIndex -= shift;
-
-                        if (targetIndex < 0) targetIndex = 0;
+                        int finalInsertIndex = _insertionIndex;
+                        Control insertionMarker = null;
+                        if (finalInsertIndex < panel.Controls.Count)
+                        {
+                            insertionMarker = panel.Controls[finalInsertIndex];
+                        }
 
                         foreach (var pic in orderedPicturesToMove)
                         {
-                            panel.Controls.SetChildIndex(pic, targetIndex);
-                            targetIndex++;
+                            panel.Controls.Remove(pic);
                         }
+
+                        int newIndex = (insertionMarker != null && insertionMarker.Parent != null)
+                                        ? panel.Controls.GetChildIndex(insertionMarker)
+                                        : panel.Controls.Count;
+
+                        foreach (var pic in orderedPicturesToMove.AsEnumerable().Reverse())
+                        {
+                            panel.Controls.Add(pic);
+                            panel.Controls.SetChildIndex(pic, newIndex);
+                        }
+
                         panel.PerformLayout();
                     }
-
-                    _insertionIndex = -1;
-                    panel.Invalidate();
-                    return;
+            
+                    return; // الخروج بعد المعالجة
                 }
-                // *** نهاية الإضافة الجديدة ***
+                // *** نهاية الكود الجديد ***
 
 
-                // التعامل مع إعادة ترتيب عنصر واحد (الكود الأصلي)
+                // التعامل مع إعادة ترتيب عنصر واحد (يبقى كما هو)
                 if (e.Data.GetDataPresent("FlowPanel2Reorder"))
                 {
                     PictureBox sourcePic = (PictureBox)e.Data.GetData("FlowPanel2Reorder");
-
                     if (sourcePic != null && _insertionIndex != -1)
                     {
                         int sourceIndex = panel.Controls.GetChildIndex(sourcePic);
@@ -2459,20 +2492,17 @@ namespace Mospuk_1
                         {
                             targetIndex--;
                         }
-
                         if (targetIndex < 0) targetIndex = 0;
                         if (targetIndex >= panel.Controls.Count) targetIndex = panel.Controls.Count - 1;
 
                         panel.Controls.SetChildIndex(sourcePic, targetIndex);
                         panel.PerformLayout();
                     }
-
-                    _insertionIndex = -1;
-                    panel.Invalidate();
                     return;
                 }
 
-                // باقي الكود الأصلي للسحب من لوحات أخرى
+                // باقي الكود للتعامل مع السحب من لوحات أخرى (يبقى كما هو)
+                // ... (هنا يأتي باقي الكود الأصلي للدالة بدون تغيير) ...
                 List<string> filePaths = new List<string>();
                 bool isInternalDrag = e.Data.GetDataPresent(DataFormats.StringFormat);
 
@@ -2536,7 +2566,6 @@ namespace Mospuk_1
                     return;
                 }
 
-
                 if (e.Data.GetDataPresent(DataFormats.FileDrop))
                 {
                     string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
@@ -2551,7 +2580,6 @@ namespace Mospuk_1
                 foreach (string filePath in filePaths)
                 {
                     if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) continue;
-
                     string ext = Path.GetExtension(filePath).ToLower();
                     if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".gif")
                     {
@@ -2576,7 +2604,6 @@ namespace Mospuk_1
                         }
                     }
                 }
-
                 ClearSelection();
                 dragSourcePanel = null;
             }
@@ -2589,10 +2616,10 @@ namespace Mospuk_1
                 if (_insertionIndex != -1)
                 {
                     _insertionIndex = -1;
-                    flowLayoutPanel2.Invalidate();
+                            flowLayoutPanel2.Invalidate();
                 }
             }
-        }
+        }  
         private int CalculateInsertionIndexForPanel2(Point clientPoint)
         {
             for (int i = 0; i < flowLayoutPanel2.Controls.Count; i++)
@@ -3317,21 +3344,29 @@ namespace Mospuk_1
         }
         private void ClearAllSelections()
         {
-            var picturesToInvalidate = new List<PictureBox>();
-            picturesToInvalidate.AddRange(selectedPictureBoxes);
-            picturesToInvalidate.AddRange(selectedPictureBoxesFlow1);
-            picturesToInvalidate.AddRange(selectedPictureBoxesFlow2);
-
+            var tempSelected = new List<PictureBox>(selectedPictureBoxes);
+            var tempSelectedFlow1 = new List<PictureBox>(selectedPictureBoxesFlow1);
+            var tempSelectedFlow2 = new List<PictureBox>(selectedPictureBoxesFlow2);
             selectedPictureBoxes.Clear();
             selectedPictureBoxesFlow1.Clear();
             selectedPictureBoxesFlow2.Clear();
+            foreach (var pb in tempSelected) pb.Invalidate();
+            foreach (var pb in tempSelectedFlow1) pb.Invalidate();
+            foreach (var pb in tempSelectedFlow2) pb.Invalidate();
+        }
+        private void panel1_MouseDown(object sender, MouseEventArgs e)
+        {
+            panel1.Focus(); // إعطاء التركيز لـ panel1 عند النقر على أي مكان فيه
+        }
 
-            foreach (var pb in picturesToInvalidate)
-            {
-                pb.Invalidate(); // هذا سيقوم بإعادة رسم الصورة بدون التحديد
-            }
+        private void flowLayoutPanel1_MouseDown(object sender, MouseEventArgs e)
+        {
+            flowLayoutPanel1.Focus(); // إعطاء التركيز لـ flowLayoutPanel1 عند النقر على أي مكان فيه
+        }
 
-            // *** تم حذف الكتلة البرمجية القديمة التي كانت تتعامل مع apostilleBox.BorderStyle ***
+        private void flowLayoutPanel2_MouseDown(object sender, MouseEventArgs e)
+        {
+            flowLayoutPanel2.Focus(); // إعطاء التركيز لـ flowLayoutPanel2 عند النقر على أي مكان فيه
         }
         private void OpenSelectedImages()
         {
@@ -3607,15 +3642,9 @@ namespace Mospuk_1
         {
             PictureBox pb = sender as PictureBox;
             if (pb == null) return;
-
-            // التحقق مما إذا كان هذا الـ PictureBox محدداً حالياً في أي من قوائم التحديد
             bool isSelected = selectedPictureBoxes.Contains(pb) ||
                               selectedPictureBoxesFlow1.Contains(pb) ||
                               selectedPictureBoxesFlow2.Contains(pb);
-
-            // *** تم حذف الشرط الخاص بـ imageApostille لأنه لم يعد ضرورياً ***
-
-            // إذا كان محدداً، ارسم الطبقة الزرقاء الشفافة
             if (isSelected)
             {
                 Color overlayColor = Color.FromArgb(100, SystemColors.Highlight);
@@ -3625,6 +3654,54 @@ namespace Mospuk_1
                 }
             }
         }
+        private void HandleSelectAll(object sender, KeyEventArgs e)
+        {
+            if (e.Control && e.KeyCode == Keys.A) // التحقق من ضغط Ctrl+A
+            {
+                e.Handled = true; // منع معالجة الحدث مرة أخرى
+                e.SuppressKeyPress = true; // منع صوت التنبيه في النظام
+
+                Control container = sender as Control;
+                if (container == null) return;
+                ClearAllSelections();
+                if (container == panel1)
+                {
+                    foreach (Control control in panel1.Controls)
+                    {
+                        if (control is PictureBox pb)
+                        {
+                            selectedPictureBoxes.Add(pb);
+                            pb.Invalidate();
+                        }
+                    }
+                    panel1.Invalidate();
+                }
+                else if (container == flowLayoutPanel1)
+                {
+                    foreach (Control control in flowLayoutPanel1.Controls)
+                    {
+                        if (control is PictureBox pb && pb.Image != null)
+                        {
+                            selectedPictureBoxesFlow1.Add(pb);
+                            pb.Invalidate();
+                        }
+                    }
+                    flowLayoutPanel1.Invalidate();
+                }
+                else if (container == flowLayoutPanel2)
+                {
+                    foreach (Control control in flowLayoutPanel2.Controls)
+                    {
+                        if (control is PictureBox pb && pb.Image != null)
+                        {
+                            selectedPictureBoxesFlow2.Add(pb);
+                            pb.Invalidate();
+                        }
+                    }
+                    flowLayoutPanel2.Invalidate();
+                }
+            }//********************************
+        }
     }
-    //************
+  
 }
