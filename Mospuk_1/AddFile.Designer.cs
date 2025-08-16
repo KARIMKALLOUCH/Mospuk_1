@@ -30,7 +30,6 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AddFile));
             this.panel1 = new System.Windows.Forms.Panel();
-            this.savebtn = new Guna.UI2.WinForms.Guna2Button();
             this.comboTranslation = new Guna.UI2.WinForms.Guna2ComboBox();
             this.comboDocumentType = new Guna.UI2.WinForms.Guna2ComboBox();
             this.labelControl2 = new DevExpress.XtraEditors.LabelControl();
@@ -39,7 +38,6 @@
             this.labelControl1 = new DevExpress.XtraEditors.LabelControl();
             this.labelControl3 = new DevExpress.XtraEditors.LabelControl();
             this.Reception_Date = new Guna.UI2.WinForms.Guna2DateTimePicker();
-            this.Time = new Guna.UI2.WinForms.Guna2DateTimePicker();
             this.labelControl4 = new DevExpress.XtraEditors.LabelControl();
             this.txtnotes = new Guna.UI2.WinForms.Guna2TextBox();
             this.labelControl15 = new DevExpress.XtraEditors.LabelControl();
@@ -49,9 +47,11 @@
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.flowLayoutPanel2 = new System.Windows.Forms.FlowLayoutPanel();
             this.btnAddWord = new Guna.UI2.WinForms.Guna2Button();
+            this.panelDocx = new System.Windows.Forms.Panel();
+            this.Time = new System.Windows.Forms.MaskedTextBox();
             this.btnUplaod = new Guna.UI2.WinForms.Guna2Button();
             this.imageApostille = new Guna.UI2.WinForms.Guna2PictureBox();
-            this.panelDocx = new System.Windows.Forms.Panel();
+            this.savebtn = new Guna.UI2.WinForms.Guna2Button();
             ((System.ComponentModel.ISupportInitialize)(this.imageApostille)).BeginInit();
             this.SuspendLayout();
             // 
@@ -65,26 +65,6 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(1164, 82);
             this.panel1.TabIndex = 23;
-            // 
-            // savebtn
-            // 
-            this.savebtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.savebtn.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
-            this.savebtn.BorderRadius = 1;
-            this.savebtn.BorderThickness = 2;
-            this.savebtn.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
-            this.savebtn.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
-            this.savebtn.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
-            this.savebtn.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
-            this.savebtn.FillColor = System.Drawing.Color.Transparent;
-            this.savebtn.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.savebtn.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
-            this.savebtn.Location = new System.Drawing.Point(850, 536);
-            this.savebtn.Name = "savebtn";
-            this.savebtn.Size = new System.Drawing.Size(140, 38);
-            this.savebtn.TabIndex = 25;
-            this.savebtn.Text = "Save";
-            this.savebtn.Click += new System.EventHandler(this.savebtn_Click);
             // 
             // comboTranslation
             // 
@@ -200,24 +180,6 @@
             this.Reception_Date.TabIndex = 116;
             this.Reception_Date.Value = new System.DateTime(2025, 5, 7, 23, 54, 28, 444);
             // 
-            // Time
-            // 
-            this.Time.BorderColor = System.Drawing.Color.White;
-            this.Time.Checked = true;
-            this.Time.CustomFormat = "HH:mm";
-            this.Time.FillColor = System.Drawing.Color.White;
-            this.Time.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.Time.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
-            this.Time.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
-            this.Time.Location = new System.Drawing.Point(725, 27);
-            this.Time.MaxDate = new System.DateTime(9998, 12, 31, 0, 0, 0, 0);
-            this.Time.MinDate = new System.DateTime(1753, 1, 1, 0, 0, 0, 0);
-            this.Time.Name = "Time";
-            this.Time.ShowUpDown = true;
-            this.Time.Size = new System.Drawing.Size(210, 36);
-            this.Time.TabIndex = 115;
-            this.Time.Value = new System.DateTime(2025, 5, 7, 23, 54, 28, 444);
-            // 
             // labelControl4
             // 
             this.labelControl4.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -242,12 +204,12 @@
             this.txtnotes.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.txtnotes.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
             this.txtnotes.IconLeftSize = new System.Drawing.Size(15, 15);
-            this.txtnotes.Location = new System.Drawing.Point(962, 27);
+            this.txtnotes.Location = new System.Drawing.Point(860, 27);
             this.txtnotes.Multiline = true;
             this.txtnotes.Name = "txtnotes";
             this.txtnotes.PlaceholderText = "Write your notes here";
             this.txtnotes.SelectedText = "";
-            this.txtnotes.Size = new System.Drawing.Size(172, 36);
+            this.txtnotes.Size = new System.Drawing.Size(292, 36);
             this.txtnotes.TabIndex = 159;
             // 
             // labelControl15
@@ -257,7 +219,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.labelControl15.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelControl15.Appearance.Options.UseFont = true;
-            this.labelControl15.Location = new System.Drawing.Point(962, 3);
+            this.labelControl15.Location = new System.Drawing.Point(864, 3);
             this.labelControl15.Name = "labelControl15";
             this.labelControl15.Size = new System.Drawing.Size(63, 18);
             this.labelControl15.TabIndex = 158;
@@ -337,6 +299,29 @@
             this.btnAddWord.Text = "Archive";
             this.btnAddWord.Click += new System.EventHandler(this.btnAddWord_Click);
             // 
+            // panelDocx
+            // 
+            this.panelDocx.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.panelDocx.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panelDocx.Location = new System.Drawing.Point(603, 343);
+            this.panelDocx.Name = "panelDocx";
+            this.panelDocx.Size = new System.Drawing.Size(525, 162);
+            this.panelDocx.TabIndex = 173;
+            // 
+            // Time
+            // 
+            this.Time.BackColor = System.Drawing.Color.Gainsboro;
+            this.Time.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Time.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.Time.Location = new System.Drawing.Point(725, 29);
+            this.Time.Mask = "00:00";
+            this.Time.Name = "Time";
+            this.Time.Size = new System.Drawing.Size(101, 29);
+            this.Time.TabIndex = 174;
+            this.Time.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.Time.Click += new System.EventHandler(this.Time_Click);
+            this.Time.Enter += new System.EventHandler(this.Time_Enter);
+            // 
             // btnUplaod
             // 
             this.btnUplaod.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
@@ -366,14 +351,25 @@
             this.imageApostille.TabIndex = 172;
             this.imageApostille.TabStop = false;
             // 
-            // panelDocx
+            // savebtn
             // 
-            this.panelDocx.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.panelDocx.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.panelDocx.Location = new System.Drawing.Point(603, 343);
-            this.panelDocx.Name = "panelDocx";
-            this.panelDocx.Size = new System.Drawing.Size(525, 162);
-            this.panelDocx.TabIndex = 173;
+            this.savebtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.savebtn.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.savebtn.BorderRadius = 1;
+            this.savebtn.BorderThickness = 2;
+            this.savebtn.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
+            this.savebtn.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
+            this.savebtn.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
+            this.savebtn.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
+            this.savebtn.FillColor = System.Drawing.Color.Transparent;
+            this.savebtn.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.savebtn.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.savebtn.Location = new System.Drawing.Point(850, 536);
+            this.savebtn.Name = "savebtn";
+            this.savebtn.Size = new System.Drawing.Size(140, 38);
+            this.savebtn.TabIndex = 25;
+            this.savebtn.Text = "Save";
+            this.savebtn.Click += new System.EventHandler(this.savebtn_Click);
             // 
             // AddFile
             // 
@@ -381,6 +377,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1164, 671);
+            this.Controls.Add(this.Time);
             this.Controls.Add(this.panelDocx);
             this.Controls.Add(this.imageApostille);
             this.Controls.Add(this.btnAddWord);
@@ -393,7 +390,6 @@
             this.Controls.Add(this.labelControl15);
             this.Controls.Add(this.labelControl3);
             this.Controls.Add(this.Reception_Date);
-            this.Controls.Add(this.Time);
             this.Controls.Add(this.labelControl4);
             this.Controls.Add(this.labelControl2);
             this.Controls.Add(this.Delivery_Date);
@@ -427,7 +423,6 @@
         private DevExpress.XtraEditors.LabelControl labelControl1;
         private DevExpress.XtraEditors.LabelControl labelControl3;
         private Guna.UI2.WinForms.Guna2DateTimePicker Reception_Date;
-        private Guna.UI2.WinForms.Guna2DateTimePicker Time;
         private DevExpress.XtraEditors.LabelControl labelControl4;
         private Guna.UI2.WinForms.Guna2TextBox txtnotes;
         private DevExpress.XtraEditors.LabelControl labelControl15;
@@ -439,5 +434,6 @@
         private Guna.UI2.WinForms.Guna2Button btnAddWord;
         private Guna.UI2.WinForms.Guna2PictureBox imageApostille;
         private System.Windows.Forms.Panel panelDocx;
+        private System.Windows.Forms.MaskedTextBox Time;
     }
 }
