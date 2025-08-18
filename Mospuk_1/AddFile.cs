@@ -6,6 +6,7 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using IronPdf;
 
 using System.Windows.Forms;
 using PdfiumViewer;
@@ -561,7 +562,6 @@ namespace Mospuk_1
 
         private void DisplayFiles(string directory)
         {
-            // 1. جمع كل مسارات الملفات المعروضة حالياً في كل اللوحات
             var allPictureBoxes = panel1.Controls.OfType<PictureBox>()
                 .Concat(flowLayoutPanel1.Controls.OfType<PictureBox>())
                 .Concat(flowLayoutPanel2.Controls.OfType<PictureBox>());
@@ -578,7 +578,6 @@ namespace Mospuk_1
                 existingFilePaths.Add(imageApostille.Tag.ToString());
             }
 
-            // إعدادات عرض الصور
             int padding = 10;
             int maxWidth = 120;
             int maxHeight = 120;
@@ -601,33 +600,22 @@ namespace Mospuk_1
                         if (!Directory.Exists(pdfImagesDir))
                             Directory.CreateDirectory(pdfImagesDir);
 
-                        using (var document = PdfDocument.Load(file))
+                        using (var document = IronPdf.PdfDocument.FromFile(file))
                         {
-                            int dpi = 600;
-                            for (int i = 0; i < document.PageCount; i++)
-                            {
-                                string imagePath = Path.Combine(pdfImagesDir, $"Page_{i + 1}.png");
+                            document.RasterizeToImageFiles(
+     Path.Combine(pdfImagesDir, "Page_*.png")
+    );
 
-                                // **** التعديل الجوهري والنهائي هنا ****
-                                // هذا الشرط الآن يعالج كلتا الحالتين بشكل صحيح.
-                                // إذا كانت صورة هذه الصفحة المحددة موجودة بالفعل على الشاشة، نتجاهلها.
+                            // الخطوة ب: الآن قم بالمرور على الصور التي تم إنشاؤها وأضفها للواجهة
+                            var createdImagePaths = Directory.GetFiles(pdfImagesDir, "Page_*.png");
+                            foreach (var imagePath in createdImagePaths)
+                            {
                                 if (existingFilePaths.Contains(imagePath))
                                 {
-                                    continue; // تخطى هذه الصفحة فقط وانتقل للتالية
-                                }
-                                // **** نهاية التعديل ****
-
-                                // إذا وصلنا إلى هنا، فهذا يعني أن هذه الصورة غير معروضة ويجب إضافتها.
-                                // أولاً، تأكد من وجود ملف الصورة على القرص، وإذا لم يكن موجوداً، قم بإنشائه.
-                                if (!File.Exists(imagePath))
-                                {
-                                    using (var image = document.Render(i, dpi, dpi, true))
-                                    {
-                                        image.Save(imagePath, System.Drawing.Imaging.ImageFormat.Png);
-                                    }
+                                    continue;
                                 }
 
-                                // الآن، قم بإنشاء وعرض الـ PictureBox لهذه الصورة
+                                // نفس الكود السابق لإنشاء PictureBox وعرض الصورة
                                 PictureBox pb = new PictureBox();
                                 pb.Width = maxWidth;
                                 pb.Height = maxHeight;
@@ -658,7 +646,6 @@ namespace Mospuk_1
 
                                 panel1.Controls.Add(pb);
 
-                                // تحديث مكان الصورة التالية
                                 x += maxWidth + padding;
                                 count++;
                                 if (count % itemsPerRow == 0)
@@ -669,21 +656,21 @@ namespace Mospuk_1
                             }
                         }
                     }
+
+
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error processing PDF '{Path.GetFileName(file)}':\n{ex.Message}",
+                        MessageBox.Show($"Error processing PDF '{Path.GetFileName(file)}' with IronPdf:\n{ex.Message}",
                                         "PDF Processing Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
-                else // التعامل مع كل الملفات الأخرى (JPG, PNG, DOCX, etc.)
+                else
                 {
-                    // تجاهل الملف إذا كان معروضًا بالفعل
                     if (existingFilePaths.Contains(file))
                     {
                         continue;
                     }
 
-                    // ... بقية الكود يبقى كما هو تماماً ...
                     if (ext == ".jpg" || ext == ".jpeg" || ext == ".png")
                     {
                         PictureBox pb = new PictureBox();
@@ -3643,6 +3630,6 @@ namespace Mospuk_1
             }
         }
     }
-    //***************
+    //*********************************
 
 }
