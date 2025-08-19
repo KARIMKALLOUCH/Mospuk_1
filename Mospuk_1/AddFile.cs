@@ -6,11 +6,13 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using IronPdf;
 
 using System.Windows.Forms;
 using PdfiumViewer;
 using System.Data.SQLite;
+using System.Diagnostics;
+using Org.BouncyCastle.Asn1.Cmp;
+
 namespace Mospuk_1
 {
      
@@ -81,6 +83,8 @@ namespace Mospuk_1
             flowLayoutPanel1.Click += EmptySpace_Click;
             flowLayoutPanel2.Click += EmptySpace_Click;
 
+            panelDocx.Click += EmptySpace_Click;
+
             panel1.MouseDown += panel1_MouseDown_ForSelection;
             panel1.MouseMove += panel1_MouseMove_ForSelection;
             panel1.MouseUp += panel1_MouseUp_ForSelection;
@@ -108,16 +112,32 @@ namespace Mospuk_1
         {
             if (e.Control && e.KeyCode == Keys.X)
             {
-                HandleKeyboardDragStart();
+                HandleKeyboardDragStart(); // This is the "Cut" operation
                 e.Handled = true;
                 e.SuppressKeyPress = true;
             }
             else if (e.Control && e.KeyCode == Keys.V)
             {
-                HandleKeyboardDrop();
+               
+                if (_keyboardDragItems.Any())
+                {
+                    HandleKeyboardDrop();
+                }
+                else 
+                {
+                    HandlePaste();
+                }
                 e.Handled = true;
                 e.SuppressKeyPress = true;
             }
+            else if (e.Control && e.KeyCode == Keys.C)
+            {
+                // This is the new "Copy" operation.
+                HandleCopy();
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+            }
+            // --- END: MODIFIED SECTION ---
             else if (e.KeyCode == Keys.Delete)
             {
                 List<PictureBox> allSelectedPictures = new List<PictureBox>();
@@ -451,35 +471,14 @@ namespace Mospuk_1
         }
         private void OpenImage_DoubleClick(object sender, EventArgs e)
         {
-            // تم إزالة سطر التأخير من هنا
             PictureBox pb = sender as PictureBox;
-            if (pb?.Tag != null)
+            if (pb != null)
             {
-                string filePath = pb.Tag.ToString();
-                try
-                {
-                    // التأكد من وجود الملف قبل محاولة فتحه
-                    if (File.Exists(filePath))
-                    {
-                        var psi = new System.Diagnostics.ProcessStartInfo()
-                        {
-                            FileName = filePath,
-                            UseShellExecute = true // مهم لفتح الملف بالبرنامج الافتراضي
-                        };
-                        System.Diagnostics.Process.Start(psi);
-                    }
-                    else
-                    {
-                        MessageBox.Show("الملف المحدد لم يعد موجوداً في المسار:\n" + filePath, "ملف غير موجود", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("خطأ في فتح الملف: " + ex.Message, "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                // <<-- التعديل هنا: استدعاء الدالة الجديدة بدلاً من الكود القديم -->>
+                OpenFileInIsolatedDirectory(pb);
+
             }
         }
-
 
         private void btnUplaod_Click(object sender, EventArgs e)
         {
@@ -562,6 +561,7 @@ namespace Mospuk_1
 
         private void DisplayFiles(string directory)
         {
+            // 1. جمع كل مسارات الملفات المعروضة حالياً في كل اللوحات
             var allPictureBoxes = panel1.Controls.OfType<PictureBox>()
                 .Concat(flowLayoutPanel1.Controls.OfType<PictureBox>())
                 .Concat(flowLayoutPanel2.Controls.OfType<PictureBox>());
@@ -578,6 +578,7 @@ namespace Mospuk_1
                 existingFilePaths.Add(imageApostille.Tag.ToString());
             }
 
+            // إعدادات عرض الصور
             int padding = 10;
             int maxWidth = 120;
             int maxHeight = 120;
@@ -600,22 +601,33 @@ namespace Mospuk_1
                         if (!Directory.Exists(pdfImagesDir))
                             Directory.CreateDirectory(pdfImagesDir);
 
-                        using (var document = IronPdf.PdfDocument.FromFile(file))
+                        using (var document = PdfDocument.Load(file))
                         {
-                            document.RasterizeToImageFiles(
-     Path.Combine(pdfImagesDir, "Page_*.png")
-    );
-
-                            // الخطوة ب: الآن قم بالمرور على الصور التي تم إنشاؤها وأضفها للواجهة
-                            var createdImagePaths = Directory.GetFiles(pdfImagesDir, "Page_*.png");
-                            foreach (var imagePath in createdImagePaths)
+                            int dpi = 600;
+                            for (int i = 0; i < document.PageCount; i++)
                             {
+                                string imagePath = Path.Combine(pdfImagesDir, $"Page_{i + 1}.png");
+
+                                // **** التعديل الجوهري والنهائي هنا ****
+                                // هذا الشرط الآن يعالج كلتا الحالتين بشكل صحيح.
+                                // إذا كانت صورة هذه الصفحة المحددة موجودة بالفعل على الشاشة، نتجاهلها.
                                 if (existingFilePaths.Contains(imagePath))
                                 {
-                                    continue;
+                                    continue; // تخطى هذه الصفحة فقط وانتقل للتالية
+                                }
+                                // **** نهاية التعديل ****
+
+                                // إذا وصلنا إلى هنا، فهذا يعني أن هذه الصورة غير معروضة ويجب إضافتها.
+                                // أولاً، تأكد من وجود ملف الصورة على القرص، وإذا لم يكن موجوداً، قم بإنشائه.
+                                if (!File.Exists(imagePath))
+                                {
+                                    using (var image = document.Render(i, dpi, dpi, true))
+                                    {
+                                        image.Save(imagePath, System.Drawing.Imaging.ImageFormat.Png);
+                                    }
                                 }
 
-                                // نفس الكود السابق لإنشاء PictureBox وعرض الصورة
+                                // الآن، قم بإنشاء وعرض الـ PictureBox لهذه الصورة
                                 PictureBox pb = new PictureBox();
                                 pb.Width = maxWidth;
                                 pb.Height = maxHeight;
@@ -646,6 +658,7 @@ namespace Mospuk_1
 
                                 panel1.Controls.Add(pb);
 
+                                // تحديث مكان الصورة التالية
                                 x += maxWidth + padding;
                                 count++;
                                 if (count % itemsPerRow == 0)
@@ -656,21 +669,21 @@ namespace Mospuk_1
                             }
                         }
                     }
-
-
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error processing PDF '{Path.GetFileName(file)}' with IronPdf:\n{ex.Message}",
+                        MessageBox.Show($"Error processing PDF '{Path.GetFileName(file)}':\n{ex.Message}",
                                         "PDF Processing Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
-                else
+                else // التعامل مع كل الملفات الأخرى (JPG, PNG, DOCX, etc.)
                 {
+                    // تجاهل الملف إذا كان معروضًا بالفعل
                     if (existingFilePaths.Contains(file))
                     {
                         continue;
                     }
 
+                    // ... بقية الكود يبقى كما هو تماماً ...
                     if (ext == ".jpg" || ext == ".jpeg" || ext == ".png")
                     {
                         PictureBox pb = new PictureBox();
@@ -978,154 +991,155 @@ namespace Mospuk_1
 
         private void savebtn_Click(object sender, EventArgs e)
         {
-            string companyClient = Company_Client.Text.Trim();
-            DateTime receptionDate = Reception_Date.Value.Date;
-            if (!Time.MaskCompleted)
+            lblStatus.Text = "Saving, please wait...";
+            lblStatus.Visible = true;
+            this.Enabled = false;
+            Application.DoEvents();
+
+            try
             {
-                MessageBox.Show("Please enter a valid time (HH:mm).", "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                Time.Focus();
-                return; // إيقاف العملية
-            }
-
-            // 2. التحقق من أن النص المدخل يمثل وقتاً صالحاً (خطوة أمان إضافية)
-            if (!DateTime.TryParseExact(Time.Text, "HH:mm", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out _))
-            {
-                MessageBox.Show("The time entered is not valid. Please use 24-hour format (e.g., 14:30).", "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                Time.Focus();
-                return; // إيقاف العملية
-            }
-
-            string receptionTime = Time.Text; if (!flowLayoutPanel1.Controls.OfType<PictureBox>().Any())
-            {
-                MessageBox.Show("Please upload at least one translation image.", "No Images", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                this.ActiveControl = null; 
-
-                return; // إيقاف العملية لأن لا توجد صور أساسية
-
-            }
-            // 1. التحقق من اختيار العميل
-
-            if (Company_Client.SelectedItem == null)
-            {
-                MessageBox.Show("Please select a client or company.", "Input Error");           
-                    Company_Client.Focus();
-                return; // إيقاف العملية
-            }
-
-            // 2. التحقق من اختيار نوع الوثيقة
-            if (!(comboDocumentType.SelectedItem is KeyValuePair<int, string> selectedDocTypePair))
-            {
-                MessageBox.Show("Please select a document type.", "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                comboDocumentType.Focus();
-                return; // إيقاف العملية
-            }
-
-            // 3. التحقق من اختيار نوع الترجمة
-            if (!(comboTranslation.SelectedItem is KeyValuePair<int, string> selectedTranslationPair))
-            {
-                MessageBox.Show("Please select a translation type.", "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                comboTranslation.Focus();
-                return; // إيقاف العملية
-            }
-            // قيمة أيام التسليم من الـ ComboBox (مخزن كـ KeyValuePair<string,int>)
-            int deliveryDays = ((KeyValuePair<string, int>)Delivery_Date.SelectedItem).Value;
-
-            DateTime deliveryDate = receptionDate.AddDays(deliveryDays);
-
-            // جلب آخر رقم طلب في نفس يوم الاستقبال
-            string orderQuery = "SELECT IFNULL(MAX(project_order), 0) FROM projects WHERE reception_date = @date";
-            object result = db.ExecuteScalar(orderQuery, new List<SQLiteParameter>
-            {
-                new SQLiteParameter("@date", receptionDate.ToString("yyyy-MM-dd"))
-            });
-
-            int lastOrder = (result == null || result == DBNull.Value) ? 0 : Convert.ToInt32(result);
-            int newOrder = lastOrder + 1;
-
-            string documentType = selectedDocTypePair.Value;
-            string translationType = selectedTranslationPair.Value;
-
-            string hoursSpent = "24";
-
-            // تكوين اسم المجلد مع إضافة نوع الترجمة ونوع الوثيقة
-            string deliveryDateStr = deliveryDate.ToString("yyyyMMdd");
-            string receptionDateStr = receptionDate.ToString("yyMMdd");
-            string projectOrderStr = newOrder.ToString("D2");
-            string receptionTimeStr = receptionTime.Replace(":", "");
-
-            string folderName = $"{deliveryDateStr}{hoursSpent}_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}";
-
-            if (!string.IsNullOrWhiteSpace(txtnotes.Text))
-            {
-                // تنقية الملاحظة: إزالة الرموز غير المسموحة
-                string rawNote = txtnotes.Text.Trim();
-                string sanitizedNote = new string(rawNote.Where(c => char.IsLetterOrDigit(c) || c == ' ').ToArray()).Replace(" ", "_");
-
-                // تقصير الملاحظة إن كانت طويلة جدًا
-                if (sanitizedNote.Length > 30)
-                    sanitizedNote = sanitizedNote.Substring(0, 30);
-
-                // إضافة الملاحظة إلى اسم المجلد بشكل واضح
-                folderName += $"-------------{sanitizedNote}-----------";
-            }
-
-            string insertQuery = @"INSERT INTO projects 
-                (company_client, reception_date, reception_time, delivery_days, delivery_date, hours_spent, project_order, folder_name, note, document_type, translation_type, registration_date, last_update_date) 
-                VALUES 
-                (@company_client, @reception_date, @reception_time, @delivery_days, @delivery_date, @hours_spent, @project_order, @folder_name, @note, @document_type, @translation_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-            // تغيير: استخدام SQLiteParameter
-            List<SQLiteParameter> parameters = new List<SQLiteParameter>
-            {
-                new SQLiteParameter("@company_client", companyClient),
-                new SQLiteParameter("@reception_date", receptionDate.ToString("yyyy-MM-dd")),
-                new SQLiteParameter("@reception_time", receptionTime),
-                new SQLiteParameter("@delivery_days", deliveryDays),
-                new SQLiteParameter("@delivery_date", deliveryDate.ToString("yyyy-MM-dd")),
-                new SQLiteParameter("@hours_spent", 24),
-                new SQLiteParameter("@project_order", newOrder),
-                new SQLiteParameter("@folder_name", folderName),
-                new SQLiteParameter("@note", string.IsNullOrWhiteSpace(txtnotes.Text) ? DBNull.Value : (object)txtnotes.Text),
-                new SQLiteParameter("@document_type", documentType),
-                new SQLiteParameter("@translation_type", translationType)
-            };
-
-            bool success = db.ExecuteNonQuery(insertQuery, parameters);
-            if (success)
-            {
-           
-                string getLastIdQuery = "SELECT last_insert_rowid()";
-                object lastIdResult = db.ExecuteScalar(getLastIdQuery, null); // لا نحتاج لمعاملات هنا
-                int projectId = Convert.ToInt32(lastIdResult);
-
-                bool allImagesSaved = SaveProjectImages(projectId, folderName, deliveryDateStr, receptionDateStr, projectOrderStr, receptionTimeStr, companyClient, translationType, documentType);
-
-                if (allImagesSaved)
+                // ... (كل كود التحقق من المدخلات حتى الوصول إلى جملة if(success) يبقى كما هو) ...
+                string companyClient = Company_Client.Text.Trim();
+                DateTime receptionDate = Reception_Date.Value.Date;
+                if (!Time.MaskCompleted)
                 {
-                    CleanWorkspace();
+                    MessageBox.Show("Please enter a valid time (HH:mm).", "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    Time.Focus();
+                    return;
+                }
+
+                if (!DateTime.TryParseExact(Time.Text, "HH:mm", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out _))
+                {
+                    MessageBox.Show("The time entered is not valid. Please use 24-hour format (e.g., 14:30).", "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    Time.Focus();
+                    return;
+                }
+
+                string receptionTime = Time.Text;
+                if (!flowLayoutPanel1.Controls.OfType<PictureBox>().Any())
+                {
+                    MessageBox.Show("Please upload at least one translation image.", "No Images", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     this.ActiveControl = null;
+                    return;
+                }
+
+                if (Company_Client.SelectedItem == null)
+                {
+                    MessageBox.Show("Please select a client or company.", "Input Error");
+                    Company_Client.Focus();
+                    return;
+                }
+
+                if (!(comboDocumentType.SelectedItem is KeyValuePair<int, string> selectedDocTypePair))
+                {
+                    MessageBox.Show("Please select a document type.", "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    comboDocumentType.Focus();
+                    return;
+                }
+
+                if (!(comboTranslation.SelectedItem is KeyValuePair<int, string> selectedTranslationPair))
+                {
+                    MessageBox.Show("Please select a translation type.", "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    comboTranslation.Focus();
+                    return;
+                }
+                int deliveryDays = ((KeyValuePair<string, int>)Delivery_Date.SelectedItem).Value;
+                DateTime deliveryDate = receptionDate.AddDays(deliveryDays);
+                string orderQuery = "SELECT IFNULL(MAX(project_order), 0) FROM projects WHERE reception_date = @date";
+                object result = db.ExecuteScalar(orderQuery, new List<SQLiteParameter> { new SQLiteParameter("@date", receptionDate.ToString("yyyy-MM-dd")) });
+                int lastOrder = (result == null || result == DBNull.Value) ? 0 : Convert.ToInt32(result);
+                int newOrder = lastOrder + 1;
+                string documentType = selectedDocTypePair.Value;
+                string translationType = selectedTranslationPair.Value;
+                string hoursSpent = "24";
+                string deliveryDateStr = deliveryDate.ToString("yyyyMMdd");
+                string receptionDateStr = receptionDate.ToString("yyMMdd");
+                string projectOrderStr = newOrder.ToString("D2");
+                string receptionTimeStr = receptionTime.Replace(":", "");
+                if (deliveryDays == 1)
+                {
+                    if (!string.IsNullOrEmpty(deliveryDateStr))
+                    {
+                        deliveryDateStr = "0" + deliveryDateStr.Substring(1);
+                    }
+                }
+                string folderName = $"{deliveryDateStr}{hoursSpent}_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}";
+                if (!string.IsNullOrWhiteSpace(txtnotes.Text))
+                {
+                    string rawNote = txtnotes.Text.Trim();
+                    string sanitizedNote = new string(rawNote.Where(c => char.IsLetterOrDigit(c) || c == ' ' || c == '+' || c == '-').ToArray()).Replace(" ", "_");
+                    if (sanitizedNote.Length > 30)
+                        sanitizedNote = sanitizedNote.Substring(0, 30);
+                    folderName += $"-------------{sanitizedNote}-----------";
+                }
+                string insertQuery = @"INSERT INTO projects (company_client, reception_date, reception_time, delivery_days, delivery_date, hours_spent, project_order, folder_name, note, document_type, translation_type, registration_date, last_update_date) VALUES (@company_client, @reception_date, @reception_time, @delivery_days, @delivery_date, @hours_spent, @project_order, @folder_name, @note, @document_type, @translation_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
+                List<SQLiteParameter> parameters = new List<SQLiteParameter>
+        {
+            new SQLiteParameter("@company_client", companyClient), new SQLiteParameter("@reception_date", receptionDate.ToString("yyyy-MM-dd")), new SQLiteParameter("@reception_time", receptionTime), new SQLiteParameter("@delivery_days", deliveryDays), new SQLiteParameter("@delivery_date", deliveryDate.ToString("yyyy-MM-dd")), new SQLiteParameter("@hours_spent", 24), new SQLiteParameter("@project_order", newOrder), new SQLiteParameter("@folder_name", folderName), new SQLiteParameter("@note", string.IsNullOrWhiteSpace(txtnotes.Text) ? DBNull.Value : (object)txtnotes.Text), new SQLiteParameter("@document_type", documentType), new SQLiteParameter("@translation_type", translationType)
+        };
+                bool success = db.ExecuteNonQuery(insertQuery, parameters);
+
+                if (success)
+                {
+                    string getLastIdQuery = "SELECT last_insert_rowid()";
+                    object lastIdResult = db.ExecuteScalar(getLastIdQuery, null);
+                    int projectId = Convert.ToInt32(lastIdResult);
+
+                    // استدعاء دالة الحفظ واستقبال النتيجة وقائمة المسارات
+                    var (allImagesSaved, savedSourcePaths) = SaveProjectImages(projectId, folderName, deliveryDateStr, receptionDateStr, projectOrderStr, receptionTimeStr, companyClient, translationType, documentType);
+
+                    if (allImagesSaved)
+                    {
+                        // 1. تنظيف الواجهة الرسومية
+                        CleanUpSavedProject();
+
+                        // 2. حذف الملفات المصدر من المجلد المؤقت
+                        foreach (string path in savedSourcePaths)
+                        {
+                            try
+                            {
+                                if (File.Exists(path))
+                                {
+                                    File.Delete(path);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                // اختياري: إظهار رسالة إذا فشل الحذف
+                                Console.WriteLine($"Could not delete temporary file {path}: {ex.Message}");
+                            }
+                        }
+
+                        this.ActiveControl = null;
+                    }
+                    else
+                    {
+                        MessageBox.Show("⚠️ Project saved but some images failed to save.");
+                        this.ActiveControl = null;
+                    }
                 }
                 else
                 {
-                    MessageBox.Show("⚠️ Project saved but some images failed to save.");
-                    this.ActiveControl = null;
+                    MessageBox.Show("❌ Error inserting project.");
                 }
             }
-            else
+            finally
             {
-                MessageBox.Show("❌ Error inserting project.");
+                lblStatus.Visible = false;
+                this.Enabled = true;
             }
         }
-
-        private bool SaveProjectImages(int projectId, string folderName, string deliveryDateStr, string receptionDateStr, string projectOrderStr, string receptionTimeStr, string companyClient, string translationType, string documentType)
+        private (bool success, List<string> savedSourcePaths) SaveProjectImages(int projectId, string folderName, string deliveryDateStr, string receptionDateStr, string projectOrderStr, string receptionTimeStr, string companyClient, string translationType, string documentType)
         {
             bool allSaved = true;
             int imageCounter = 1;
+            var savedSourcePaths = new List<string>(); // قائمة لتخزين مسارات الملفات التي تم حفظها
 
             string projectFolder = db.GetSavedPathById("save");
             if (string.IsNullOrEmpty(projectFolder))
             {
                 MessageBox.Show("Please set a save directory first.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return false;
+                return (false, savedSourcePaths);
             }
 
             if (!Directory.Exists(projectFolder))
@@ -1133,14 +1147,15 @@ namespace Mospuk_1
                 Directory.CreateDirectory(projectFolder);
             }
 
-            // 1. حفظ عناصر flowLayoutPanel1 (الصور الأساسية وملفات الوورد)
+            // 1. حفظ عناصر flowLayoutPanel1
             foreach (Control control in flowLayoutPanel1.Controls)
             {
-                if (control is PictureBox pb && pb.Tag != null) // تم إزالة شرط وجود الصورة للسماح بملفات الوورد التي ليس لها صورة حقيقية
+                if (control is PictureBox pb && pb.Tag != null)
                 {
                     try
                     {
-                        // تكوين اسم العنصر
+                        string originalPath = pb.Tag.ToString();
+                        string extension = Path.GetExtension(originalPath);
                         string imageName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}";
 
                         if (imageCounter == 1)
@@ -1148,7 +1163,7 @@ namespace Mospuk_1
                             if (!string.IsNullOrWhiteSpace(txtnotes.Text))
                             {
                                 string rawNote = txtnotes.Text.Trim();
-                                string sanitizedNote = new string(rawNote.Where(c => char.IsLetterOrDigit(c) || c == ' ').ToArray()).Replace(" ", "_");
+                                string sanitizedNote = new string(rawNote.Where(c => char.IsLetterOrDigit(c) || c == ' ' || c == '+' || c == '-').ToArray()).Replace(" ", "_");
                                 if (sanitizedNote.Length > 30)
                                     sanitizedNote = sanitizedNote.Substring(0, 30);
                                 imageName += $"------------------------{sanitizedNote}----------------------";
@@ -1159,39 +1174,28 @@ namespace Mospuk_1
                             }
                         }
 
-                        string originalPath = pb.Tag.ToString();
-                        string extension = Path.GetExtension(originalPath);
                         string fullItemName = imageName + extension;
                         string destinationPath = Path.Combine(projectFolder, fullItemName);
 
-                        // <<-- بداية التعديل الرئيسي هنا -->>
-                        // التحقق من نوع الملف وحفظه بالطريقة الصحيحة
                         if (extension.Equals(".docx", StringComparison.OrdinalIgnoreCase) || extension.Equals(".doc", StringComparison.OrdinalIgnoreCase))
                         {
-                            // إذا كان ملف وورد، استخدم File.Copy
                             File.Copy(originalPath, destinationPath, true);
                         }
                         else if (pb.Image != null)
                         {
-                            // إذا كان صورة، استخدم Image.Save
                             pb.Image.Save(destinationPath);
                         }
                         else
                         {
-                            // في حال كان Tag موجوداً ولكن لا توجد صورة (حالة غير متوقعة)
                             allSaved = false;
                             MessageBox.Show($"Could not save item (no image found): {originalPath}");
-                            continue; // انتقل إلى العنصر التالي
+                            continue;
                         }
-                        // <<-- نهاية التعديل الرئيسي هنا -->>
 
-                        // تعديل تاريخ الملف
                         File.SetCreationTime(destinationPath, DateTime.Now);
                         File.SetLastWriteTime(destinationPath, DateTime.Now);
 
-                        string insertImageQuery = @"INSERT INTO items (project_id, image_name, image_path, registration_date, last_update_date) 
-                                  VALUES (@project_id, @image_name, @image_path, CURRENT_DATE, CURRENT_TIMESTAMP)";
-
+                        string insertImageQuery = @"INSERT INTO items (project_id, image_name, image_path, registration_date, last_update_date) VALUES (@project_id, @image_name, @image_path, CURRENT_DATE, CURRENT_TIMESTAMP)";
                         List<SQLiteParameter> imageParameters = new List<SQLiteParameter>
                 {
                     new SQLiteParameter("@project_id", projectId),
@@ -1199,15 +1203,15 @@ namespace Mospuk_1
                     new SQLiteParameter("@image_path", destinationPath)
                 };
 
-                        bool imageSaved = db.ExecuteNonQuery(insertImageQuery, imageParameters);
-                        if (!imageSaved)
+                        if (db.ExecuteNonQuery(insertImageQuery, imageParameters))
                         {
-                            allSaved = false;
-                            MessageBox.Show($"Failed to save database record for: {fullItemName}");
+                            imageCounter++;
+                            savedSourcePaths.Add(originalPath); // إضافة المسار المصدر للقائمة عند النجاح
                         }
                         else
                         {
-                            imageCounter++;
+                            allSaved = false;
+                            MessageBox.Show($"Failed to save database record for: {fullItemName}");
                         }
                     }
                     catch (Exception ex)
@@ -1218,26 +1222,22 @@ namespace Mospuk_1
                 }
             }
 
-            // 2. حفظ صورة imageApostille (هذه ستبقى للصور فقط)
+            // 2. حفظ صورة imageApostille
             PictureBox imageApostille = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
             if (imageApostille != null && imageApostille.Image != null && imageApostille.Tag != null)
             {
                 try
                 {
-                    string imageName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_Apostille";
                     string originalPath = imageApostille.Tag.ToString();
                     string extension = Path.GetExtension(originalPath);
+                    string imageName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_Apostille";
                     string fullImageName = imageName + extension;
                     string imagePath = Path.Combine(projectFolder, fullImageName);
-
-                    // حفظ الصورة مع تعديل التاريخ
                     imageApostille.Image.Save(imagePath);
                     File.SetCreationTime(imagePath, DateTime.Now);
                     File.SetLastWriteTime(imagePath, DateTime.Now);
 
-                    string insertImageQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
-                              VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-
+                    string insertImageQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
                     List<SQLiteParameter> imageParameters = new List<SQLiteParameter>
             {
                 new SQLiteParameter("@project_id", projectId),
@@ -1246,15 +1246,15 @@ namespace Mospuk_1
                 new SQLiteParameter("@attachment_type", "Apostille")
             };
 
-                    bool imageSaved = db.ExecuteNonQuery(insertImageQuery, imageParameters);
-                    if (!imageSaved)
+                    if (db.ExecuteNonQuery(insertImageQuery, imageParameters))
                     {
-                        allSaved = false;
-                        MessageBox.Show($"Failed to save Apostille image: {fullImageName}");
+                        imageCounter++;
+                        savedSourcePaths.Add(originalPath); // إضافة المسار المصدر للقائمة
                     }
                     else
                     {
-                        imageCounter++;
+                        allSaved = false;
+                        MessageBox.Show($"Failed to save Apostille image: {fullImageName}");
                     }
                 }
                 catch (Exception ex)
@@ -1264,21 +1264,20 @@ namespace Mospuk_1
                 }
             }
 
-            // 3. حفظ عناصر flowLayoutPanel2 (المرفقات)
+            // 3. حفظ عناصر flowLayoutPanel2
             string attachmentType = "A";
             foreach (Control control in flowLayoutPanel2.Controls)
             {
-                if (control is PictureBox pb && pb.Tag != null) // تم إزالة شرط وجود الصورة
+                if (control is PictureBox pb && pb.Tag != null)
                 {
                     try
                     {
-                        string imageName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_{attachmentType}";
                         string originalPath = pb.Tag.ToString();
                         string extension = Path.GetExtension(originalPath);
+                        string imageName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_{attachmentType}";
                         string fullItemName = imageName + extension;
                         string destinationPath = Path.Combine(projectFolder, fullItemName);
 
-                        // <<-- نفس التعديل هنا لـ flowLayoutPanel2 -->>
                         if (extension.Equals(".docx", StringComparison.OrdinalIgnoreCase) || extension.Equals(".doc", StringComparison.OrdinalIgnoreCase))
                         {
                             File.Copy(originalPath, destinationPath, true);
@@ -1297,9 +1296,7 @@ namespace Mospuk_1
                         File.SetCreationTime(destinationPath, DateTime.Now);
                         File.SetLastWriteTime(destinationPath, DateTime.Now);
 
-                        string insertImageQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
-                                  VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-
+                        string insertImageQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
                         List<SQLiteParameter> imageParameters = new List<SQLiteParameter>
                 {
                     new SQLiteParameter("@project_id", projectId),
@@ -1308,15 +1305,15 @@ namespace Mospuk_1
                     new SQLiteParameter("@attachment_type", attachmentType)
                 };
 
-                        bool imageSaved = db.ExecuteNonQuery(insertImageQuery, imageParameters);
-                        if (!imageSaved)
+                        if (db.ExecuteNonQuery(insertImageQuery, imageParameters))
                         {
-                            allSaved = false;
-                            MessageBox.Show($"Failed to save attachment record: {fullItemName}");
+                            imageCounter++;
+                            savedSourcePaths.Add(originalPath); // إضافة المسار المصدر للقائمة
                         }
                         else
                         {
-                            imageCounter++;
+                            allSaved = false;
+                            MessageBox.Show($"Failed to save attachment record: {fullItemName}");
                         }
                     }
                     catch (Exception ex)
@@ -1327,17 +1324,20 @@ namespace Mospuk_1
                 }
             }
 
-            // 4. حفظ ملفات Word المرفوعة (OCR) - هذا الجزء كان صحيحاً بالفعل
+            // 4. حفظ ملفات Word المرفوعة (OCR)
             int ocrFileNumber = imageCounter;
+            bool hasOcrFiles = false; // متغير لتتبع وجود ملفات OCR
+
             foreach (Control control in panelDocx.Controls)
             {
                 if (control is Label lbl && lbl.Tag != null)
                 {
+                    hasOcrFiles = true; // تم العثور على ملف OCR
                     try
                     {
-                        string wordFileName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{ocrFileNumber}_OCR";
                         string originalPath = lbl.Tag.ToString();
                         string extension = Path.GetExtension(originalPath);
+                        string wordFileName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{ocrFileNumber}_OCR";
                         string fullWordFileName = wordFileName + extension;
                         string wordPath = Path.Combine(projectFolder, fullWordFileName);
 
@@ -1346,10 +1346,7 @@ namespace Mospuk_1
                             File.Copy(originalPath, wordPath, true);
                             File.SetCreationTime(wordPath, DateTime.Now);
                             File.SetLastWriteTime(wordPath, DateTime.Now);
-
-                            string insertWordQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
-                                    VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-
+                            string insertWordQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
                             List<SQLiteParameter> wordParameters = new List<SQLiteParameter>
                     {
                         new SQLiteParameter("@project_id", projectId),
@@ -1358,15 +1355,15 @@ namespace Mospuk_1
                         new SQLiteParameter("@attachment_type", "WORD")
                     };
 
-                            bool wordSaved = db.ExecuteNonQuery(insertWordQuery, wordParameters);
-                            if (!wordSaved)
+                            if (db.ExecuteNonQuery(insertWordQuery, wordParameters))
                             {
-                                allSaved = false;
-                                MessageBox.Show($"Failed to save Word file record: {fullWordFileName}");
+                                ocrFileNumber++;
+                                savedSourcePaths.Add(originalPath); // إضافة المسار المصدر للقائمة
                             }
                             else
                             {
-                                ocrFileNumber++; // زيادة العداد لكل ملف وورد
+                                allSaved = false;
+                                MessageBox.Show($"Failed to save Word file record: {fullWordFileName}");
                             }
                         }
                         else
@@ -1382,7 +1379,13 @@ namespace Mospuk_1
                     }
                 }
             }
-            imageCounter = ocrFileNumber; // تحديث العداد الرئيسي
+
+            // الأجزاء التالية تنشئ ملفات فارغة، لذا ليس لديها "مسار مصدر" ليتم حذفه
+            if (!hasOcrFiles)
+            {
+                ocrFileNumber++;
+            }
+            imageCounter = ocrFileNumber;
 
             // 5. إنشاء ملف Word جديد بإسم Google Drive
             try
@@ -1394,9 +1397,7 @@ namespace Mospuk_1
                 File.SetCreationTime(googleDriverPath, DateTime.Now);
                 File.SetLastWriteTime(googleDriverPath, DateTime.Now);
 
-                string insertGoogleDriverQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
-                                VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-
+                string insertGoogleDriverQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
                 List<SQLiteParameter> googleDriverParams = new List<SQLiteParameter>
         {
             new SQLiteParameter("@project_id", projectId),
@@ -1405,15 +1406,14 @@ namespace Mospuk_1
             new SQLiteParameter("@attachment_type", "Google Driver")
         };
 
-                bool googleDriverSaved = db.ExecuteNonQuery(insertGoogleDriverQuery, googleDriverParams);
-                if (!googleDriverSaved)
+                if (db.ExecuteNonQuery(insertGoogleDriverQuery, googleDriverParams))
                 {
-                    allSaved = false;
-                    MessageBox.Show($"❌ Failed to save Google Driver file: {googleDriverFileName}");
+                    imageCounter++;
                 }
                 else
                 {
-                    imageCounter++;
+                    allSaved = false;
+                    MessageBox.Show($"❌ Failed to save Google Driver file: {googleDriverFileName}");
                 }
             }
             catch (Exception ex)
@@ -1432,9 +1432,7 @@ namespace Mospuk_1
                 File.SetCreationTime(traduccionPath, DateTime.Now);
                 File.SetLastWriteTime(traduccionPath, DateTime.Now);
 
-                string insertTraduccionQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
-                              VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-
+                string insertTraduccionQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
                 List<SQLiteParameter> traduccionParams = new List<SQLiteParameter>
         {
             new SQLiteParameter("@project_id", projectId),
@@ -1443,15 +1441,14 @@ namespace Mospuk_1
             new SQLiteParameter("@attachment_type", "Traducción Preliminar")
         };
 
-                bool traduccionSaved = db.ExecuteNonQuery(insertTraduccionQuery, traduccionParams);
-                if (!traduccionSaved)
+                if (db.ExecuteNonQuery(insertTraduccionQuery, traduccionParams))
                 {
-                    allSaved = false;
-                    MessageBox.Show($"❌ Failed to save Traducción Preliminar file: {traduccionFileName}");
+                    imageCounter++;
                 }
                 else
                 {
-                    imageCounter++;
+                    allSaved = false;
+                    MessageBox.Show($"❌ Failed to save Traducción Preliminar file: {traduccionFileName}");
                 }
             }
             catch (Exception ex)
@@ -1470,26 +1467,23 @@ namespace Mospuk_1
                 File.SetCreationTime(informePath, DateTime.Now);
                 File.SetLastWriteTime(informePath, DateTime.Now);
 
-                string insertInformeQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) 
-                          VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
-
+                string insertInformeQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
                 List<SQLiteParameter> informeParams = new List<SQLiteParameter>
         {
             new SQLiteParameter("@project_id", projectId),
             new SQLiteParameter("@image_name", informeFileName),
             new SQLiteParameter("@image_path", informePath),
-            new SQLiteParameter("@attachment_type", "Informe revisión") // تم تصحيح النوع هنا
+            new SQLiteParameter("@attachment_type", "Informe revisión")
         };
 
-                bool informeSaved = db.ExecuteNonQuery(insertInformeQuery, informeParams);
-                if (!informeSaved)
+                if (db.ExecuteNonQuery(insertInformeQuery, informeParams))
                 {
-                    allSaved = false;
-                    MessageBox.Show($"❌ Failed to save Informe revisión file: {informeFileName}");
+                    imageCounter++;
                 }
                 else
                 {
-                    imageCounter++;
+                    allSaved = false;
+                    MessageBox.Show($"❌ Failed to save Informe revisión file: {informeFileName}");
                 }
             }
             catch (Exception ex)
@@ -1498,7 +1492,42 @@ namespace Mospuk_1
                 MessageBox.Show($"❌ Error creating Informe revisión file {imageCounter}: {ex.Message}");
             }
 
-            return allSaved;
+            // 8. إنشاء ملف Word جديد بإسم Traducción revisada
+            try
+            {
+                string traduccionRevisadaFileName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_Traducción revisada.docx";
+                string traduccionRevisadaPath = Path.Combine(projectFolder, traduccionRevisadaFileName);
+                using (var fs = File.Create(traduccionRevisadaPath)) { }
+
+                File.SetCreationTime(traduccionRevisadaPath, DateTime.Now);
+                File.SetLastWriteTime(traduccionRevisadaPath, DateTime.Now);
+
+                string insertTraduccionRevisadaQuery = @"INSERT INTO items (project_id, image_name, image_path, attachment_type, registration_date, last_update_date) VALUES (@project_id, @image_name, @image_path, @attachment_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
+                List<SQLiteParameter> traduccionRevisadaParams = new List<SQLiteParameter>
+        {
+            new SQLiteParameter("@project_id", projectId),
+            new SQLiteParameter("@image_name", traduccionRevisadaFileName),
+            new SQLiteParameter("@image_path", traduccionRevisadaPath),
+            new SQLiteParameter("@attachment_type", "Traducción revisada")
+        };
+
+                if (db.ExecuteNonQuery(insertTraduccionRevisadaQuery, traduccionRevisadaParams))
+                {
+                    imageCounter++;
+                }
+                else
+                {
+                    allSaved = false;
+                    MessageBox.Show($"❌ Failed to save Traducción revisada file: {traduccionRevisadaFileName}");
+                }
+            }
+            catch (Exception ex)
+            {
+                allSaved = false;
+                MessageBox.Show($"❌ Error creating Traducción revisada file {imageCounter}: {ex.Message}");
+            }
+
+            return (allSaved, savedSourcePaths);
         }
         private void RemoveImageFromPanel1(string filePath)
         {
@@ -1524,7 +1553,7 @@ namespace Mospuk_1
                 ReArrangeImages();
             }
         }
-
+        //***********
         private void AddImageBackToPanel1(string filePath)
         {
             int padding = 10;
@@ -1614,13 +1643,26 @@ namespace Mospuk_1
             SetupMultiPanelDragSupport();
             Time.KeyUp += Time_KeyUp_AutoJump;
             Time.TextChanged += Time_TextChanged_Validate; // ربط حدث التحقق
-
+            Time.KeyDown += Time_KeyDown;
+            lblStatus.Visible = false;
 
         }
 
         private void btnAddWord_Click(object sender, EventArgs e)
         {
-            string projectFolder = db.GetSavedPathById( "archive");
+            // --- بداية التعديل ---
+            // 1. التحقق أولاً إذا كان هناك ملف Word مضاف بالفعل
+            if (panelDocx.Controls.Count >= 1)
+            {
+                MessageBox.Show("You can only add one OCR Word file.\nPlease remove the existing file if you wish to add a different one.",
+                                "Limit Reached",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Information);
+                return; // إيقاف العملية
+            }
+            // --- نهاية التعديل ---
+
+            string projectFolder = db.GetSavedPathById("archive");
             if (string.IsNullOrEmpty(projectFolder))
             {
                 MessageBox.Show("Please set a save directory first.", "Error",
@@ -1629,81 +1671,74 @@ namespace Mospuk_1
             }
 
             OpenFileDialog ofd = new OpenFileDialog();
-            ofd.InitialDirectory = projectFolder; // بدلاً من المسار الثابت
+            ofd.InitialDirectory = projectFolder;
             ofd.Filter = "Word Files|*.doc;*.docx|All Files|*.*";
             ofd.Title = "Select Word File";
-            ofd.Multiselect = true; // السماح بتحديد عدة ملفات
+
+            // --- التعديل الثاني: منع تحديد أكثر من ملف واحد ---
+            ofd.Multiselect = false; // تغيير القيمة إلى false
 
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                foreach (string filePath in ofd.FileNames)
+                // بما أننا نسمح بملف واحد فقط، لم نعد بحاجة إلى حلقة تكرارية
+                string filePath = ofd.FileName; // استخدام .FileName بدلاً من .FileNames
+                string fileName = Path.GetFileName(filePath);
+
+                // التحقق من التكرار (للاحتياط، رغم أنه لا يجب أن يحدث الآن)
+                bool fileExists = panelDocx.Controls.OfType<Label>().Any(lbl => lbl.Tag?.ToString() == filePath);
+
+                if (!fileExists)
                 {
-                    string fileName = Path.GetFileName(filePath);
-                    string fullPath = filePath;
-                    bool fileExists = false;
-                    foreach (Control ctrl in panelDocx.Controls)
+                    Label lbl = new Label();
+                    lbl.Text = fileName;
+                    lbl.Tag = filePath; // تخزين المسار الكامل
+                    lbl.AutoSize = true;
+                    lbl.Padding = new Padding(5);
+                    lbl.Margin = new Padding(5);
+                    lbl.BackColor = Color.SeaGreen;
+                    lbl.ForeColor = Color.White;
+                    lbl.Cursor = Cursors.Hand;
+                    lbl.BorderStyle = BorderStyle.FixedSingle;
+                    ToolTip toolTip = new ToolTip();
+                    toolTip.SetToolTip(lbl, filePath);
+                    lbl.DoubleClick += (s, ev) =>
                     {
-                        if (ctrl is Label existingLbl && existingLbl.Tag?.ToString() == fullPath)
+                        try
                         {
-                            fileExists = true;
-                            break;
+                            var psi = new System.Diagnostics.ProcessStartInfo()
+                            {
+                                FileName = filePath,
+                                UseShellExecute = true
+                            };
+                            System.Diagnostics.Process.Start(psi);
                         }
-                    }
-
-                    if (!fileExists)
-                    {
-                        Label lbl = new Label();
-                        lbl.Text = fileName;
-                        lbl.Tag = fullPath; // تخزين المسار الكامل
-                        lbl.AutoSize = true;
-                        lbl.Padding = new Padding(5);
-                        lbl.Margin = new Padding(5);
-                        lbl.BackColor = Color.SeaGreen;
-                        lbl.ForeColor = Color.White;
-                        lbl.Cursor = Cursors.Hand;
-                        lbl.BorderStyle = BorderStyle.FixedSingle;
-                        ToolTip toolTip = new ToolTip();
-                        toolTip.SetToolTip(lbl, fullPath);
-                        lbl.DoubleClick += (s, ev) =>
+                        catch (Exception ex)
                         {
-                            try
-                            {
-                                var psi = new System.Diagnostics.ProcessStartInfo()
-                                {
-                                    FileName = fullPath,
-                                    UseShellExecute = true
-                                };
-                                System.Diagnostics.Process.Start(psi);
-                            }
-                            catch (Exception ex)
-                            {
-                                MessageBox.Show($"Error opening file: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            }
-                        };
-                        ContextMenuStrip contextMenu = new ContextMenuStrip();
-                        ToolStripMenuItem removeItem = new ToolStripMenuItem("Remove File");
-                        removeItem.Click += (s, ev) =>
-                        {
-                            if (MessageBox.Show($"Are you sure you want to remove '{fileName}' from the list?",
-                                "Confirm Remove", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-                            {
-                                panelDocx.Controls.Remove(lbl);
-                                lbl.Dispose();
-                            }
-                        };
-                        contextMenu.Items.Add(removeItem);
-                        lbl.ContextMenuStrip = contextMenu;
-
-                        panelDocx.Controls.Add(lbl);
-                    }
-                    else
+                            MessageBox.Show($"Error opening file: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    };
+                    ContextMenuStrip contextMenu = new ContextMenuStrip();
+                    ToolStripMenuItem removeItem = new ToolStripMenuItem("Remove File");
+                    removeItem.Click += (s, ev) =>
                     {
-                        MessageBox.Show($"File '{fileName}' is already added.", "Duplicate File", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
+                        if (MessageBox.Show($"Are you sure you want to remove '{fileName}' from the list?",
+                            "Confirm Remove", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                        {
+                            panelDocx.Controls.Remove(lbl);
+                            lbl.Dispose();
+                        }
+                    };
+                    contextMenu.Items.Add(removeItem);
+                    lbl.ContextMenuStrip = contextMenu;
+
+                    panelDocx.Controls.Add(lbl);
+                }
+                else
+                {
+                    MessageBox.Show($"File '{fileName}' is already added.", "Duplicate File", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
-         }
-
+        }
         private void SetupImageApostille()
         {
             PictureBox imageApostille = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
@@ -2107,41 +2142,11 @@ namespace Mospuk_1
             allSelectedPictures.AddRange(selectedPictureBoxesFlow2);
             allSelectedPictures.AddRange(selectedPictureBoxes);
 
-            PictureBox apostilleBox = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
-            if (apostilleBox != null && apostilleBox.Image != null && apostilleBox.BorderStyle == BorderStyle.FixedSingle)
+            // <<-- التعديل هنا: افتح أول صورة محددة فقط باستخدام المنطق الجديد -->>
+            PictureBox firstSelected = allSelectedPictures.FirstOrDefault();
+            if (firstSelected != null)
             {
-                allSelectedPictures.Add(apostilleBox);
-            }
-
-            // فتح كل الصور المحددة
-            foreach (var pb in allSelectedPictures)
-            {
-                if (pb?.Tag != null)
-                {
-                    string filePath = pb.Tag.ToString();
-                    try
-                    {
-                        if (File.Exists(filePath))
-                        {
-                            var psi = new System.Diagnostics.ProcessStartInfo()
-                            {
-                                FileName = filePath,
-                                UseShellExecute = true
-                            };
-                            System.Diagnostics.Process.Start(psi);
-                        }
-                        else
-                        {
-                            MessageBox.Show("الملف المحدد لم يعد موجوداً في المسار:\n" + filePath,
-                                          "ملف غير موجود", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("خطأ في فتح الملف: " + ex.Message,
-                                      "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
+                OpenFileInIsolatedDirectory(firstSelected);
             }
         }
         private bool AreAnyImagesSelected()
@@ -2160,27 +2165,34 @@ namespace Mospuk_1
             panel1.Invalidate();
             flowLayoutPanel1.Invalidate();
             flowLayoutPanel2.Invalidate();
+            if (sender is Control clickedControl)
+            {
+                clickedControl.Focus();
+            }
         }
         private void CleanWorkspace()
         {
             try
             {
                 ClearFlowLayoutPanel(flowLayoutPanel1);
-
                 ClearFlowLayoutPanel(flowLayoutPanel2);
-
                 ClearImageApostille();
-
                 ClearPanelDocx();
-
                 ClearAllSelections();
-
                 ClearFormFields();
-                             
+
+       
+                string tempFolder = Path.Combine(Application.StartupPath, "ExtractedFiles");
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+                Directory.CreateDirectory(tempFolder);
             }
             catch (Exception ex)
             {
-             
+                // من الجيد عرض رسالة في حال فشل التنظيف لأي سبب
+                MessageBox.Show($"حدث خطأ أثناء تنظيف مساحة العمل:\n{ex.Message}", "تحذير", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
         private void ClearFlowLayoutPanel(FlowLayoutPanel panel)
@@ -2255,6 +2267,10 @@ namespace Mospuk_1
             comboTranslation.SelectedIndex = -1; // يلغي التحديد
 
             Reception_Date.Value = DateTime.Now;
+            if (panel1.Controls.Count == 0)
+            {
+                Company_Client.SelectedIndex = -1;
+            }
 
         }
         private void LoadClientsAndCompanies()
@@ -2530,30 +2546,58 @@ namespace Mospuk_1
 
         private int CalculateInsertionIndexForPanel(FlowLayoutPanel panel, Point clientPoint)
         {
-            var pictureBoxes = panel.Controls.OfType<PictureBox>().ToList();
+            var pictureBoxes = panel.Controls.OfType<PictureBox>().Where(p => p.Visible).ToList();
 
-            if (pictureBoxes.Count == 0)
+            if (!pictureBoxes.Any())
+            {
                 return 0;
+            }
 
             for (int i = 0; i < pictureBoxes.Count; i++)
             {
                 var pb = pictureBoxes[i];
 
-                // تجاهل العنصر المسحوب إذا كان من نفس اللوحة
                 if (pb == draggedPictureBox)
                     continue;
 
                 Rectangle bounds = pb.Bounds;
 
-                // إذا كان المؤشر في النصف الأيسر من الصورة، أدرج قبلها
-                if (clientPoint.X < bounds.Left + (bounds.Width / 2))
-                    return Math.Max(0, panel.Controls.GetChildIndex(pb));
+     
+                if (clientPoint.Y >= bounds.Top && clientPoint.Y <= bounds.Bottom)
+                {
+                    
+                    if (clientPoint.X < bounds.Left + (bounds.Width / 2))
+                    {
+                        return panel.Controls.GetChildIndex(pb);
+                    }
+                }
             }
 
-            // إذا لم نجد موضع مناسب، أدرج في النهاية
+          
+
+            PictureBox lastControlInRow = null;
+            foreach (var pb in pictureBoxes.OfType<PictureBox>().Reverse())
+            {
+                if (pb == draggedPictureBox) continue;
+
+                Rectangle bounds = pb.Bounds;
+                if (clientPoint.Y >= bounds.Top && clientPoint.Y <= bounds.Bottom)
+                {
+                    lastControlInRow = pb;
+                    break;
+                }
+            }
+
+            if (lastControlInRow != null)
+            {
+                // إذا وجدنا عنصراً في الصف، والمؤشر على يمينه، قم بالإدراج بعده
+                return panel.Controls.GetChildIndex(lastControlInRow) + 1;
+            }
+
+            // إذا لم نجد أي موضع مناسب (مثلاً، المؤشر في منطقة فارغة تماماً)،
+            // فقم بالإدراج في نهاية اللوحة
             return panel.Controls.Count;
         }
-
         private void Generic_Pic_Click_FlowPanel(object sender, EventArgs e)
         {
             PictureBox pb = sender as PictureBox;
@@ -2951,7 +2995,7 @@ namespace Mospuk_1
 
                 string reorderKey = GetReorderKeyForPanel(panel);
 
-                // **الحالة 1: إعادة ترتيب داخل نفس اللوحة - هذا هو الجزء المهم المطلوب تصحيحه**
+                // **الحالة 1: إعادة ترتيب داخل نفس اللوحة**
                 if (e.Data.GetDataPresent(reorderKey) && dragSourcePanel == panel)
                 {
                     string multiDragKey = GetMultiDragKeyForPanel(panel);
@@ -2966,14 +3010,11 @@ namespace Mospuk_1
                         picturesToMove = new List<PictureBox> { (PictureBox)e.Data.GetData(reorderKey) };
                     }
 
-                    // *** التصحيح الرئيسي هنا ***
                     if (targetIndex != -1 && picturesToMove.Any())
                     {
-                        // 1. احصل على قائمة جميع العناصر مع فهارسهم الحالية
                         var allControls = panel.Controls.OfType<PictureBox>().ToList();
                         var movedControlsIndices = picturesToMove.Select(p => allControls.IndexOf(p)).OrderBy(i => i).ToList();
 
-                        // 2. احسب المؤشر المُصحح بناءً على العناصر التي ستُزال قبل المؤشر الهدف
                         int adjustedTargetIndex = targetIndex;
                         foreach (int index in movedControlsIndices)
                         {
@@ -2983,16 +3024,13 @@ namespace Mospuk_1
                             }
                         }
 
-                        // 3. تأكد من أن المؤشر ضمن النطاق الصحيح
                         adjustedTargetIndex = Math.Max(0, Math.Min(adjustedTargetIndex, allControls.Count - picturesToMove.Count));
 
-                        // 4. قم بإزالة العناصر المسحوبة مؤقتاً (بترتيب عكسي لتجنب تغيير الفهارس)
                         foreach (var pic in picturesToMove.OrderByDescending(p => allControls.IndexOf(p)))
                         {
                             panel.Controls.Remove(pic);
                         }
 
-                        // 5. أعد إدراج العناصر في المكان الصحيح
                         for (int i = 0; i < picturesToMove.Count; i++)
                         {
                             panel.Controls.Add(picturesToMove[i]);
@@ -3001,7 +3039,7 @@ namespace Mospuk_1
                         }
                     }
                 }
-                // الحالة 2: السحب المتعدد من panel1 مباشرة
+                // **الحالة 2: السحب المتعدد من panel1 مباشرة (هنا التعديل المهم)**
                 else if (e.Data.GetDataPresent(DataFormats.StringFormat) &&
                          e.Data.GetDataPresent("DragSource") &&
                          e.Data.GetData("DragSource").ToString() == "panel1")
@@ -3031,8 +3069,10 @@ namespace Mospuk_1
                             }
                         }
 
+                        // *** التعديل الجوهري: إزالة العناصر من panel1 بعد نقلها ***
                         foreach (string filePath in filePaths)
                         {
+                            // استدعاء الدالة التي تزيل الصورة من panel1 وتعيد ترتيبه
                             RemoveImageFromPanel1(filePath);
                         }
                     }
@@ -3097,7 +3137,7 @@ namespace Mospuk_1
                         ClearAllSelections();
                     }
                 }
-                // **الحالة 4: السحب الفردي بين اللوحات**
+                // **الحالة 4: السحب الفردي بين اللوحات (هنا تعديل آخر مهم)**
                 else if (e.Data.GetDataPresent("ReturnToPanel1"))
                 {
                     var sourceCtrl = (PictureBox)e.Data.GetData("ReturnToPanel1");
@@ -3113,11 +3153,13 @@ namespace Mospuk_1
                             panel.Controls.SetChildIndex(targetPic, targetIndex);
                         }
 
+                        // *** التعديل الجوهري: إزالة العنصر من مصدره الأصلي ***
                         string sourceType = DetermineSourceType(sourceCtrl);
+                        // الدالة CleanupSourcePictureBox تقوم بالإزالة والتنظيف اللازم
                         CleanupSourcePictureBox(sourceCtrl, sourceType);
                     }
                 }
-                // الحالة 5: إفلات من خارج البرنامج
+                // **الحالة 5: إفلات من خارج البرنامج**
                 else if (e.Data.GetDataPresent(DataFormats.FileDrop))
                 {
                     string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
@@ -3130,6 +3172,7 @@ namespace Mospuk_1
                             PictureBox targetPic = CreateNewPictureBoxForPanel(panel);
                             SetPictureBoxContent(targetPic, filePath);
 
+                            // التأكد من أن الصورة أو أيقونة الوورد قد تم تحميلها بنجاح قبل الإضافة
                             if (targetPic.Image != null)
                             {
                                 newPictureBoxes.Add(targetPic);
@@ -3333,7 +3376,17 @@ namespace Mospuk_1
                     pb.Image?.Dispose();
                     pb.Dispose();
                     break;
-                default:
+                case "panel1": // تعديل هنا
+                    if (pb.Parent != null)
+                    {
+                        selectedPictureBoxes.Remove(pb); // إزالة من قائمة التحديد
+                        pb.Parent.Controls.Remove(pb);
+                        ReArrangeImages(); // *** إضافة مهمة: إعادة ترتيب panel1 بعد الحذف ***
+                    }
+                    pb.Image?.Dispose();
+                    pb.Dispose();
+                    break;
+                default: // الحالة الافتراضية للتعامل مع أي مصدر غير معروف
                     if (pb.Parent != null)
                     {
                         pb.Parent.Controls.Remove(pb);
@@ -3471,9 +3524,25 @@ namespace Mospuk_1
             Control targetControl = this.ActiveControl;
             PictureBox imageApostille = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
 
+            // *** NEW: Check if a valid destination is selected ***
+            bool isValidTarget = (targetControl == panel1) ||
+                                 (targetControl == flowLayoutPanel1) ||
+                                 (targetControl == flowLayoutPanel2) ||
+                                 (targetControl == imageApostille);
+
+            if (!isValidTarget)
+            {
+                MessageBox.Show("Please click on a panel to select a destination before pasting.",
+                                "No Destination Selected",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Information);
+                return; // Stop the paste operation, but keep items in the "cut" buffer
+            }
+            // *** END NEW SECTION ***
+
+
             if (targetControl == imageApostille)
             {
-                // لا يمكن لصق ملف وورد في خانة Apostille
                 var itemToCheck = _keyboardDragItems.FirstOrDefault();
                 if (itemToCheck != null)
                 {
@@ -3515,7 +3584,7 @@ namespace Mospuk_1
 
                 _keyboardDragItems.Clear();
                 ClearAllSelections();
-                return; // إنهاء العملية هنا
+                return;
             }
 
             if (!(targetControl is FlowLayoutPanel) && targetControl != panel1)
@@ -3531,24 +3600,15 @@ namespace Mospuk_1
 
                 if (targetControl is FlowLayoutPanel flowTarget)
                 {
-                    // ===== بداية التعديل =====
                     PictureBox targetPic = CreateNewPictureBoxForPanel(flowTarget);
-
-                    // استخدم الدالة المساعدة لتعيين المحتوى الصحيح (صورة أو أيقونة وورد)
                     SetPictureBoxContent(targetPic, item.FilePath);
-
                     flowTarget.Controls.Add(targetPic);
-                    // ===== نهاية التعديل =====
                 }
                 else if (targetControl == panel1)
                 {
-                    // ===== بداية التعديل =====
-                    // دالة AddImageBackToPanel1 لا تعمل مع ملفات الوورد
-                    // سنقوم بإعادة إنشاء العنصر هنا أيضاً
                     string ext = Path.GetExtension(item.FilePath).ToLower();
                     if (ext == ".doc" || ext == ".docx")
                     {
-                        // إذا كان الملف وورد، استخدم نفس منطق DisplayFiles
                         int padding = 10;
                         int maxWidth = 120;
                         int maxHeight = 120;
@@ -3564,7 +3624,7 @@ namespace Mospuk_1
                         pbWord.BorderStyle = BorderStyle.None;
                         pbWord.BackColor = Color.Transparent;
                         pbWord.Tag = item.FilePath;
-                        pbWord.Image = Properties.Resources.wordicon; // تأكد أن اسم المورد صحيح
+                        pbWord.Image = Properties.Resources.wordicon;
 
                         pbWord.Location = new Point(x, y);
                         pbWord.DoubleClick += OpenImage_DoubleClick;
@@ -3578,10 +3638,8 @@ namespace Mospuk_1
                     }
                     else
                     {
-                        // إذا كان صورة، استخدم الدالة القديمة
                         AddImageBackToPanel1(item.FilePath);
                     }
-                    // ===== نهاية التعديل =====
                 }
 
                 string sourceType = DetermineSourceType(item.SourceControl);
@@ -3592,8 +3650,10 @@ namespace Mospuk_1
                 CleanupSourcePictureBox(item.SourceControl, sourceType);
             }
 
-            // إعادة ترتيب العناصر في panel1 إذا تم تعديلها
-            ReArrangeImages();
+            if (wasPanel1Modified)
+            {
+                ReArrangeImages();
+            }
 
             _keyboardDragItems.Clear();
             ClearAllSelections();
@@ -3629,7 +3689,430 @@ namespace Mospuk_1
                 }
             }
         }
+
+        private void AddFile_Resize(object sender, EventArgs e)
+        {
+            ReArrangeImages();
+        }
+        private void Time_KeyDown(object sender, KeyEventArgs e)
+        {
+            MaskedTextBox mtb = sender as MaskedTextBox;
+            if (mtb == null) return;
+
+            // --- بداية التعديل ---
+
+            // 1. التعامل مع القفز الذكي فوق النقطتين أولاً
+            // إذا ضغطت السهم الأيمن والمؤشر قبل النقطتين، اقفز إلى تحديد الدقائق
+            if (e.KeyCode == Keys.Right && mtb.SelectionStart == 2)
+            {
+                // انتظر قليلاً ثم حدد حقل الدقائق
+                this.BeginInvoke((MethodInvoker)delegate {
+                    mtb.Select(3, 2);
+                });
+                e.Handled = true; // منع المعالجة الافتراضية
+                return; // تم التعامل مع هذا المفتاح، لا تكمل
+            }
+
+            // إذا ضغطت السهم الأيسر والمؤشر في بداية الدقائق، اقفز إلى تحديد الساعات
+            if (e.KeyCode == Keys.Left && mtb.SelectionStart == 3)
+            {
+                // انتظر قليلاً ثم حدد حقل الساعات
+                this.BeginInvoke((MethodInvoker)delegate {
+                    mtb.Select(0, 2);
+                });
+                e.Handled = true; // منع المعالجة الافتراضية
+                return; // تم التعامل مع هذا المفتاح، لا تكمل
+            }
+
+            // 2. إذا لم تكن حالة خاصة، اسمح لمفاتيح التنقل والحذف بالعمل بشكل طبيعي
+            if (e.KeyCode == Keys.Left || e.KeyCode == Keys.Right || e.KeyCode == Keys.Up || e.KeyCode == Keys.Down ||
+                e.KeyCode == Keys.Home || e.KeyCode == Keys.End || e.KeyCode == Keys.Delete || e.KeyCode == Keys.Back)
+            {
+                return; // اسمح للسلوك الافتراضي لهذه المفاتيح
+            }
+
+            // --- نهاية التعديل ---
+
+            // الكود الأصلي الخاص بك لإضافة "0" تلقائياً (لا يزال مفيداً)
+            // التحقق من الساعات
+            if (mtb.SelectionStart >= 0 && mtb.SelectionStart <= 1)
+            {
+                int numberPressed = -1;
+                if (e.KeyCode >= Keys.D0 && e.KeyCode <= Keys.D9)
+                    numberPressed = e.KeyCode - Keys.D0;
+                else if (e.KeyCode >= Keys.NumPad0 && e.KeyCode <= Keys.NumPad9)
+                    numberPressed = e.KeyCode - Keys.NumPad0;
+
+                // إذا كان المستخدم يكتب الرقم الأول وكان 3 أو أكبر، أضف 0 قبله
+                if (mtb.SelectionStart == 0 && numberPressed >= 3 && numberPressed <= 9)
+                {
+                    this.BeginInvoke((MethodInvoker)delegate
+                    {
+                        mtb.Text = "0" + numberPressed.ToString();
+                        mtb.Select(3, 0); // نقل المؤشر إلى موضع الدقائق
+                    });
+                }
+            }
+            // التحقق من الدقائق
+            else if (mtb.SelectionStart >= 3 && mtb.SelectionStart <= 4)
+            {
+                int numberPressed = -1;
+                if (e.KeyCode >= Keys.D0 && e.KeyCode <= Keys.D9)
+                    numberPressed = e.KeyCode - Keys.D0;
+                else if (e.KeyCode >= Keys.NumPad0 && e.KeyCode <= Keys.NumPad9)
+                    numberPressed = e.KeyCode - Keys.NumPad0;
+
+                if (mtb.SelectionStart == 3 && numberPressed >= 6 && numberPressed <= 9)
+                {
+                    this.BeginInvoke((MethodInvoker)delegate
+                    {
+                        string hours = mtb.Text.Substring(0, 3); // الساعات مع النقطتين
+                        mtb.Text = hours + "0" + numberPressed.ToString();
+                        mtb.Select(5, 0); // نقل المؤشر إلى النهاية
+                    });
+                }
+            }
+        }
+        private void OpenFileInIsolatedDirectory(PictureBox clickedPictureBox)
+        {
+            if (clickedPictureBox?.Tag == null) return;
+
+            string clickedFilePath = clickedPictureBox.Tag.ToString();
+
+            // تجاهل ملفات الوورد، افتحها مباشرة
+            string ext = Path.GetExtension(clickedFilePath).ToLower();
+            if (ext == ".doc" || ext == ".docx")
+            {
+                try
+                {
+                    var psi = new ProcessStartInfo()
+                    {
+                        FileName = clickedFilePath,
+                        UseShellExecute = true
+                    };
+                    Process.Start(psi);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("خطأ في فتح ملف الوورد: " + ex.Message, "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                return;
+            }
+
+            List<string> sourceFilePaths = new List<string>();
+            int clickedFileIndex = 0;
+
+            // 1. تحديد اللوحة المصدر وجمع كل مسارات الملفات منها مع الترتيب الصحيح
+            Control parentControl = clickedPictureBox.Parent;
+            if (clickedPictureBox.Name == "imageApostille")
+            {
+                parentControl = clickedPictureBox;
+            }
+
+            if (parentControl == panel1)
+            {
+                var orderedPictureBoxes = panel1.Controls.OfType<PictureBox>()
+                    .Where(pb => pb.Tag != null && !pb.Tag.ToString().EndsWith(".docx") && !pb.Tag.ToString().EndsWith(".doc"))
+                    .OrderBy(p => p.Location.Y).ThenBy(p => p.Location.X) // ترتيب حسب الموقع المرئي
+                    .ToList();
+
+                sourceFilePaths = orderedPictureBoxes.Select(pb => pb.Tag.ToString()).ToList();
+
+                // العثور على فهرس الملف المنقور عليه
+                clickedFileIndex = orderedPictureBoxes.FindIndex(pb => pb.Tag.ToString() == clickedFilePath);
+            }
+            else if (parentControl == flowLayoutPanel1)
+            {
+                var orderedPictureBoxes = flowLayoutPanel1.Controls.OfType<PictureBox>()
+                    .Where(pb => pb.Tag != null && !pb.Tag.ToString().EndsWith(".docx") && !pb.Tag.ToString().EndsWith(".doc"))
+                    .ToList();
+
+                sourceFilePaths = orderedPictureBoxes.Select(pb => pb.Tag.ToString()).ToList();
+                clickedFileIndex = orderedPictureBoxes.FindIndex(pb => pb.Tag.ToString() == clickedFilePath);
+            }
+            else if (parentControl == flowLayoutPanel2)
+            {
+                var orderedPictureBoxes = flowLayoutPanel2.Controls.OfType<PictureBox>()
+                    .Where(pb => pb.Tag != null && !pb.Tag.ToString().EndsWith(".docx") && !pb.Tag.ToString().EndsWith(".doc"))
+                    .ToList();
+
+                sourceFilePaths = orderedPictureBoxes.Select(pb => pb.Tag.ToString()).ToList();
+                clickedFileIndex = orderedPictureBoxes.FindIndex(pb => pb.Tag.ToString() == clickedFilePath);
+            }
+            else if (parentControl == clickedPictureBox && clickedPictureBox.Name == "imageApostille")
+            {
+                sourceFilePaths.Add(clickedFilePath);
+                clickedFileIndex = 0;
+            }
+
+            if (!sourceFilePaths.Any()) return;
+
+            // 2. إنشاء مجلد مؤقت وفريد
+            string tempDir = Path.Combine(Path.GetTempPath(), "MospukViewer_" + Guid.NewGuid().ToString());
+            try
+            {
+                Directory.CreateDirectory(tempDir);
+
+                // 3. نسخ الملفات مع إعادة تسمية لضمان الترتيب الصحيح
+                for (int i = 0; i < sourceFilePaths.Count; i++)
+                {
+                    string sourcePath = sourceFilePaths[i];
+                    if (File.Exists(sourcePath))
+                    {
+                        // إعادة تسمية الملفات بأرقام تسلسلية لضمان الترتيب الصحيح
+                        string extension = Path.GetExtension(sourcePath);
+                        string newFileName = $"{i:D3}_{Path.GetFileNameWithoutExtension(sourcePath)}{extension}";
+                        string destPath = Path.Combine(tempDir, newFileName);
+                        File.Copy(sourcePath, destPath);
+
+                        // تحديث مسار الملف المطلوب فتحه
+                        if (i == clickedFileIndex)
+                        {
+                            clickedFilePath = destPath;
+                        }
+                    }
+                }
+
+                // 4. فتح الملف الذي تم النقر عليه من داخل المجلد المؤقت
+                if (File.Exists(clickedFilePath))
+                {
+                    var process = new Process();
+                    process.StartInfo = new ProcessStartInfo()
+                    {
+                        FileName = clickedFilePath,
+                        UseShellExecute = true
+                    };
+
+                    // 5. إعداد الحذف التلقائي للمجلد المؤقت بعد إغلاق عارض الصور
+                    process.EnableRaisingEvents = true;
+                    process.Exited += (s, args) =>
+                    {
+                        try
+                        {
+                            if (Directory.Exists(tempDir))
+                            {
+                                Directory.Delete(tempDir, true);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // تجاهل الأخطاء المحتملة في الحذف
+                            Console.WriteLine($"Could not delete temp directory {tempDir}: {ex.Message}");
+                        }
+                    };
+
+                    process.Start();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("خطأ في تهيئة عارض الصور: " + ex.Message, "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // تأكد من حذف المجلد إذا فشلت العملية
+                try
+                {
+                    if (Directory.Exists(tempDir))
+                    {
+                        Directory.Delete(tempDir, true);
+                    }
+                }
+                catch
+                {
+                    // تجاهل أخطاء الحذف
+                }
+            }
+        }
+        private void HandleCopy()
+        {
+            // 1. Gather all selected picture boxes from every list.
+            var allSelected = new List<PictureBox>();
+            allSelected.AddRange(selectedPictureBoxes); // For panel1 and imageApostille
+            allSelected.AddRange(selectedPictureBoxesFlow1);
+            allSelected.AddRange(selectedPictureBoxesFlow2);
+
+            // Use Distinct to ensure we don't have duplicates
+            var uniqueSelected = allSelected.Distinct().ToList();
+
+            if (!uniqueSelected.Any()) return; // Nothing selected to copy
+
+            // 2. Get the file paths from their Tag property.
+            var filePaths = new List<string>();
+            foreach (var pb in uniqueSelected)
+            {
+                if (pb?.Tag != null)
+                {
+                    string path = pb.Tag.ToString();
+                    if (File.Exists(path))
+                    {
+                        filePaths.Add(path);
+                    }
+                }
+            }
+
+            if (!filePaths.Any()) return; // No valid files to copy
+
+            // 3. Add the file paths to the clipboard as a file drop list.
+            var fileDropList = new System.Collections.Specialized.StringCollection();
+            fileDropList.AddRange(filePaths.ToArray());
+
+            try
+            {
+                Clipboard.SetFileDropList(fileDropList);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not copy files to clipboard: {ex.Message}", "Copy Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+
+        private void HandlePaste()
+        {
+            // 1. Check if the clipboard contains a list of files.
+            if (!Clipboard.ContainsFileDropList()) return;
+
+            var filePathsFromClipboard = Clipboard.GetFileDropList();
+            if (filePathsFromClipboard == null || filePathsFromClipboard.Count == 0) return;
+
+            // 2. Determine the target control for the paste operation.
+            Control targetControl = this.ActiveControl;
+            PictureBox imageApostille = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
+
+            // *** NEW: Check if a valid destination is selected ***
+            bool isValidTarget = (targetControl == panel1) ||
+                                 (targetControl == flowLayoutPanel1) ||
+                                 (targetControl == flowLayoutPanel2) ||
+                                 (targetControl == imageApostille);
+
+            if (!isValidTarget)
+            {
+                MessageBox.Show("Please click on a panel to select a destination before pasting.",
+                                "No Destination Selected",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Information);
+                return; // Stop the paste operation
+            }
+            // *** END NEW SECTION ***
+
+            // Case A: Pasting into the Apostille slot
+            if (targetControl == imageApostille)
+            {
+                if (imageApostille.Image != null)
+                {
+                    MessageBox.Show("Apostille slot is already occupied. Cannot paste here.", "Paste Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                if (filePathsFromClipboard.Count > 1)
+                {
+                    MessageBox.Show("You can only paste a single image into the Apostille slot.", "Paste Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                string originalFilePath = filePathsFromClipboard[0];
+                string ext = Path.GetExtension(originalFilePath).ToLower();
+                if (ext == ".doc" || ext == ".docx")
+                {
+                    MessageBox.Show("Cannot paste a Word document into the Apostille slot.", "Paste Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                string newFilePath = CreateFileCopyInWorkspace(originalFilePath);
+                if (newFilePath != null)
+                {
+                    SetPictureBoxContent(imageApostille, newFilePath);
+                }
+            }
+            // Case B: Pasting into one of the FlowLayoutPanels
+            else if (targetControl is FlowLayoutPanel flowTarget)
+            {
+                foreach (string path in filePathsFromClipboard)
+                {
+                    string newFilePath = CreateFileCopyInWorkspace(path);
+                    if (newFilePath != null)
+                    {
+                        PictureBox newPic = CreateNewPictureBoxForPanel(flowTarget);
+                        SetPictureBoxContent(newPic, newFilePath);
+
+                        if (newPic.Image != null || Path.GetExtension(newFilePath).ToLower().Contains("doc"))
+                        {
+                            flowTarget.Controls.Add(newPic);
+                        }
+                        else
+                        {
+                            newPic.Dispose();
+                        }
+                    }
+                }
+            }
+            // Case C: Pasting into the main panel (panel1)
+            else if (targetControl == panel1)
+            {
+                foreach (string path in filePathsFromClipboard)
+                {
+                    string newFilePath = CreateFileCopyInWorkspace(path);
+                    if (newFilePath != null)
+                    {
+                        AddImageBackToPanel1(newFilePath);
+                    }
+                }
+                ReArrangeImages();
+            }
+
+            ClearAllSelections();
+        }
+        private string CreateFileCopyInWorkspace(string sourceFilePath)
+        {
+            // First, check if the source file still exists before trying to copy it.
+            if (!File.Exists(sourceFilePath))
+            {
+                MessageBox.Show($"The source file could not be found and cannot be pasted:\n{Path.GetFileName(sourceFilePath)}",
+                                "File Not Found", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return null;
+            }
+
+            try
+            {
+                string directory = Path.GetDirectoryName(sourceFilePath);
+                string fileName = Path.GetFileNameWithoutExtension(sourceFilePath);
+                string extension = Path.GetExtension(sourceFilePath);
+
+                // Create a new, unique filename to avoid conflicts (e.g., "MyImage_copy_a1b2c3.png")
+                string newFileName = $"{fileName}_copy_{Guid.NewGuid().ToString("N").Substring(0, 6)}{extension}";
+                string newFilePath = Path.Combine(directory, newFileName);
+
+                File.Copy(sourceFilePath, newFilePath);
+
+                return newFilePath;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to create a copy of the file: {Path.GetFileName(sourceFilePath)}\nError: {ex.Message}",
+                                "Paste Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return null;
+            }
+
+        }
+        private void CleanUpSavedProject()
+        {
+            try
+            {
+                // 1. إفراغ اللوحات التي تحتوي على عناصر المشروع المحفوظ فقط
+                // panel1 لا يتم المساس به هنا.
+                ClearFlowLayoutPanel(flowLayoutPanel1);
+                ClearFlowLayoutPanel(flowLayoutPanel2);
+                ClearImageApostille();
+                ClearPanelDocx();
+
+                // 2. إلغاء تحديد أي صور متبقية
+                ClearAllSelections();
+
+                // 3. مسح حقول الإدخال للتحضير للمشروع التالي
+                ClearFormFields();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"حدث خطأ أثناء تنظيف المشروع المحفوظ:\n{ex.Message}", "تحذير", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
     }
-    //*********************************
+    //*************************************
 
 }

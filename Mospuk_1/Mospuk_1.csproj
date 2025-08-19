@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\IronPdf.Slim.2025.8.8\build\IronPdf.Slim.props" Condition="Exists('..\packages\IronPdf.Slim.2025.8.8\build\IronPdf.Slim.props')" />
   <Import Project="..\packages\EntityFramework.6.4.4\build\EntityFramework.props" Condition="Exists('..\packages\EntityFramework.6.4.4\build\EntityFramework.props')" />
   <Import Project="..\packages\PdfiumViewer.Native.x86_64.v8-xfa.2018.4.8.256\build\PdfiumViewer.Native.x86_64.v8-xfa.props" Condition="Exists('..\packages\PdfiumViewer.Native.x86_64.v8-xfa.2018.4.8.256\build\PdfiumViewer.Native.x86_64.v8-xfa.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
@@ -124,12 +123,6 @@
     </Reference>
     <Reference Include="IronOcr.Assets, Version=2020.11.2.0, Culture=neutral, PublicKeyToken=c2cbcea5ea3f6d8d, processorArchitecture=MSIL">
       <HintPath>..\packages\IronOcr.2020.11.2\lib\net40\IronOcr.Assets.dll</HintPath>
-    </Reference>
-    <Reference Include="IronPdf, Version=2025.8.0.8, Culture=neutral, PublicKeyToken=94e1c31412563c75, processorArchitecture=MSIL">
-      <HintPath>..\packages\IronPdf.Slim.2025.8.8\lib\netstandard2.0\IronPdf.dll</HintPath>
-    </Reference>
-    <Reference Include="IronPdf.Extensions.ASPX, Version=2023.10.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\IronPdf.Extensions.ASPX.2023.10.3\lib\net462\IronPdf.Extensions.ASPX.dll</HintPath>
     </Reference>
     <Reference Include="IronSoftware.Abstractions, Version=2025.4.0.2, Culture=neutral, PublicKeyToken=3bd0119b776a4800, processorArchitecture=MSIL">
       <HintPath>..\packages\IronSoftware.Abstractions.2025.4.2\lib\netstandard2.0\IronSoftware.Abstractions.dll</HintPath>
@@ -368,6 +361,12 @@
     <Compile Include="Home.Designer.cs">
       <DependentUpon>Home.cs</DependentUpon>
     </Compile>
+    <Compile Include="ImageViewerForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ImageViewerForm.Designer.cs">
+      <DependentUpon>ImageViewerForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Login.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -401,6 +400,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Home.resx">
       <DependentUpon>Home.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ImageViewerForm.resx">
+      <DependentUpon>ImageViewerForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Login.resx">
       <DependentUpon>Login.cs</DependentUpon>
@@ -479,6 +481,17 @@
     <None Include="Resources\icondoc.png" />
     <None Include="Resources\logout.png" />
   </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="IWshRuntimeLibrary">
+      <Guid>{F935DC20-1CF0-11D0-ADB9-00C04FD58A0B}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -492,8 +505,6 @@
     <Error Condition="!Exists('..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.119.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.119.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets'))" />
     <Error Condition="!Exists('..\packages\IronSoftware.Native.PdfModel.2025.8.13\build\net\IronSoftware.Native.PdfModel.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\IronSoftware.Native.PdfModel.2025.8.13\build\net\IronSoftware.Native.PdfModel.targets'))" />
     <Error Condition="!Exists('..\packages\Grpc.Core.2.46.6\build\net45\Grpc.Core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Grpc.Core.2.46.6\build\net45\Grpc.Core.targets'))" />
-    <Error Condition="!Exists('..\packages\IronPdf.Native.Chrome.Windows.2025.8.13\build\net\IronPdf.Native.Chrome.Windows.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\IronPdf.Native.Chrome.Windows.2025.8.13\build\net\IronPdf.Native.Chrome.Windows.targets'))" />
-    <Error Condition="!Exists('..\packages\IronPdf.Slim.2025.8.8\build\IronPdf.Slim.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\IronPdf.Slim.2025.8.8\build\IronPdf.Slim.props'))" />
   </Target>
   <Import Project="..\packages\Tesseract.5.2.0\build\Tesseract.targets" Condition="Exists('..\packages\Tesseract.5.2.0\build\Tesseract.targets')" />
   <Import Project="..\packages\IronOcr.Languages.Arabic.2020.11.2\build\IronOcr.Languages.Arabic.targets" Condition="Exists('..\packages\IronOcr.Languages.Arabic.2020.11.2\build\IronOcr.Languages.Arabic.targets')" />
@@ -501,5 +512,4 @@
   <Import Project="..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.119.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets" Condition="Exists('..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.119.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets')" />
   <Import Project="..\packages\IronSoftware.Native.PdfModel.2025.8.13\build\net\IronSoftware.Native.PdfModel.targets" Condition="Exists('..\packages\IronSoftware.Native.PdfModel.2025.8.13\build\net\IronSoftware.Native.PdfModel.targets')" />
   <Import Project="..\packages\Grpc.Core.2.46.6\build\net45\Grpc.Core.targets" Condition="Exists('..\packages\Grpc.Core.2.46.6\build\net45\Grpc.Core.targets')" />
-  <Import Project="..\packages\IronPdf.Native.Chrome.Windows.2025.8.13\build\net\IronPdf.Native.Chrome.Windows.targets" Condition="Exists('..\packages\IronPdf.Native.Chrome.Windows.2025.8.13\build\net\IronPdf.Native.Chrome.Windows.targets')" />
 </Project>

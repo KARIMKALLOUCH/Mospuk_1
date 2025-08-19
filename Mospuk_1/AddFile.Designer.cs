@@ -52,6 +52,7 @@
             this.btnUplaod = new Guna.UI2.WinForms.Guna2Button();
             this.imageApostille = new Guna.UI2.WinForms.Guna2PictureBox();
             this.savebtn = new Guna.UI2.WinForms.Guna2Button();
+            this.lblStatus = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.imageApostille)).BeginInit();
             this.SuspendLayout();
             // 
@@ -371,12 +372,26 @@
             this.savebtn.Text = "Save";
             this.savebtn.Click += new System.EventHandler(this.savebtn_Click);
             // 
+            // lblStatus
+            // 
+            this.lblStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblStatus.AutoSize = true;
+            this.lblStatus.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblStatus.Location = new System.Drawing.Point(598, 266);
+            this.lblStatus.Name = "lblStatus";
+            this.lblStatus.Size = new System.Drawing.Size(70, 25);
+            this.lblStatus.TabIndex = 175;
+            this.lblStatus.Text = "label1";
+            // 
             // AddFile
             // 
             this.AcceptButton = this.btnUplaod;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1164, 671);
+            this.Controls.Add(this.lblStatus);
             this.Controls.Add(this.Time);
             this.Controls.Add(this.panelDocx);
             this.Controls.Add(this.imageApostille);
@@ -404,6 +419,7 @@
             this.Name = "AddFile";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Load += new System.EventHandler(this.AddFile_Load);
+            this.Resize += new System.EventHandler(this.AddFile_Resize);
             ((System.ComponentModel.ISupportInitialize)(this.imageApostille)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -435,5 +451,6 @@
         private Guna.UI2.WinForms.Guna2PictureBox imageApostille;
         private System.Windows.Forms.Panel panelDocx;
         private System.Windows.Forms.MaskedTextBox Time;
+        private System.Windows.Forms.Label lblStatus;
     }
 }
