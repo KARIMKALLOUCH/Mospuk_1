@@ -123,6 +123,16 @@ namespace Mospuk_1.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap iconsetting {
+            get {
+                object obj = ResourceManager.GetObject("iconsetting", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap late {
             get {
                 object obj = ResourceManager.GetObject("late", resourceCulture);
@@ -176,6 +186,26 @@ namespace Mospuk_1.Properties {
         internal static System.Drawing.Bitmap mospuk__15_ {
             get {
                 object obj = ResourceManager.GetObject("mospuk (15)", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap pdficon {
+            get {
+                object obj = ResourceManager.GetObject("pdficon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap saveicon {
+            get {
+                object obj = ResourceManager.GetObject("saveicon", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

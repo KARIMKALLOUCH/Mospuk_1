@@ -15,7 +15,7 @@ using Org.BouncyCastle.Asn1.Cmp;
 
 namespace Mospuk_1
 {
-     
+
     public partial class AddFile : Form
 
     {
@@ -118,12 +118,12 @@ namespace Mospuk_1
             }
             else if (e.Control && e.KeyCode == Keys.V)
             {
-               
+
                 if (_keyboardDragItems.Any())
                 {
                     HandleKeyboardDrop();
                 }
-                else 
+                else
                 {
                     HandlePaste();
                 }
@@ -148,7 +148,7 @@ namespace Mospuk_1
                 if (allSelectedPictures.Count > 0)
                 {
                     var confirmResult = MessageBox.Show(
-                        $"Are you sure you want to delete {allSelectedPictures.Count} selected images?",
+                        $"Are you sure you want to delete {allSelectedPictures.Count} selected items?",
                         "Confirm Deletion",
                         MessageBoxButtons.YesNo,
                         MessageBoxIcon.Warning);
@@ -157,62 +157,43 @@ namespace Mospuk_1
                     {
                         bool panel1NeedsRearrange = false;
 
-                        // *** بداية التعديل: قائمة لتخزين ملفات PDF المرشحة للحذف ***
-                        var potentialPdfsToCheck = new HashSet<string>();
-
-                        foreach (var pb in allSelectedPictures.ToList())
+                        foreach (var pb in allSelectedPictures.ToList()) // .ToList() is important for safe removal
                         {
                             string filePathToDelete = pb.Tag?.ToString();
 
+                            // Remove PictureBox from its parent
                             if (pb.Parent == flowLayoutPanel1)
                             {
                                 flowLayoutPanel1.Controls.Remove(pb);
                                 selectedPictureBoxesFlow1.Remove(pb);
-                                pb.Image?.Dispose();
-                                pb.Dispose();
                             }
                             else if (pb.Parent == flowLayoutPanel2)
                             {
                                 flowLayoutPanel2.Controls.Remove(pb);
                                 selectedPictureBoxesFlow2.Remove(pb);
-                                pb.Image?.Dispose();
-                                pb.Dispose();
                             }
                             else if (pb.Parent == panel1)
                             {
                                 panel1NeedsRearrange = true;
                                 panel1.Controls.Remove(pb);
                                 selectedPictureBoxes.Remove(pb);
-                                pb.Image?.Dispose();
-                                pb.Dispose();
                             }
                             else if (pb.Name == "imageApostille")
                             {
-                                pb.Image?.Dispose();
                                 pb.Image = null;
                                 pb.Tag = null;
                             }
 
+                            // Dispose the PictureBox resources
+                            pb.Image?.Dispose();
+                            pb.Dispose();
+
+                            // <<-- START MODIFICATION: Simplified File Deletion -->>
+                            // Now we just delete the file directly, regardless of its type (image, pdf, docx)
                             if (!string.IsNullOrEmpty(filePathToDelete) && File.Exists(filePathToDelete))
                             {
-                                // *** التعديل الثاني: التحقق إذا كانت الصورة من PDF وإضافة الـ PDF للقائمة ***
                                 try
                                 {
-                                    DirectoryInfo parentDir = Directory.GetParent(filePathToDelete);
-                                    if (parentDir != null && parentDir.Name.EndsWith("_Images"))
-                                    {
-                                        // استنتاج اسم ملف الـ PDF الأصلي
-                                        string pdfBaseName = parentDir.Name.Substring(0, parentDir.Name.Length - "_Images".Length);
-                                        string mainDirectory = Directory.GetParent(parentDir.FullName).FullName;
-                                        string sourcePdfPath = Path.Combine(mainDirectory, pdfBaseName + ".pdf");
-
-                                        if (File.Exists(sourcePdfPath))
-                                        {
-                                            potentialPdfsToCheck.Add(sourcePdfPath);
-                                        }
-                                    }
-
-                                    // حذف ملف الصورة نفسه
                                     File.Delete(filePathToDelete);
                                 }
                                 catch (Exception ex)
@@ -221,58 +202,15 @@ namespace Mospuk_1
                                                     "File Deletion Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                                 }
                             }
+                            // <<-- END MODIFICATION -->>
                         }
 
+                        // Clear all selection lists
                         selectedPictureBoxesFlow1.Clear();
                         selectedPictureBoxesFlow2.Clear();
                         selectedPictureBoxes.Clear();
 
-                        // *** التعديل الثالث: فحص وحذف ملفات PDF إذا لم يتبق لها صور ***
-                        if (potentialPdfsToCheck.Any())
-                        {
-                            // جمع كل الصور المتبقية في التطبيق بعد الحذف
-                            var allRemainingPictureBoxes = panel1.Controls.OfType<PictureBox>()
-                                .Concat(flowLayoutPanel1.Controls.OfType<PictureBox>())
-                                .Concat(flowLayoutPanel2.Controls.OfType<PictureBox>());
-
-                            var remainingFilePaths = new HashSet<string>(
-                                allRemainingPictureBoxes
-                                    .Where(pb => pb != null && pb.Tag != null)
-                                    .Select(pb => pb.Tag.ToString())
-                            );
-
-                            foreach (var pdfPath in potentialPdfsToCheck)
-                            {
-                                string uniqueImageFolderName = Path.GetFileNameWithoutExtension(pdfPath) + "_Images";
-
-                                // التحقق مما إذا كانت هناك أي صورة متبقية من هذا الـ PDF
-                                bool anyImageRemains = remainingFilePaths.Any(path => path.Contains(uniqueImageFolderName));
-
-                                if (!anyImageRemains)
-                                {
-                                    try
-                                    {
-                                        // لم يتبق أي صور، لذا يمكن حذف الـ PDF والمجلد الخاص به
-                                        if (File.Exists(pdfPath))
-                                        {
-                                            File.Delete(pdfPath);
-                                        }
-
-                                        string imageDirectoryPath = Path.Combine(Path.GetDirectoryName(pdfPath), uniqueImageFolderName);
-                                        if (Directory.Exists(imageDirectoryPath))
-                                        {
-                                            Directory.Delete(imageDirectoryPath, true); // true لحذف المجلد ومحتوياته (التي يجب أن تكون فارغة)
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        MessageBox.Show($"Could not clean up PDF resources for: {Path.GetFileName(pdfPath)}\nError: {ex.Message}",
-                                                   "Cleanup Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                                    }
-                                }
-                            }
-                        }
-
+                        // Rearrange panel1 if any items were removed from it
                         if (panel1NeedsRearrange)
                         {
                             ReArrangeImages();
@@ -297,13 +235,13 @@ namespace Mospuk_1
         }
         private void panel1_DragEnter(object sender, DragEventArgs e)
         {
-          
+
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 e.Effect = DragDropEffects.Copy;
-                return; 
+                return;
             }
-           
+
             if (e.Data.GetDataPresent("DragSource") && e.Data.GetData("DragSource").ToString() == "panel1")
             {
                 e.Effect = DragDropEffects.None; // عرض أيقونة المنع
@@ -364,7 +302,7 @@ namespace Mospuk_1
 
                 return;
             }
-        
+
             if (e.Data.GetDataPresent("MultiPanelDrag"))
             {
                 var draggedItems = (List<PictureBoxDragInfo>)e.Data.GetData("MultiPanelDrag");
@@ -483,7 +421,7 @@ namespace Mospuk_1
         private void btnUplaod_Click(object sender, EventArgs e)
         {
 
-            string downloadsPath = db.GetSavedPathById( "downloads");
+            string downloadsPath = db.GetSavedPathById("downloads");
 
             if (string.IsNullOrEmpty(downloadsPath) || !Directory.Exists(downloadsPath))
             {
@@ -591,194 +529,148 @@ namespace Mospuk_1
 
             foreach (string file in allFilesInDirectory)
             {
+                // تجاهل الملف إذا كان معروضًا بالفعل
+                if (existingFilePaths.Contains(file))
+                {
+                    continue;
+                }
+
                 string ext = Path.GetExtension(file).ToLower();
 
+                // <<-- START MODIFICATION: New PDF Handling -->>
                 if (ext == ".pdf")
                 {
+                    PictureBox pbPdf = new PictureBox();
+                    pbPdf.Width = maxWidth;
+                    pbPdf.Height = maxHeight;
+                    pbPdf.SizeMode = PictureBoxSizeMode.Zoom;
+                    pbPdf.BorderStyle = BorderStyle.None;
+                    pbPdf.BackColor = Color.Transparent;
+                    pbPdf.Tag = file; // الأهم: تخزين مسار ملف PDF الأصلي
+
                     try
                     {
-                        string pdfImagesDir = Path.Combine(directory, Path.GetFileNameWithoutExtension(file) + "_Images");
-                        if (!Directory.Exists(pdfImagesDir))
-                            Directory.CreateDirectory(pdfImagesDir);
-
-                        using (var document = PdfDocument.Load(file))
-                        {
-                            int dpi = 600;
-                            for (int i = 0; i < document.PageCount; i++)
-                            {
-                                string imagePath = Path.Combine(pdfImagesDir, $"Page_{i + 1}.png");
-
-                                // **** التعديل الجوهري والنهائي هنا ****
-                                // هذا الشرط الآن يعالج كلتا الحالتين بشكل صحيح.
-                                // إذا كانت صورة هذه الصفحة المحددة موجودة بالفعل على الشاشة، نتجاهلها.
-                                if (existingFilePaths.Contains(imagePath))
-                                {
-                                    continue; // تخطى هذه الصفحة فقط وانتقل للتالية
-                                }
-                                // **** نهاية التعديل ****
-
-                                // إذا وصلنا إلى هنا، فهذا يعني أن هذه الصورة غير معروضة ويجب إضافتها.
-                                // أولاً، تأكد من وجود ملف الصورة على القرص، وإذا لم يكن موجوداً، قم بإنشائه.
-                                if (!File.Exists(imagePath))
-                                {
-                                    using (var image = document.Render(i, dpi, dpi, true))
-                                    {
-                                        image.Save(imagePath, System.Drawing.Imaging.ImageFormat.Png);
-                                    }
-                                }
-
-                                // الآن، قم بإنشاء وعرض الـ PictureBox لهذه الصورة
-                                PictureBox pb = new PictureBox();
-                                pb.Width = maxWidth;
-                                pb.Height = maxHeight;
-                                pb.SizeMode = PictureBoxSizeMode.Zoom;
-                                pb.BorderStyle = BorderStyle.None;
-                                pb.BackColor = Color.White;
-                                pb.Tag = imagePath;
-
-                                try
-                                {
-                                    using (var imgTemp = Image.FromFile(imagePath))
-                                    {
-                                        pb.Image = new Bitmap(imgTemp);
-                                    }
-                                }
-                                catch
-                                {
-                                    pb.BackColor = Color.LightGray;
-                                }
-
-                                pb.Location = new Point(x, y);
-                                pb.DoubleClick += OpenImage_DoubleClick;
-                                pb.MouseDown += Pb_MouseDown_Panel1;
-                                pb.MouseMove += Pb_MouseMove_Panel1;
-                                pb.MouseUp += Pb_MouseUp_Panel1;
-                                pb.Click += Pb_Click_Panel1;
-                                pb.Paint += PictureBox_Paint_Selection;
-
-                                panel1.Controls.Add(pb);
-
-                                // تحديث مكان الصورة التالية
-                                x += maxWidth + padding;
-                                count++;
-                                if (count % itemsPerRow == 0)
-                                {
-                                    x = padding;
-                                    y += maxHeight + padding;
-                                }
-                            }
-                        }
+                        // تعيين الأيقونة من الموارد كما طلبت
+                        pbPdf.Image = Properties.Resources.pdficon;
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        MessageBox.Show($"Error processing PDF '{Path.GetFileName(file)}':\n{ex.Message}",
-                                        "PDF Processing Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-                else // التعامل مع كل الملفات الأخرى (JPG, PNG, DOCX, etc.)
-                {
-                    // تجاهل الملف إذا كان معروضًا بالفعل
-                    if (existingFilePaths.Contains(file))
-                    {
-                        continue;
-                    }
-
-                    // ... بقية الكود يبقى كما هو تماماً ...
-                    if (ext == ".jpg" || ext == ".jpeg" || ext == ".png")
-                    {
-                        PictureBox pb = new PictureBox();
-                        pb.Width = maxWidth;
-                        pb.Height = maxHeight;
-                        pb.SizeMode = PictureBoxSizeMode.Zoom;
-                        pb.BorderStyle = BorderStyle.None;
-                        pb.BackColor = Color.Transparent;
-                        pb.Tag = file;
-
-                        try
+                        // في حال عدم وجود المورد، ارسم نصًا كحل بديل
+                        pbPdf.BackColor = Color.LightCoral;
+                        pbPdf.Paint += (s, e_paint) =>
                         {
-                            using (var imgTemp = Image.FromFile(file))
-                            {
-                                pb.Image = new Bitmap(imgTemp);
-                            }
-                        }
-                        catch
-                        {
-                            pb.BackColor = Color.White;
-                        }
-
-                        pb.Location = new Point(x, y);
-                        pb.DoubleClick += OpenImage_DoubleClick;
-                        pb.MouseDown += Pb_MouseDown_Panel1;
-                        pb.MouseMove += Pb_MouseMove_Panel1;
-                        pb.MouseUp += Pb_MouseUp_Panel1;
-                        pb.Click += Pb_Click_Panel1;
-                        pb.Paint += PictureBox_Paint_Selection;
-
-                        panel1.Controls.Add(pb);
-                    }
-                    else if (ext == ".docx" || ext == ".doc")
-                    {
-                        PictureBox pbWord = new PictureBox();
-                        pbWord.Width = maxWidth;
-                        pbWord.Height = maxHeight;
-                        pbWord.SizeMode = PictureBoxSizeMode.Zoom;
-                        pbWord.BorderStyle = BorderStyle.None;
-                        pbWord.BackColor = Color.Transparent;
-                        pbWord.Tag = file;
-
-                        try
-                        {
-                            pbWord.Image = Properties.Resources.wordicon;
-                        }
-                        catch { }
-
-                        pbWord.Location = new Point(x, y);
-                        pbWord.DoubleClick += OpenImage_DoubleClick;
-                        pbWord.MouseDown += Pb_MouseDown_Panel1;
-                        pbWord.MouseMove += Pb_MouseMove_Panel1;
-                        pbWord.MouseUp += Pb_MouseUp_Panel1;
-                        pbWord.Click += Pb_Click_Panel1;
-                        pbWord.Paint += PictureBox_Paint_Selection;
-
-                        panel1.Controls.Add(pbWord);
-                    }
-                    else
-                    {
-                        PictureBox pbOther = new PictureBox();
-                        pbOther.Width = maxWidth;
-                        pbOther.Height = maxHeight;
-                        pbOther.BackColor = Color.LightGray;
-                        pbOther.BorderStyle = BorderStyle.None;
-                        pbOther.Paint += (s, e_paint) =>
-                        {
-                            e_paint.Graphics.DrawString(Path.GetFileName(file), new Font("Arial", 8),
-                                Brushes.Black, new PointF(5, 40));
+                            e_paint.Graphics.DrawString("PDF", new Font("Arial", 12, FontStyle.Bold),
+                                Brushes.White, new PointF(45, 50));
                         };
-                        pbOther.Location = new Point(x, y);
-                        pbOther.Tag = file;
-                        pbOther.DoubleClick += OpenImage_DoubleClick;
-                        pbOther.MouseDown += Pb_MouseDown_Panel1;
-                        pbOther.MouseMove += Pb_MouseMove_Panel1;
-                        pbOther.MouseUp += Pb_MouseUp_Panel1;
-                        pbOther.Click += Pb_Click_Panel1;
-                        pbOther.Paint += PictureBox_Paint_Selection;
-
-                        panel1.Controls.Add(pbOther);
                     }
 
-                    x += maxWidth + padding;
-                    count++;
-                    if (count % itemsPerRow == 0)
+                    pbPdf.Location = new Point(x, y);
+                    // استخدام نفس معالجات الأحداث للملفات الأخرى
+                    pbPdf.DoubleClick += OpenImage_DoubleClick; // سيقوم بفتح ملف PDF
+                    pbPdf.MouseDown += Pb_MouseDown_Panel1;
+                    pbPdf.MouseMove += Pb_MouseMove_Panel1;
+                    pbPdf.MouseUp += Pb_MouseUp_Panel1;
+                    pbPdf.Click += Pb_Click_Panel1;
+                    pbPdf.Paint += PictureBox_Paint_Selection;
+
+                    panel1.Controls.Add(pbPdf);
+                }
+                // <<-- END MODIFICATION -->>
+                else if (ext == ".jpg" || ext == ".jpeg" || ext == ".png")
+                {
+                    PictureBox pb = new PictureBox();
+                    pb.Width = maxWidth;
+                    pb.Height = maxHeight;
+                    pb.SizeMode = PictureBoxSizeMode.Zoom;
+                    pb.BorderStyle = BorderStyle.None;
+                    pb.BackColor = Color.Transparent;
+                    pb.Tag = file;
+
+                    try
                     {
-                        x = padding;
-                        y += maxHeight + padding;
+                        using (var imgTemp = Image.FromFile(file))
+                        {
+                            pb.Image = new Bitmap(imgTemp);
+                        }
                     }
+                    catch
+                    {
+                        pb.BackColor = Color.White;
+                    }
+
+                    pb.Location = new Point(x, y);
+                    pb.DoubleClick += OpenImage_DoubleClick;
+                    pb.MouseDown += Pb_MouseDown_Panel1;
+                    pb.MouseMove += Pb_MouseMove_Panel1;
+                    pb.MouseUp += Pb_MouseUp_Panel1;
+                    pb.Click += Pb_Click_Panel1;
+                    pb.Paint += PictureBox_Paint_Selection;
+
+                    panel1.Controls.Add(pb);
+                }
+                else if (ext == ".docx" || ext == ".doc")
+                {
+                    PictureBox pbWord = new PictureBox();
+                    pbWord.Width = maxWidth;
+                    pbWord.Height = maxHeight;
+                    pbWord.SizeMode = PictureBoxSizeMode.Zoom;
+                    pbWord.BorderStyle = BorderStyle.None;
+                    pbWord.BackColor = Color.Transparent;
+                    pbWord.Tag = file;
+
+                    try
+                    {
+                        pbWord.Image = Properties.Resources.wordicon;
+                    }
+                    catch { }
+
+                    pbWord.Location = new Point(x, y);
+                    pbWord.DoubleClick += OpenImage_DoubleClick;
+                    pbWord.MouseDown += Pb_MouseDown_Panel1;
+                    pbWord.MouseMove += Pb_MouseMove_Panel1;
+                    pbWord.MouseUp += Pb_MouseUp_Panel1;
+                    pbWord.Click += Pb_Click_Panel1;
+                    pbWord.Paint += PictureBox_Paint_Selection;
+
+                    panel1.Controls.Add(pbWord);
+                }
+                else
+                {
+                    PictureBox pbOther = new PictureBox();
+                    pbOther.Width = maxWidth;
+                    pbOther.Height = maxHeight;
+                    pbOther.BackColor = Color.LightGray;
+                    pbOther.BorderStyle = BorderStyle.None;
+                    pbOther.Paint += (s, e_paint) =>
+                    {
+                        e_paint.Graphics.DrawString(Path.GetFileName(file), new Font("Arial", 8),
+                            Brushes.Black, new PointF(5, 40));
+                    };
+                    pbOther.Location = new Point(x, y);
+                    pbOther.Tag = file;
+                    pbOther.DoubleClick += OpenImage_DoubleClick;
+                    pbOther.MouseDown += Pb_MouseDown_Panel1;
+                    pbOther.MouseMove += Pb_MouseMove_Panel1;
+                    pbOther.MouseUp += Pb_MouseUp_Panel1;
+                    pbOther.Click += Pb_Click_Panel1;
+                    pbOther.Paint += PictureBox_Paint_Selection;
+
+                    panel1.Controls.Add(pbOther);
+                }
+
+                // تحديث مكان العنصر التالي (يتم وضعه خارج الشروط)
+                x += maxWidth + padding;
+                count++;
+                if (count % itemsPerRow == 0)
+                {
+                    x = padding;
+                    y += maxHeight + padding;
                 }
             }
         }
         private void Pb_Click_Panel1(object sender, EventArgs e)
         {
-          
+
             PictureBox pb = sender as PictureBox;
             if (pb == null) return;
 
@@ -933,7 +825,7 @@ namespace Mospuk_1
                 isDragging = false;
             }
         }
-       private void ReArrangeImages()
+        private void ReArrangeImages()
         {
             int padding = 10;
             int maxWidth = 120;
@@ -1625,7 +1517,7 @@ namespace Mospuk_1
             pb.Paint += PictureBox_Paint_Selection;
             panel1.Controls.Add(pb);
 
-        
+
         }
         private void AddFile_Load(object sender, EventArgs e)
         {
@@ -1650,8 +1542,7 @@ namespace Mospuk_1
 
         private void btnAddWord_Click(object sender, EventArgs e)
         {
-            // --- بداية التعديل ---
-            // 1. التحقق أولاً إذا كان هناك ملف Word مضاف بالفعل
+
             if (panelDocx.Controls.Count >= 1)
             {
                 MessageBox.Show("You can only add one OCR Word file.\nPlease remove the existing file if you wish to add a different one.",
@@ -1865,8 +1756,8 @@ namespace Mospuk_1
                     string data = (string)e.Data.GetData(DataFormats.StringFormat);
                     if (!string.IsNullOrEmpty(data) && data.Contains("|"))
                     {
-                        e.Effect = DragDropEffects.None; 
-                        return; 
+                        e.Effect = DragDropEffects.None;
+                        return;
                     }
                 }
 
@@ -1875,8 +1766,8 @@ namespace Mospuk_1
                     string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                     if (files != null && files.Length > 1)
                     {
-                        e.Effect = DragDropEffects.None; 
-                        return; 
+                        e.Effect = DragDropEffects.None;
+                        return;
                     }
                 }
 
@@ -2036,13 +1927,13 @@ namespace Mospuk_1
         }
         private void panel1_MouseDown_ForSelection(object sender, MouseEventArgs e)
         {
-         
+
             if (e.Button == MouseButtons.Left)
             {
                 // التحقق مما إذا كان النقر فوق عنصر تحكم فرعي (صورة)
                 Control clickedControl = panel1.GetChildAtPoint(e.Location);
                 if (clickedControl != null && clickedControl is PictureBox)
-                {              
+                {
                     isSelecting = false;
                     return;
                 }
@@ -2077,14 +1968,14 @@ namespace Mospuk_1
         {
             if (isSelecting)
             {
-                
+
                 isSelecting = false;
 
                 foreach (Control control in panel1.Controls)
                 {
                     if (control is PictureBox pb)
                     {
-                       
+
                         if (selectionRectangle.Width > 2 && selectionRectangle.Height > 2 && selectionRectangle.IntersectsWith(pb.Bounds))
                         {
                             // إذا تقاطعت، قم بتحديد الصورة
@@ -2097,7 +1988,7 @@ namespace Mospuk_1
                     }
                 }
 
-        
+
                 selectionRectangle = Rectangle.Empty;
 
                 panel1.Invalidate();
@@ -2116,8 +2007,8 @@ namespace Mospuk_1
                 {
                     e.Graphics.DrawRectangle(pen, selectionRectangle);
                 }
-           
-         }
+
+            }
         }
         private void ClearAllSelections()
         {
@@ -2181,7 +2072,7 @@ namespace Mospuk_1
                 ClearAllSelections();
                 ClearFormFields();
 
-       
+
                 string tempFolder = Path.Combine(Application.StartupPath, "ExtractedFiles");
                 if (Directory.Exists(tempFolder))
                 {
@@ -2334,7 +2225,7 @@ namespace Mospuk_1
                 // Select first item if data exists
                 if (comboDocumentType.Items.Count > 0)
                 {
-                
+
                 }
             }
             catch (Exception ex)
@@ -2562,10 +2453,10 @@ namespace Mospuk_1
 
                 Rectangle bounds = pb.Bounds;
 
-     
+
                 if (clientPoint.Y >= bounds.Top && clientPoint.Y <= bounds.Bottom)
                 {
-                    
+
                     if (clientPoint.X < bounds.Left + (bounds.Width / 2))
                     {
                         return panel.Controls.GetChildIndex(pb);
@@ -2573,7 +2464,7 @@ namespace Mospuk_1
                 }
             }
 
-          
+
 
             PictureBox lastControlInRow = null;
             foreach (var pb in pictureBoxes.OfType<PictureBox>().Reverse())
@@ -2773,9 +2664,9 @@ namespace Mospuk_1
                     e.Effect = DragDropEffects.None;
                 }
             }
-            else if (e.Data.GetDataPresent(DataFormats.StringFormat) ||  
-                     e.Data.GetDataPresent(DataFormats.FileDrop) ||      
-                     e.Data.GetDataPresent("ReturnToPanel1"))            
+            else if (e.Data.GetDataPresent(DataFormats.StringFormat) ||
+                     e.Data.GetDataPresent(DataFormats.FileDrop) ||
+                     e.Data.GetDataPresent("ReturnToPanel1"))
             {
                 e.Effect = DragDropEffects.Move;
             }
@@ -3435,10 +3326,10 @@ namespace Mospuk_1
             MaskedTextBox mtb = sender as MaskedTextBox;
             if (mtb == null) return;
 
-           
+
             if (mtb.SelectionStart == 2)
             {
-        
+
                 mtb.Select(3, 2);
             }
         }
@@ -3447,9 +3338,9 @@ namespace Mospuk_1
             MaskedTextBox mtb = sender as MaskedTextBox;
             if (mtb == null) return;
 
-                       mtb.TextChanged -= Time_TextChanged_Validate;
+            mtb.TextChanged -= Time_TextChanged_Validate;
 
-                      if (!mtb.Text.Substring(0, 2).Contains(mtb.PromptChar))
+            if (!mtb.Text.Substring(0, 2).Contains(mtb.PromptChar))
             {
                 if (int.TryParse(mtb.Text.Substring(0, 2), out int hour))
                 {
@@ -3462,7 +3353,7 @@ namespace Mospuk_1
                 }
             }
 
-          
+
             if (mtb.MaskCompleted)
             {
                 if (int.TryParse(mtb.Text.Substring(3, 2), out int minute))
@@ -3673,7 +3564,7 @@ namespace Mospuk_1
             {
                 targetPic.Image = Properties.Resources.wordicon;
             }
-            else 
+            else
             {
                 try
                 {
@@ -3706,7 +3597,8 @@ namespace Mospuk_1
             if (e.KeyCode == Keys.Right && mtb.SelectionStart == 2)
             {
                 // انتظر قليلاً ثم حدد حقل الدقائق
-                this.BeginInvoke((MethodInvoker)delegate {
+                this.BeginInvoke((MethodInvoker)delegate
+                {
                     mtb.Select(3, 2);
                 });
                 e.Handled = true; // منع المعالجة الافتراضية
@@ -3717,7 +3609,8 @@ namespace Mospuk_1
             if (e.KeyCode == Keys.Left && mtb.SelectionStart == 3)
             {
                 // انتظر قليلاً ثم حدد حقل الساعات
-                this.BeginInvoke((MethodInvoker)delegate {
+                this.BeginInvoke((MethodInvoker)delegate
+                {
                     mtb.Select(0, 2);
                 });
                 e.Handled = true; // منع المعالجة الافتراضية
@@ -4111,6 +4004,20 @@ namespace Mospuk_1
             {
                 MessageBox.Show($"حدث خطأ أثناء تنظيف المشروع المحفوظ:\n{ex.Message}", "تحذير", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
+        }
+
+        private void btnsettings_Click(object sender, EventArgs e)
+        {
+            Home addproject = new Home(db);
+            // addproject.FormClosed += (s, args) => LoadProjectsToDGV(); // تحديث عند إغلاق النموذج
+            addproject.ShowDialog();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Home addproject = new Home(db);
+            // addproject.FormClosed += (s, args) => LoadProjectsToDGV(); // تحديث عند إغلاق النموذج
+            addproject.ShowDialog();
         }
     }
     //*************************************

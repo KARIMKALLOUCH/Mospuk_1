@@ -49,10 +49,13 @@
             this.btnAddWord = new Guna.UI2.WinForms.Guna2Button();
             this.panelDocx = new System.Windows.Forms.Panel();
             this.Time = new System.Windows.Forms.MaskedTextBox();
+            this.lblStatus = new System.Windows.Forms.Label();
+            this.button1 = new System.Windows.Forms.Button();
             this.btnUplaod = new Guna.UI2.WinForms.Guna2Button();
+            this.btnsettings = new Guna.UI2.WinForms.Guna2PictureBox();
             this.imageApostille = new Guna.UI2.WinForms.Guna2PictureBox();
             this.savebtn = new Guna.UI2.WinForms.Guna2Button();
-            this.lblStatus = new System.Windows.Forms.Label();
+            ((System.ComponentModel.ISupportInitialize)(this.btnsettings)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageApostille)).BeginInit();
             this.SuspendLayout();
             // 
@@ -78,7 +81,7 @@
             this.comboTranslation.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.comboTranslation.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
             this.comboTranslation.ItemHeight = 30;
-            this.comboTranslation.Location = new System.Drawing.Point(209, 270);
+            this.comboTranslation.Location = new System.Drawing.Point(209, 302);
             this.comboTranslation.Name = "comboTranslation";
             this.comboTranslation.Size = new System.Drawing.Size(165, 36);
             this.comboTranslation.TabIndex = 108;
@@ -94,7 +97,7 @@
             this.comboDocumentType.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.comboDocumentType.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
             this.comboDocumentType.ItemHeight = 30;
-            this.comboDocumentType.Location = new System.Drawing.Point(15, 270);
+            this.comboDocumentType.Location = new System.Drawing.Point(15, 302);
             this.comboDocumentType.Name = "comboDocumentType";
             this.comboDocumentType.Size = new System.Drawing.Size(165, 36);
             this.comboDocumentType.TabIndex = 107;
@@ -103,7 +106,7 @@
             // 
             this.labelControl2.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelControl2.Appearance.Options.UseFont = true;
-            this.labelControl2.Location = new System.Drawing.Point(248, 3);
+            this.labelControl2.Location = new System.Drawing.Point(248, 33);
             this.labelControl2.Name = "labelControl2";
             this.labelControl2.Size = new System.Drawing.Size(89, 18);
             this.labelControl2.TabIndex = 113;
@@ -120,7 +123,7 @@
             this.Delivery_Date.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.Delivery_Date.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
             this.Delivery_Date.ItemHeight = 30;
-            this.Delivery_Date.Location = new System.Drawing.Point(248, 27);
+            this.Delivery_Date.Location = new System.Drawing.Point(248, 57);
             this.Delivery_Date.Name = "Delivery_Date";
             this.Delivery_Date.Size = new System.Drawing.Size(210, 36);
             this.Delivery_Date.TabIndex = 112;
@@ -139,7 +142,7 @@
             this.Company_Client.Items.AddRange(new object[] {
             "ndr",
             "bnc"});
-            this.Company_Client.Location = new System.Drawing.Point(11, 27);
+            this.Company_Client.Location = new System.Drawing.Point(11, 57);
             this.Company_Client.Name = "Company_Client";
             this.Company_Client.Size = new System.Drawing.Size(210, 36);
             this.Company_Client.TabIndex = 111;
@@ -148,7 +151,7 @@
             // 
             this.labelControl1.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelControl1.Appearance.Options.UseFont = true;
-            this.labelControl1.Location = new System.Drawing.Point(14, 3);
+            this.labelControl1.Location = new System.Drawing.Point(14, 33);
             this.labelControl1.Name = "labelControl1";
             this.labelControl1.Size = new System.Drawing.Size(112, 18);
             this.labelControl1.TabIndex = 110;
@@ -158,7 +161,7 @@
             // 
             this.labelControl3.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelControl3.Appearance.Options.UseFont = true;
-            this.labelControl3.Location = new System.Drawing.Point(725, 3);
+            this.labelControl3.Location = new System.Drawing.Point(725, 33);
             this.labelControl3.Name = "labelControl3";
             this.labelControl3.Size = new System.Drawing.Size(101, 18);
             this.labelControl3.TabIndex = 117;
@@ -173,7 +176,7 @@
             this.Reception_Date.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.Reception_Date.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
             this.Reception_Date.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
-            this.Reception_Date.Location = new System.Drawing.Point(488, 27);
+            this.Reception_Date.Location = new System.Drawing.Point(488, 57);
             this.Reception_Date.MaxDate = new System.DateTime(9998, 12, 31, 0, 0, 0, 0);
             this.Reception_Date.MinDate = new System.DateTime(1753, 1, 1, 0, 0, 0, 0);
             this.Reception_Date.Name = "Reception_Date";
@@ -185,7 +188,7 @@
             // 
             this.labelControl4.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelControl4.Appearance.Options.UseFont = true;
-            this.labelControl4.Location = new System.Drawing.Point(488, 3);
+            this.labelControl4.Location = new System.Drawing.Point(488, 33);
             this.labelControl4.Name = "labelControl4";
             this.labelControl4.Size = new System.Drawing.Size(99, 18);
             this.labelControl4.TabIndex = 114;
@@ -205,7 +208,7 @@
             this.txtnotes.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.txtnotes.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
             this.txtnotes.IconLeftSize = new System.Drawing.Size(15, 15);
-            this.txtnotes.Location = new System.Drawing.Point(860, 27);
+            this.txtnotes.Location = new System.Drawing.Point(860, 57);
             this.txtnotes.Multiline = true;
             this.txtnotes.Name = "txtnotes";
             this.txtnotes.PlaceholderText = "Write your notes here";
@@ -220,7 +223,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.labelControl15.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelControl15.Appearance.Options.UseFont = true;
-            this.labelControl15.Location = new System.Drawing.Point(864, 3);
+            this.labelControl15.Location = new System.Drawing.Point(864, 33);
             this.labelControl15.Name = "labelControl15";
             this.labelControl15.Size = new System.Drawing.Size(63, 18);
             this.labelControl15.TabIndex = 158;
@@ -232,7 +235,7 @@
             | System.Windows.Forms.AnchorStyles.Left)));
             this.labelControl5.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelControl5.Appearance.Options.UseFont = true;
-            this.labelControl5.Location = new System.Drawing.Point(15, 314);
+            this.labelControl5.Location = new System.Drawing.Point(15, 346);
             this.labelControl5.Name = "labelControl5";
             this.labelControl5.Size = new System.Drawing.Size(95, 18);
             this.labelControl5.TabIndex = 160;
@@ -242,7 +245,7 @@
             // 
             this.labelControl6.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelControl6.Appearance.Options.UseFont = true;
-            this.labelControl6.Location = new System.Drawing.Point(15, 252);
+            this.labelControl6.Location = new System.Drawing.Point(15, 284);
             this.labelControl6.Name = "labelControl6";
             this.labelControl6.Size = new System.Drawing.Size(106, 18);
             this.labelControl6.TabIndex = 161;
@@ -252,7 +255,7 @@
             // 
             this.labelControl7.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelControl7.Appearance.Options.UseFont = true;
-            this.labelControl7.Location = new System.Drawing.Point(209, 252);
+            this.labelControl7.Location = new System.Drawing.Point(209, 284);
             this.labelControl7.Name = "labelControl7";
             this.labelControl7.Size = new System.Drawing.Size(114, 18);
             this.labelControl7.TabIndex = 162;
@@ -265,9 +268,9 @@
             this.flowLayoutPanel1.AutoScroll = true;
             this.flowLayoutPanel1.BackColor = System.Drawing.SystemColors.Control;
             this.flowLayoutPanel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.flowLayoutPanel1.Location = new System.Drawing.Point(12, 75);
+            this.flowLayoutPanel1.Location = new System.Drawing.Point(12, 105);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(941, 168);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(975, 168);
             this.flowLayoutPanel1.TabIndex = 166;
             // 
             // flowLayoutPanel2
@@ -277,7 +280,7 @@
             this.flowLayoutPanel2.AutoScroll = true;
             this.flowLayoutPanel2.BackColor = System.Drawing.SystemColors.Control;
             this.flowLayoutPanel2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.flowLayoutPanel2.Location = new System.Drawing.Point(12, 337);
+            this.flowLayoutPanel2.Location = new System.Drawing.Point(12, 369);
             this.flowLayoutPanel2.Name = "flowLayoutPanel2";
             this.flowLayoutPanel2.Size = new System.Drawing.Size(572, 168);
             this.flowLayoutPanel2.TabIndex = 167;
@@ -291,22 +294,22 @@
             this.btnAddWord.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
             this.btnAddWord.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
             this.btnAddWord.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
-            this.btnAddWord.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.btnAddWord.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnAddWord.ForeColor = System.Drawing.Color.White;
-            this.btnAddWord.Location = new System.Drawing.Point(603, 294);
+            this.btnAddWord.Location = new System.Drawing.Point(1012, 311);
             this.btnAddWord.Name = "btnAddWord";
             this.btnAddWord.Size = new System.Drawing.Size(140, 38);
             this.btnAddWord.TabIndex = 171;
-            this.btnAddWord.Text = "Archive";
+            this.btnAddWord.Text = "Add OCR";
             this.btnAddWord.Click += new System.EventHandler(this.btnAddWord_Click);
             // 
             // panelDocx
             // 
             this.panelDocx.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.panelDocx.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.panelDocx.Location = new System.Drawing.Point(603, 343);
+            this.panelDocx.Location = new System.Drawing.Point(627, 369);
             this.panelDocx.Name = "panelDocx";
-            this.panelDocx.Size = new System.Drawing.Size(525, 162);
+            this.panelDocx.Size = new System.Drawing.Size(525, 168);
             this.panelDocx.TabIndex = 173;
             // 
             // Time
@@ -314,7 +317,7 @@
             this.Time.BackColor = System.Drawing.Color.Gainsboro;
             this.Time.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Time.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
-            this.Time.Location = new System.Drawing.Point(725, 29);
+            this.Time.Location = new System.Drawing.Point(725, 59);
             this.Time.Mask = "00:00";
             this.Time.Name = "Time";
             this.Time.Size = new System.Drawing.Size(101, 29);
@@ -322,6 +325,29 @@
             this.Time.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.Time.Click += new System.EventHandler(this.Time_Click);
             this.Time.Enter += new System.EventHandler(this.Time_Enter);
+            // 
+            // lblStatus
+            // 
+            this.lblStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblStatus.AutoSize = true;
+            this.lblStatus.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblStatus.Location = new System.Drawing.Point(622, 308);
+            this.lblStatus.Name = "lblStatus";
+            this.lblStatus.Size = new System.Drawing.Size(107, 25);
+            this.lblStatus.TabIndex = 175;
+            this.lblStatus.Text = "Loading...";
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(797, 315);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(66, 31);
+            this.button1.TabIndex = 177;
+            this.button1.Text = "button1";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // btnUplaod
             // 
@@ -334,18 +360,30 @@
             this.btnUplaod.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.btnUplaod.ForeColor = System.Drawing.Color.White;
             this.btnUplaod.Image = ((System.Drawing.Image)(resources.GetObject("btnUplaod.Image")));
-            this.btnUplaod.Location = new System.Drawing.Point(1012, 536);
+            this.btnUplaod.Location = new System.Drawing.Point(1012, 545);
             this.btnUplaod.Name = "btnUplaod";
             this.btnUplaod.Size = new System.Drawing.Size(140, 38);
             this.btnUplaod.TabIndex = 22;
             this.btnUplaod.Text = "Add";
             this.btnUplaod.Click += new System.EventHandler(this.btnUplaod_Click);
             // 
+            // btnsettings
+            // 
+            this.btnsettings.Image = global::Mospuk_1.Properties.Resources.iconsetting;
+            this.btnsettings.ImageRotate = 0F;
+            this.btnsettings.Location = new System.Drawing.Point(10, 3);
+            this.btnsettings.Name = "btnsettings";
+            this.btnsettings.Size = new System.Drawing.Size(36, 27);
+            this.btnsettings.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.btnsettings.TabIndex = 176;
+            this.btnsettings.TabStop = false;
+            this.btnsettings.Click += new System.EventHandler(this.btnsettings_Click);
+            // 
             // imageApostille
             // 
             this.imageApostille.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.imageApostille.ImageRotate = 0F;
-            this.imageApostille.Location = new System.Drawing.Point(981, 75);
+            this.imageApostille.Location = new System.Drawing.Point(1011, 105);
             this.imageApostille.Name = "imageApostille";
             this.imageApostille.Size = new System.Drawing.Size(141, 168);
             this.imageApostille.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -354,7 +392,6 @@
             // 
             // savebtn
             // 
-            this.savebtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.savebtn.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
             this.savebtn.BorderRadius = 1;
             this.savebtn.BorderThickness = 2;
@@ -365,25 +402,13 @@
             this.savebtn.FillColor = System.Drawing.Color.Transparent;
             this.savebtn.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.savebtn.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
-            this.savebtn.Location = new System.Drawing.Point(850, 536);
+            this.savebtn.Image = global::Mospuk_1.Properties.Resources.saveicon;
+            this.savebtn.Location = new System.Drawing.Point(400, 300);
             this.savebtn.Name = "savebtn";
             this.savebtn.Size = new System.Drawing.Size(140, 38);
             this.savebtn.TabIndex = 25;
             this.savebtn.Text = "Save";
             this.savebtn.Click += new System.EventHandler(this.savebtn_Click);
-            // 
-            // lblStatus
-            // 
-            this.lblStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblStatus.AutoSize = true;
-            this.lblStatus.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblStatus.Location = new System.Drawing.Point(598, 266);
-            this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(70, 25);
-            this.lblStatus.TabIndex = 175;
-            this.lblStatus.Text = "label1";
             // 
             // AddFile
             // 
@@ -391,6 +416,8 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1164, 671);
+            this.Controls.Add(this.button1);
+            this.Controls.Add(this.btnsettings);
             this.Controls.Add(this.lblStatus);
             this.Controls.Add(this.Time);
             this.Controls.Add(this.panelDocx);
@@ -420,6 +447,7 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Load += new System.EventHandler(this.AddFile_Load);
             this.Resize += new System.EventHandler(this.AddFile_Resize);
+            ((System.ComponentModel.ISupportInitialize)(this.btnsettings)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageApostille)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -452,5 +480,7 @@
         private System.Windows.Forms.Panel panelDocx;
         private System.Windows.Forms.MaskedTextBox Time;
         private System.Windows.Forms.Label lblStatus;
+        private Guna.UI2.WinForms.Guna2PictureBox btnsettings;
+        private System.Windows.Forms.Button button1;
     }
 }

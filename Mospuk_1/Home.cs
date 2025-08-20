@@ -24,13 +24,14 @@ namespace Mospuk_1
             InitializeComponent();
             db = database;  // ← هنا تحفظ المتغير لتستخدمه لاحقاً
 
-            LoadProjectsToDGV();
+          //  LoadProjectsToDGV();
             navigationFrame1.TransitionAnimationProperties.FrameCount = 1;
-            LoadClientsToDGV();
-            LoadCompaniesToDGV();
-            LoadDocumentTypesToDGV();
-            LoadLanguagePairsToDGV();
+          //  LoadClientsToDGV();
+       //     LoadCompaniesToDGV();
+          //  LoadDocumentTypesToDGV();
+         //   LoadLanguagePairsToDGV();
         }
+
         private void btnLogout_Click(object sender, EventArgs e)
         {
 
@@ -38,21 +39,22 @@ namespace Mospuk_1
         }
         private void btnAdd_Click(object sender, EventArgs e)
         {
-            AddFile addproject = new AddFile(db);
-            addproject.FormClosed += (s, args) => LoadProjectsToDGV(); // تحديث عند إغلاق النموذج
-            addproject.Show();
+          //  AddFile addproject = new AddFile(db);
+       //     addproject.FormClosed += (s, args) => LoadProjectsToDGV(); // تحديث عند إغلاق النموذج
+        //    addproject.Show();
         }
-        private void LoadProjectsToDGV()
+    /*  private void LoadProjectsToDGV()
         {
             string query = "SELECT folder_name FROM projects ORDER BY id DESC"; // تعرض آخر Project في الأعلى
             DataTable dt = db.ExecuteQuery(query, null);
             DGVChanges.DataSource = dt;
-        }
+        }*/
 
         private void btnCompanyAdd_Click(object sender, EventArgs e)
         {
-            OrcTest addproject = new OrcTest();
-            addproject.ShowDialog();
+
+          //  OrcTest addproject = new OrcTest();
+           // addproject.ShowDialog();
         }
 
         private void btnUserAdd_Click(object sender, EventArgs e)
@@ -62,6 +64,8 @@ namespace Mospuk_1
 
         private void btnClientAdd_Click(object sender, EventArgs e)
         {
+            LoadClientsToDGV();
+
             navigationFrame1.SelectedPage = navigationPage2;
         }
 
@@ -363,6 +367,7 @@ namespace Mospuk_1
 
         private void guna2Button1_Click(object sender, EventArgs e)
         {
+            LoadCompaniesToDGV();
             navigationFrame1.SelectedPage = navigationPage3;
         }
 
@@ -661,6 +666,8 @@ namespace Mospuk_1
 
         private void guna2Button3_Click(object sender, EventArgs e)
         {
+              LoadDocumentTypesToDGV();
+               LoadLanguagePairsToDGV();
             navigationFrame1.SelectedPage = navigationPage4;
         }
 
@@ -963,7 +970,13 @@ namespace Mospuk_1
 
         private void Home_Load(object sender, EventArgs e)
         {
-            LoadProjectsToDGV();
+         //   LoadProjectsToDGV();
+        }
+       
+
+        private void tabPane1_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

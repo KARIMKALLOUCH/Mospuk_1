@@ -361,12 +361,6 @@
     <Compile Include="Home.Designer.cs">
       <DependentUpon>Home.cs</DependentUpon>
     </Compile>
-    <Compile Include="ImageViewerForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="ImageViewerForm.Designer.cs">
-      <DependentUpon>ImageViewerForm.cs</DependentUpon>
-    </Compile>
     <Compile Include="Login.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -388,6 +382,12 @@
     <Compile Include="SaveDirectory.Designer.cs">
       <DependentUpon>SaveDirectory.cs</DependentUpon>
     </Compile>
+    <Compile Include="SettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SettingsForm.Designer.cs">
+      <DependentUpon>SettingsForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="SQLiteDatabase.cs" />
     <EmbeddedResource Include="AddCompany.resx">
       <DependentUpon>AddCompany.cs</DependentUpon>
@@ -400,9 +400,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Home.resx">
       <DependentUpon>Home.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ImageViewerForm.resx">
-      <DependentUpon>ImageViewerForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Login.resx">
       <DependentUpon>Login.cs</DependentUpon>
@@ -423,6 +420,9 @@
     </Compile>
     <EmbeddedResource Include="SaveDirectory.resx">
       <DependentUpon>SaveDirectory.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SettingsForm.resx">
+      <DependentUpon>SettingsForm.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="client_secret_134210498584-6jgttufjfsm0amha91v30dkiicmjofop.apps.googleusercontent.com.json" />
     <None Include="packages.config" />
@@ -477,6 +477,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="icon.ico" />
+    <None Include="Resources\pdficon.png" />
+    <None Include="Resources\iconsetting.png" />
+    <None Include="Resources\saveicon.png" />
     <None Include="Resources\wordicon.png" />
     <None Include="Resources\icondoc.png" />
     <None Include="Resources\logout.png" />
