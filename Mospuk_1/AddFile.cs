@@ -132,12 +132,10 @@ namespace Mospuk_1
             }
             else if (e.Control && e.KeyCode == Keys.C)
             {
-                // This is the new "Copy" operation.
                 HandleCopy();
                 e.Handled = true;
                 e.SuppressKeyPress = true;
             }
-            // --- END: MODIFIED SECTION ---
             else if (e.KeyCode == Keys.Delete)
             {
                 List<PictureBox> allSelectedPictures = new List<PictureBox>();
@@ -184,12 +182,10 @@ namespace Mospuk_1
                                 pb.Tag = null;
                             }
 
-                            // Dispose the PictureBox resources
                             pb.Image?.Dispose();
                             pb.Dispose();
 
-                            // <<-- START MODIFICATION: Simplified File Deletion -->>
-                            // Now we just delete the file directly, regardless of its type (image, pdf, docx)
+                        
                             if (!string.IsNullOrEmpty(filePathToDelete) && File.Exists(filePathToDelete))
                             {
                                 try
@@ -202,10 +198,8 @@ namespace Mospuk_1
                                                     "File Deletion Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                                 }
                             }
-                            // <<-- END MODIFICATION -->>
                         }
 
-                        // Clear all selection lists
                         selectedPictureBoxesFlow1.Clear();
                         selectedPictureBoxesFlow2.Clear();
                         selectedPictureBoxes.Clear();
@@ -883,13 +877,20 @@ namespace Mospuk_1
 
         private void savebtn_Click(object sender, EventArgs e)
         {
-            lblStatus.Text = "Saving, please wait...";
+                lblStatus.Text = "Saving, please wait...";
             lblStatus.Visible = true;
             this.Enabled = false;
             Application.DoEvents();
 
             try
             {
+                if (cmbUser.SelectedItem == null)
+                {
+                    MessageBox.Show("Please select a user.", "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    cmbUser.Focus();
+                    return; // إيقاف التنفيذ
+                }
+
                 // ... (كل كود التحقق من المدخلات حتى الوصول إلى جملة if(success) يبقى كما هو) ...
                 string companyClient = Company_Client.Text.Trim();
                 DateTime receptionDate = Reception_Date.Value.Date;
@@ -935,12 +936,50 @@ namespace Mospuk_1
                     comboTranslation.Focus();
                     return;
                 }
+
                 int deliveryDays = ((KeyValuePair<string, int>)Delivery_Date.SelectedItem).Value;
                 DateTime deliveryDate = receptionDate.AddDays(deliveryDays);
-                string orderQuery = "SELECT IFNULL(MAX(project_order), 0) FROM projects WHERE reception_date = @date";
-                object result = db.ExecuteScalar(orderQuery, new List<SQLiteParameter> { new SQLiteParameter("@date", receptionDate.ToString("yyyy-MM-dd")) });
-                int lastOrder = (result == null || result == DBNull.Value) ? 0 : Convert.ToInt32(result);
-                int newOrder = lastOrder + 1;
+
+                // === التعديل الجديد: إضافة إمكانية تحديد project_order يدوياً ===
+                int newOrder;
+
+                // التحقق من قيمة NumericUpDown للـ project_order
+                if (numProjectOrder.Value > 0)
+                {
+                    int manualOrder = (int)numProjectOrder.Value;
+
+                    // التحقق من أن الرقم المدخل لا يتعارض مع رقم موجود في نفس التاريخ
+                    string checkOrderQuery = "SELECT COUNT(*) FROM projects WHERE reception_date = @date AND project_order = @order";
+                    object existsResult = db.ExecuteScalar(checkOrderQuery, new List<SQLiteParameter>
+            {
+                new SQLiteParameter("@date", receptionDate.ToString("yyyy-MM-dd")),
+                new SQLiteParameter("@order", manualOrder)
+            });
+
+                    int existingCount = Convert.ToInt32(existsResult);
+                    if (existingCount > 0)
+                    {
+                        MessageBox.Show($"Project order {manualOrder} already exists for date {receptionDate:yyyy-MM-dd}. Please choose a different number.",
+                            "Duplicate Order", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        numProjectOrder.Focus();
+                        return;
+                    }
+
+                    newOrder = manualOrder;
+                }
+                else
+                {
+                    // الكود الأصلي: حساب الترقيم تلقائياً
+                    string orderQuery = "SELECT IFNULL(MAX(project_order), 0) FROM projects WHERE reception_date = @date";
+                    object result = db.ExecuteScalar(orderQuery, new List<SQLiteParameter>
+            {
+                new SQLiteParameter("@date", receptionDate.ToString("yyyy-MM-dd"))
+            });
+                    int lastOrder = (result == null || result == DBNull.Value) ? 0 : Convert.ToInt32(result);
+                    newOrder = lastOrder + 1;
+                }
+                string selectedUser = cmbUser.Text;
+
                 string documentType = selectedDocTypePair.Value;
                 string translationType = selectedTranslationPair.Value;
                 string hoursSpent = "24";
@@ -948,6 +987,7 @@ namespace Mospuk_1
                 string receptionDateStr = receptionDate.ToString("yyMMdd");
                 string projectOrderStr = newOrder.ToString("D2");
                 string receptionTimeStr = receptionTime.Replace(":", "");
+
                 if (deliveryDays == 1)
                 {
                     if (!string.IsNullOrEmpty(deliveryDateStr))
@@ -955,20 +995,40 @@ namespace Mospuk_1
                         deliveryDateStr = "0" + deliveryDateStr.Substring(1);
                     }
                 }
+
                 string folderName = $"{deliveryDateStr}{hoursSpent}_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}";
+
                 if (!string.IsNullOrWhiteSpace(txtnotes.Text))
                 {
                     string rawNote = txtnotes.Text.Trim();
                     string sanitizedNote = new string(rawNote.Where(c => char.IsLetterOrDigit(c) || c == ' ' || c == '+' || c == '-').ToArray()).Replace(" ", "_");
                     if (sanitizedNote.Length > 30)
                         sanitizedNote = sanitizedNote.Substring(0, 30);
-                    folderName += $"-------------{sanitizedNote}-----------";
+                    folderName += $"-------------{sanitizedNote}-------------{selectedUser}";
                 }
+                else
+                {
+                    folderName += $"--------------------------{selectedUser}";
+
+                }
+
                 string insertQuery = @"INSERT INTO projects (company_client, reception_date, reception_time, delivery_days, delivery_date, hours_spent, project_order, folder_name, note, document_type, translation_type, registration_date, last_update_date) VALUES (@company_client, @reception_date, @reception_time, @delivery_days, @delivery_date, @hours_spent, @project_order, @folder_name, @note, @document_type, @translation_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
+
                 List<SQLiteParameter> parameters = new List<SQLiteParameter>
         {
-            new SQLiteParameter("@company_client", companyClient), new SQLiteParameter("@reception_date", receptionDate.ToString("yyyy-MM-dd")), new SQLiteParameter("@reception_time", receptionTime), new SQLiteParameter("@delivery_days", deliveryDays), new SQLiteParameter("@delivery_date", deliveryDate.ToString("yyyy-MM-dd")), new SQLiteParameter("@hours_spent", 24), new SQLiteParameter("@project_order", newOrder), new SQLiteParameter("@folder_name", folderName), new SQLiteParameter("@note", string.IsNullOrWhiteSpace(txtnotes.Text) ? DBNull.Value : (object)txtnotes.Text), new SQLiteParameter("@document_type", documentType), new SQLiteParameter("@translation_type", translationType)
+            new SQLiteParameter("@company_client", companyClient),
+            new SQLiteParameter("@reception_date", receptionDate.ToString("yyyy-MM-dd")),
+            new SQLiteParameter("@reception_time", receptionTime),
+            new SQLiteParameter("@delivery_days", deliveryDays),
+            new SQLiteParameter("@delivery_date", deliveryDate.ToString("yyyy-MM-dd")),
+            new SQLiteParameter("@hours_spent", 24),
+            new SQLiteParameter("@project_order", newOrder),
+            new SQLiteParameter("@folder_name", folderName),
+            new SQLiteParameter("@note", string.IsNullOrWhiteSpace(txtnotes.Text) ? DBNull.Value : (object)txtnotes.Text),
+            new SQLiteParameter("@document_type", documentType),
+            new SQLiteParameter("@translation_type", translationType)
         };
+
                 bool success = db.ExecuteNonQuery(insertQuery, parameters);
 
                 if (success)
@@ -978,13 +1038,13 @@ namespace Mospuk_1
                     int projectId = Convert.ToInt32(lastIdResult);
 
                     // استدعاء دالة الحفظ واستقبال النتيجة وقائمة المسارات
-                    var (allImagesSaved, savedSourcePaths) = SaveProjectImages(projectId, folderName, deliveryDateStr, receptionDateStr, projectOrderStr, receptionTimeStr, companyClient, translationType, documentType);
+                    var (allImagesSaved, savedSourcePaths) = SaveProjectImages(projectId, folderName, deliveryDateStr, receptionDateStr, projectOrderStr, receptionTimeStr, companyClient, translationType, documentType, selectedUser);
 
                     if (allImagesSaved)
                     {
                         // 1. تنظيف الواجهة الرسومية
                         CleanUpSavedProject();
-
+                        numProjectOrder.Value = 0;
                         // 2. حذف الملفات المصدر من المجلد المؤقت
                         foreach (string path in savedSourcePaths)
                         {
@@ -1021,7 +1081,7 @@ namespace Mospuk_1
                 this.Enabled = true;
             }
         }
-        private (bool success, List<string> savedSourcePaths) SaveProjectImages(int projectId, string folderName, string deliveryDateStr, string receptionDateStr, string projectOrderStr, string receptionTimeStr, string companyClient, string translationType, string documentType)
+        private (bool success, List<string> savedSourcePaths) SaveProjectImages(int projectId, string folderName, string deliveryDateStr, string receptionDateStr, string projectOrderStr, string receptionTimeStr, string companyClient, string translationType, string documentType,string selectedUser)
         {
             bool allSaved = true;
             int imageCounter = 1;
@@ -1058,11 +1118,12 @@ namespace Mospuk_1
                                 string sanitizedNote = new string(rawNote.Where(c => char.IsLetterOrDigit(c) || c == ' ' || c == '+' || c == '-').ToArray()).Replace(" ", "_");
                                 if (sanitizedNote.Length > 30)
                                     sanitizedNote = sanitizedNote.Substring(0, 30);
-                                imageName += $"------------------------{sanitizedNote}----------------------";
+                                imageName += $"------------------------{sanitizedNote}----------------------{selectedUser}";
                             }
                             else
                             {
-                                imageName += "--------------------------------------------------------------";
+                                imageName += $"-------------------------------------------------------------{selectedUser}";
+
                             }
                         }
 
@@ -1075,7 +1136,8 @@ namespace Mospuk_1
                         }
                         else if (pb.Image != null)
                         {
-                            pb.Image.Save(destinationPath);
+                            System.Drawing.Imaging.ImageFormat format = GetImageFormat(originalPath);
+                            pb.Image.Save(destinationPath, format);
                         }
                         else
                         {
@@ -1125,7 +1187,9 @@ namespace Mospuk_1
                     string imageName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_Apostille";
                     string fullImageName = imageName + extension;
                     string imagePath = Path.Combine(projectFolder, fullImageName);
-                    imageApostille.Image.Save(imagePath);
+                    // السطر الجديد:
+                    System.Drawing.Imaging.ImageFormat format = GetImageFormat(originalPath);
+                    imageApostille.Image.Save(imagePath, format);
                     File.SetCreationTime(imagePath, DateTime.Now);
                     File.SetLastWriteTime(imagePath, DateTime.Now);
 
@@ -1176,7 +1240,8 @@ namespace Mospuk_1
                         }
                         else if (pb.Image != null)
                         {
-                            pb.Image.Save(destinationPath);
+                            System.Drawing.Imaging.ImageFormat format = GetImageFormat(originalPath);
+                            pb.Image.Save(destinationPath, format);
                         }
                         else
                         {
@@ -1521,9 +1586,8 @@ namespace Mospuk_1
         }
         private void AddFile_Load(object sender, EventArgs e)
         {
-            Delivery_Date.Items.Add(new KeyValuePair<string, int>("Default", 3));
-            Delivery_Date.Items.Add(new KeyValuePair<string, int>("Urgent (2 days)", 2));
-            Delivery_Date.Items.Add(new KeyValuePair<string, int>("Very Urgent (1 day)", 1));
+            Delivery_Date.Items.Add(new KeyValuePair<string, int>("1 day", 3));
+            Delivery_Date.Items.Add(new KeyValuePair<string, int>("Urgent (1 day)", 1));
             Delivery_Date.DisplayMember = "Key";
             Delivery_Date.ValueMember = "Value";
             Delivery_Date.SelectedIndex = 0;
@@ -1533,6 +1597,7 @@ namespace Mospuk_1
             LoadDocumentTypesToComboBox();
             LoadLanguagePairsToComboBox();
             SetupMultiPanelDragSupport();
+            LoadUsersToCombo();
             Time.KeyUp += Time_KeyUp_AutoJump;
             Time.TextChanged += Time_TextChanged_Validate; // ربط حدث التحقق
             Time.KeyDown += Time_KeyDown;
@@ -2195,7 +2260,6 @@ namespace Mospuk_1
                 MessageBox.Show($"حدث خطأ في تحميل العملاء والشركات:\n{ex.Message}",
                               "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
-                Console.WriteLine($"Error in LoadClientsAndCompanies: {ex.ToString()}");
             }
         }
         private void LoadDocumentTypesToComboBox()
@@ -2233,7 +2297,6 @@ namespace Mospuk_1
                 MessageBox.Show($"Error loading document types:\n{ex.Message}",
                               "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
-                Console.WriteLine($"Error in LoadDocumentTypesToComboBox: {ex.ToString()}");
             }
         }
         private void LoadLanguagePairsToComboBox()
@@ -4009,16 +4072,81 @@ namespace Mospuk_1
         private void btnsettings_Click(object sender, EventArgs e)
         {
             Home addproject = new Home(db);
-            // addproject.FormClosed += (s, args) => LoadProjectsToDGV(); // تحديث عند إغلاق النموذج
             addproject.ShowDialog();
         }
 
-        private void button1_Click(object sender, EventArgs e)
+    
+        private System.Drawing.Imaging.ImageFormat GetImageFormat(string filePath)
         {
-            Home addproject = new Home(db);
-            // addproject.FormClosed += (s, args) => LoadProjectsToDGV(); // تحديث عند إغلاق النموذج
-            addproject.ShowDialog();
+            string extension = Path.GetExtension(filePath).ToLowerInvariant();
+            switch (extension)
+            {
+                case ".jpg":
+                case ".jpeg":
+                    return System.Drawing.Imaging.ImageFormat.Jpeg;
+                case ".png":
+                    return System.Drawing.Imaging.ImageFormat.Png;
+                case ".gif":
+                    return System.Drawing.Imaging.ImageFormat.Gif;
+                case ".bmp":
+                    return System.Drawing.Imaging.ImageFormat.Bmp;
+                case ".tiff":
+                case ".tif":
+                    return System.Drawing.Imaging.ImageFormat.Tiff;
+                default:
+                    return System.Drawing.Imaging.ImageFormat.Jpeg;
+            }
         }
+        private void LoadUsersToCombo()
+        {
+            try
+            {
+                string sql = @"SELECT user_id, user_code FROM users ORDER BY user_code";
+                DataTable dt = db.ExecuteQuery(sql, null);
+
+                cmbUser.DataSource = dt;
+                cmbUser.DisplayMember = "user_code"; // ما يظهر للمستخدم
+                cmbUser.ValueMember = "user_id";   // القيمة الداخلية
+                cmbUser.SelectedIndex = 0;          // لا تختار شيء افتراضيًا
+
+            
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading users: " + ex.Message);
+            }
+        }
+
+        private void Delivery_Date_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (Delivery_Date.SelectedItem == null)
+            {
+                return;
+            }
+
+            var selectedItem = (KeyValuePair<string, int>)Delivery_Date.SelectedItem;
+            string selectedText = selectedItem.Key; // هذا هو النص الظاهر مثل "Urgent (1 day)"
+
+            if (selectedText.Contains("Urgent"))
+            {
+                if (string.IsNullOrWhiteSpace(txtnotes.Text) || txtnotes.Text.Trim().Equals("Urgent", StringComparison.OrdinalIgnoreCase))
+                {
+                    txtnotes.Text = "Urgent";
+                }
+                else if (!txtnotes.Text.Trim().StartsWith("Urgent", StringComparison.OrdinalIgnoreCase))
+                {
+                    txtnotes.Text = "Urgent " + txtnotes.Text;
+                }
+            }
+            else 
+            {
+                if (txtnotes.Text.Trim().Equals("Urgent", StringComparison.OrdinalIgnoreCase))
+                {
+                    txtnotes.Clear();
+                }
+            }
+        }
+
     }
     //*************************************
 

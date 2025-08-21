@@ -49,6 +49,18 @@ public class SQLiteDatabase
         string[] createTableQueries = {
             // جدول المستخدمين
           
+            @"CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            first_name TEXT NOT NULL,
+            last_name  TEXT NOT NULL,
+            user_code  TEXT NOT NULL UNIQUE,
+            email      TEXT,
+            phone      TEXT,
+            address    TEXT,
+            notes      TEXT,
+            registration_date DATE DEFAULT CURRENT_DATE,
+            last_update_date  DATETIME DEFAULT CURRENT_TIMESTAMP
+            );",
 
             // جدول مسارات المستخدمين
             @"CREATE TABLE IF NOT EXISTS user_paths (
@@ -61,18 +73,18 @@ public class SQLiteDatabase
             );",
 
             // جدول العملاء
-            @"CREATE TABLE IF NOT EXISTS clients (
-                client_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                first_name TEXT NOT NULL,
-                last_name TEXT NOT NULL,
-                client_code TEXT NOT NULL UNIQUE,
-                email TEXT,
-                phone TEXT,
-                address TEXT,
-                notes TEXT,
-                registration_date DATE DEFAULT CURRENT_DATE,
-                last_update_date DATETIME DEFAULT CURRENT_TIMESTAMP
-            );",
+                @"CREATE TABLE IF NOT EXISTS clients (
+                    client_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    first_name TEXT NOT NULL,
+                    last_name TEXT NOT NULL,
+                    client_code TEXT NOT NULL UNIQUE,
+                    email TEXT,
+                    phone TEXT,
+                    address TEXT,
+                    notes TEXT,
+                    registration_date DATE DEFAULT CURRENT_DATE,
+                    last_update_date DATETIME DEFAULT CURRENT_TIMESTAMP
+                );",
 
             // جدول الشركات
             @"CREATE TABLE IF NOT EXISTS companies (
@@ -132,7 +144,14 @@ public class SQLiteDatabase
                 registration_date DATE DEFAULT CURRENT_DATE,
                 last_update_date DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
-            );",
+                );",
+
+            @"CREATE TRIGGER IF NOT EXISTS update_users_timestamp 
+                AFTER UPDATE ON users
+                BEGIN
+                    UPDATE users SET last_update_date = CURRENT_TIMESTAMP 
+                WHERE user_id = NEW.user_id;
+               END;",
 
             // إنشاء تريجرز لتحديث التاريخ
             @"CREATE TRIGGER IF NOT EXISTS update_user_paths_timestamp 

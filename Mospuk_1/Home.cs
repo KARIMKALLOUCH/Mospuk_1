@@ -17,6 +17,8 @@ namespace Mospuk_1
         SQLiteDatabase db; // تم التغيير
         private int selectedClientId = -1;
         private int selectedCompanyId = -1;
+        private int selectedUserId = -1;
+
 
         // تم تغيير نوع المتغير في الـ Constructor
         public Home(SQLiteDatabase database)
@@ -977,6 +979,324 @@ namespace Mospuk_1
         private void tabPane1_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void btnUserAdd_Click_1(object sender, EventArgs e)
+        {
+            LoadUsersToDGV();
+            navigationFrame1.SelectedPage = navigationPage6;
+
+        }
+
+        private void panel7_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void tabNavParametres_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void navigationPage4_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void btnAddUser_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtcodeuser.Text))
+            {
+                MessageBox.Show("User code is required.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                string firstName = txtfirstnameuser.Text.Trim();
+                string lastName = txtlastnameuser.Text.Trim();
+                string userCode = txtcodeuser.Text.Trim();
+                string email = txtemailuser.Text.Trim();
+                string phone = txtphoneuser.Text.Trim();
+                string address = txtaddressuser.Text.Trim();
+                string notes = txtnotesuser.Text.Trim();
+
+                // أولاً: تحقق هل client_code موجود مسبقاً
+                string checkQuery = "SELECT COUNT(*) FROM users  WHERE user_code  = @user_code";
+                // تم التغيير
+                var checkParams = new List<SQLiteParameter>
+                {
+                    new SQLiteParameter("@user_code", userCode)
+                };
+
+                object result = db.ExecuteScalar(checkQuery, checkParams);
+                int count = Convert.ToInt32(result);
+
+                if (count > 0)
+                {
+                    MessageBox.Show("User code already exists. Please use a different user code.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return; // توقف العملية لأن الكود موجود مسبقاً
+                }
+
+                // إذا لم يكن موجود، قم بإضافة العميل
+                string query = @"INSERT INTO users  
+            (first_name, last_name, user_code, email, phone, address, notes) 
+            VALUES 
+            (@first_name, @last_name, @user_code, @email, @phone, @address, @notes)";
+
+                // تم التغيير
+                var parameters = new List<SQLiteParameter>
+                {
+                    new SQLiteParameter("@first_name", firstName),
+                    new SQLiteParameter("@last_name", lastName),
+                    new SQLiteParameter("@user_code", userCode),
+                    new SQLiteParameter("@email", email),
+                    new SQLiteParameter("@phone", phone),
+                    new SQLiteParameter("@address", address),
+                    new SQLiteParameter("@notes", notes)
+                };
+
+                bool success = db.ExecuteNonQuery(query, parameters);
+
+                if (success)
+                {
+                    MessageBox.Show("The user has been added successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    txtfirstnameuser.Clear();
+                    txtlastnameuser.Clear();
+                    txtcodeuser.Clear();
+                    txtemailuser.Clear();
+                    txtphoneuser.Clear();
+                    txtaddressuser.Clear();
+                    txtnotesuser.Clear();
+                    LoadUsersToDGV();
+                }
+                else
+                {
+                    MessageBox.Show("Failed to add the user.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("An error occurred: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+        }
+        private void LoadUsersToDGV()
+        {
+            string query = @"
+        SELECT 
+            user_id  AS 'ID',
+            first_name AS 'First Name',
+            last_name AS 'Last Name',
+            user_code AS 'User Code',
+            email AS 'Email',
+            phone AS 'Phone',
+            address AS 'Address',
+            notes AS 'Notes'
+        FROM users 
+        ORDER BY user_id DESC";
+
+            DataTable dt = db.ExecuteQuery(query, null);
+            DTGVUser.DataSource = dt;
+            // Remove old column if it exists to avoid duplication
+            if (DTGVUser.Columns.Contains("Delete"))
+                DTGVUser.Columns.Remove("Delete");
+
+            DataGridViewImageColumn imgCol = new DataGridViewImageColumn();
+            imgCol.Name = "Delete";
+            imgCol.HeaderText = "";
+            imgCol.Image = Properties.Resources.delete_red; // 🛑 ضع هنا صورة delete في Resources
+            imgCol.ImageLayout = DataGridViewImageCellLayout.Zoom;
+
+            DTGVUser.Columns.Add(imgCol);
+        }
+
+        private void DTGVUser_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0)
+            {
+                DataGridViewRow row = DTGVUser.Rows[e.RowIndex];
+
+                selectedClientId = Convert.ToInt32(row.Cells["ID"].Value);
+                txtfirstname.Text = row.Cells["First Name"].Value.ToString();
+                txtlastname.Text = row.Cells["Last Name"].Value.ToString();
+                txtcode.Text = row.Cells["User Code"].Value.ToString();
+                txtemail.Text = row.Cells["Email"].Value.ToString();
+                txtphone.Text = row.Cells["Phone"].Value.ToString();
+                txtaddress.Text = row.Cells["Address"].Value.ToString();
+                txtnotes.Text = row.Cells["Notes"].Value.ToString();
+            }
+        }
+
+        private void txtsearchuser_TextChanged(object sender, EventArgs e)
+        {
+            string searchText = txtsearchuser.Text.Trim();
+
+            string query = @"
+        SELECT 
+            user_id  AS 'ID',
+            first_name AS 'First Name',
+            last_name AS 'Last Name',
+            user_code AS 'User Code',
+            email AS 'Email',
+            phone AS 'Phone',
+            address AS 'Address',
+            notes AS 'Notes'
+        FROM users
+        WHERE 
+            first_name LIKE @search OR
+            last_name LIKE @search OR
+            email LIKE @search OR
+            user_code LIKE @search
+        ORDER BY user_id  DESC";
+
+            // تم التغيير
+            var parameters = new List<SQLiteParameter>
+            {
+                new SQLiteParameter("@search", "%" + searchText + "%")
+            };
+
+            DataTable dt = db.ExecuteQuery(query, parameters);
+            DTGVUser.DataSource = dt;
+
+            // إعادة إضافة زر الحذف بعد كل بحث
+            if (!DTGVUser.Columns.Contains("Delete"))
+            {
+                DataGridViewImageColumn imgCol = new DataGridViewImageColumn();
+                imgCol.Name = "Delete";
+                imgCol.HeaderText = "";
+                imgCol.Image = Properties.Resources.delete_red;
+                imgCol.ImageLayout = DataGridViewImageCellLayout.Zoom;
+                DTGVUser.Columns.Add(imgCol);
+            }
+        }
+
+        private void btnEditUser_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtcodeuser.Text))
+            {
+                MessageBox.Show("user code is required.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (selectedUserId == -1)
+            {
+                MessageBox.Show("Please select a user to edit by double-clicking on it.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                string firstName = txtfirstnameuser.Text.Trim();
+                string lastName = txtlastnameuser.Text.Trim();
+                string userCode = txtcodeuser.Text.Trim();
+                string email = txtemailuser.Text.Trim();
+                string phone = txtphoneuser.Text.Trim();
+                string address = txtaddressuser.Text.Trim();
+                string notes = txtnotesuser.Text.Trim();      
+
+                string checkQuery = "SELECT COUNT(*) FROM users WHERE user_code = @user_code AND user_id  != @user_id ";
+                // تم التغيير
+                var checkParams = new List<SQLiteParameter>
+                {
+                    new SQLiteParameter("@user_code", userCode),
+                    new SQLiteParameter("@user_id", selectedUserId)
+                };
+
+                object result = db.ExecuteScalar(checkQuery, checkParams);
+                int count = Convert.ToInt32(result);
+
+                if (count > 0)
+                {
+                    MessageBox.Show("user code already exists for another user. Please use a different user code.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                string query = @"UPDATE users SET
+                         first_name = @first_name,
+                         last_name = @last_name,
+                         user_code = @user_code,
+                         email = @email,
+                         phone = @phone,
+                         address = @address,
+                         notes = @notes
+                         WHERE user_id = @user_id";
+
+                // تم التغيير
+                var parameters = new List<SQLiteParameter>
+                {
+                    new SQLiteParameter("@first_name", firstName),
+                    new SQLiteParameter("@last_name", lastName),
+                    new SQLiteParameter("@user_code", userCode),
+                    new SQLiteParameter("@email", email),
+                    new SQLiteParameter("@phone", phone),
+                    new SQLiteParameter("@address", address),
+                    new SQLiteParameter("@notes", notes),
+                    new SQLiteParameter("@user_id", selectedUserId)
+                };
+
+                bool success = db.ExecuteNonQuery(query, parameters);
+
+                if (success)
+                {
+                    MessageBox.Show("The user has been updated successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    LoadUsersToDGV();
+
+                    // إفراغ الحقول وإعادة تعيين selectedClientId
+                    txtfirstnameuser.Clear();
+                    txtlastnameuser.Clear();
+                    txtcodeuser.Clear();
+                    txtemailuser.Clear();
+                    txtphoneuser.Clear();
+                    txtaddressuser.Clear();
+                    txtnotesuser.Clear();
+                    selectedUserId = -1;
+                }
+                else
+                {
+                    MessageBox.Show("Failed to update the client.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("An error occurred: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void DTGVUser_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0 && DTGVUser.Columns[e.ColumnIndex].Name == "Delete")
+            {
+                DialogResult result = MessageBox.Show(
+                    "Are you sure you want to delete this user?",
+                    "Confirm Delete",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+                if (result == DialogResult.Yes)
+                {
+                    int userId = Convert.ToInt32(DTGVUser.Rows[e.RowIndex].Cells["ID"].Value);
+
+                    string deleteQuery = "DELETE FROM users WHERE user_id = @user_id";
+                    var parameters = new List<SQLiteParameter>
+            {
+                new SQLiteParameter("@user_id", userId)
+            };
+
+                    bool success = db.ExecuteNonQuery(deleteQuery, parameters);
+
+                    if (success)
+                    {
+                        MessageBox.Show("User deleted successfully.", "Deleted",
+                                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        LoadUsersToDGV();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Failed to delete the user.", "Error",
+                                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
         }
     }
 }
