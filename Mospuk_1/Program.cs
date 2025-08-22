@@ -22,7 +22,7 @@ namespace Mospuk_1
                 Application.SetCompatibleTextRenderingDefault(false);
 
                 // افتح نافذة Home مباشرة (يمكنك تمرير قيمة افتراضية لـ userId أو 0 إذا لم يكن مطلوباً)
-                Application.Run(new AddFile(app.db));
+                Application.Run(new Home(app.db));
             }
             catch (Exception ex)
             {

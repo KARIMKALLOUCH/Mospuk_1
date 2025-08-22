@@ -38,7 +38,23 @@ namespace Mospuk_1
         private FlowLayoutPanel _currentDragOverPanel = null;
         private bool _isDragOverExternalPanel = false;
         private List<KeyboardDragItem> _keyboardDragItems = new List<KeyboardDragItem>();
+        private bool isResizingPanel = false;
+        private Point lastMousePosition;
+        private ResizeDirection resizeDirection;
 
+        private enum ResizeDirection
+        {
+            None,
+            Top,
+            Bottom,
+            Left,
+            Right,
+            TopLeft,
+            TopRight,
+            BottomLeft,
+            BottomRight
+        }
+        private const int resizeBorderWidth = 10; // زدنا العرض قليلاً لتسهيل الإمساك بالحافة
         public AddFile(SQLiteDatabase database)
         {
             InitializeComponent();
@@ -90,6 +106,27 @@ namespace Mospuk_1
             panel1.MouseUp += panel1_MouseUp_ForSelection;
             panel1.Paint += panel1_Paint_SelectionRectangle;
 
+         /*   this.panel1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.GenericPanel_MouseDown_ForResize);
+            this.panel1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.GenericPanel_MouseUp_ForResize);
+
+            // ربط flowLayoutPanel1
+            this.flowLayoutPanel1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.GenericPanel_MouseMove_ForResize);
+            this.flowLayoutPanel1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.GenericPanel_MouseDown_ForResize);
+            this.flowLayoutPanel1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.GenericPanel_MouseUp_ForResize);
+
+            // ربط flowLayoutPanel2
+            this.flowLayoutPanel2.MouseMove += new System.Windows.Forms.MouseEventHandler(this.GenericPanel_MouseMove_ForResize);
+            this.flowLayoutPanel2.MouseDown += new System.Windows.Forms.MouseEventHandler(this.GenericPanel_MouseDown_ForResize);
+            this.flowLayoutPanel2.MouseUp += new System.Windows.Forms.MouseEventHandler(this.GenericPanel_MouseUp_ForResize);
+            // ربط guna2DataGridView1
+            this.guna2DataGridView1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.GenericPanel_MouseMove_ForResize);
+            this.guna2DataGridView1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.GenericPanel_MouseDown_ForResize);
+            this.guna2DataGridView1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.GenericPanel_MouseUp_ForResize);
+
+            // ربط panelDocx
+            this.panelDocx.MouseMove += new System.Windows.Forms.MouseEventHandler(this.GenericPanel_MouseMove_ForResize);
+            this.panelDocx.MouseDown += new System.Windows.Forms.MouseEventHandler(this.GenericPanel_MouseDown_ForResize);
+            this.panelDocx.MouseUp += new System.Windows.Forms.MouseEventHandler(this.GenericPanel_MouseUp_ForResize);*/
         }
         private void AddFile_FormClosing(object sender, FormClosingEventArgs e)
         {
@@ -1057,8 +1094,6 @@ namespace Mospuk_1
                             }
                             catch (Exception ex)
                             {
-                                // اختياري: إظهار رسالة إذا فشل الحذف
-                                Console.WriteLine($"Could not delete temporary file {path}: {ex.Message}");
                             }
                         }
 
@@ -1586,7 +1621,7 @@ namespace Mospuk_1
         }
         private void AddFile_Load(object sender, EventArgs e)
         {
-            Delivery_Date.Items.Add(new KeyValuePair<string, int>("1 day", 3));
+            Delivery_Date.Items.Add(new KeyValuePair<string, int>("3 days", 3));
             Delivery_Date.Items.Add(new KeyValuePair<string, int>("Urgent (1 day)", 1));
             Delivery_Date.DisplayMember = "Key";
             Delivery_Date.ValueMember = "Value";
@@ -2342,8 +2377,9 @@ namespace Mospuk_1
         }
         private void PictureBox_Paint_Selection(object sender, PaintEventArgs e)
         {
-            PictureBox pb = sender as PictureBox;
+            var pb = sender as PictureBox;
             if (pb == null) return;
+
             bool isSelected = selectedPictureBoxes.Contains(pb) ||
                               selectedPictureBoxesFlow1.Contains(pb) ||
                               selectedPictureBoxesFlow2.Contains(pb);
@@ -2355,6 +2391,39 @@ namespace Mospuk_1
                     e.Graphics.FillRectangle(overlayBrush, pb.ClientRectangle);
                 }
             }
+
+       
+            string filePath = pb.Tag as string;
+            if (string.IsNullOrEmpty(filePath)) return;
+
+            string fileName = System.IO.Path.GetFileName(filePath);
+         //   string fileName = System.IO.Path.GetFileNameWithoutExtension(filePath);
+            if (string.IsNullOrEmpty(fileName)) return;
+
+            int captionHeight = 18;
+            var captionRect = new Rectangle(0, pb.Height - captionHeight, pb.Width, captionHeight);
+
+            // خلفية خضراء شفافة (Alpha=180 ≈ شفافية 70%)
+            Color captionBg = Color.FromArgb(180, 15, 141, 80);
+            using (var bg = new SolidBrush(captionBg))
+                e.Graphics.FillRectangle(bg, captionRect);
+
+            // نص أبيض
+            using (var font = new Font("Segoe UI", 8f, FontStyle.Bold))
+            using (var textBrush = new SolidBrush(Color.White))
+            {
+                var textRect = new RectangleF(3, pb.Height - captionHeight + 1, pb.Width - 6, captionHeight - 2);
+                var sf = new StringFormat
+                {
+                    Trimming = StringTrimming.EllipsisCharacter,
+                    FormatFlags = StringFormatFlags.NoWrap,
+                    Alignment = StringAlignment.Near,
+                    LineAlignment = StringAlignment.Center
+                };
+
+                e.Graphics.DrawString(fileName, font, textBrush, textRect, sf);
+            }
+
         }
         private void HandleSelectAll(object sender, KeyEventArgs e)
         {
@@ -3818,6 +3887,7 @@ namespace Mospuk_1
                         // إعادة تسمية الملفات بأرقام تسلسلية لضمان الترتيب الصحيح
                         string extension = Path.GetExtension(sourcePath);
                         string newFileName = $"{i:D3}_{Path.GetFileNameWithoutExtension(sourcePath)}{extension}";
+                       // string newFileName = $"{Path.GetFileNameWithoutExtension(sourcePath)}{extension}";
                         string destPath = Path.Combine(tempDir, newFileName);
                         File.Copy(sourcePath, destPath);
 
@@ -4069,11 +4139,7 @@ namespace Mospuk_1
             }
         }
 
-        private void btnsettings_Click(object sender, EventArgs e)
-        {
-            Home addproject = new Home(db);
-            addproject.ShowDialog();
-        }
+       
 
     
         private System.Drawing.Imaging.ImageFormat GetImageFormat(string filePath)
@@ -4131,11 +4197,11 @@ namespace Mospuk_1
             {
                 if (string.IsNullOrWhiteSpace(txtnotes.Text) || txtnotes.Text.Trim().Equals("Urgent", StringComparison.OrdinalIgnoreCase))
                 {
-                    txtnotes.Text = "Urgent";
+                    txtnotes.Text = "URGENT";
                 }
                 else if (!txtnotes.Text.Trim().StartsWith("Urgent", StringComparison.OrdinalIgnoreCase))
                 {
-                    txtnotes.Text = "Urgent " + txtnotes.Text;
+                    txtnotes.Text = "URGENT " + txtnotes.Text;
                 }
             }
             else 
@@ -4146,6 +4212,157 @@ namespace Mospuk_1
                 }
             }
         }
+
+        // ====================================================================
+        // ==> دوال عامة للتحكم في تغيير حجم أي لوحة (Panel)
+        // ====================================================================
+
+
+    /*    private void GenericPanel_MouseMove_ForResize(object sender, MouseEventArgs e)
+        {
+            Control p = sender as Control;
+            if (p == null) return;
+
+            if (isResizingPanel)
+            {
+                // حساب الفرق مباشرة من الموقع الحالي والموقع المحفوظ
+                int deltaX = e.X - lastMousePosition.X;
+                int deltaY = e.Y - lastMousePosition.Y;
+
+                // حساب الأبعاد الجديدة المحتملة
+                Rectangle newBounds = p.Bounds;
+                int minWidth = 150;
+                int minHeight = 150;
+
+                // حفظ الأبعاد الأصلية للمقارنة
+                Rectangle originalBounds = p.Bounds;
+
+                // تطبيق التغييرات على المستطيل المؤقت (newBounds)
+                // اليسار
+                if (resizeDirection == ResizeDirection.Left || resizeDirection == ResizeDirection.TopLeft || resizeDirection == ResizeDirection.BottomLeft)
+                {
+                    newBounds.X += deltaX;
+                    newBounds.Width -= deltaX;
+                }
+                // اليمين
+                if (resizeDirection == ResizeDirection.Right || resizeDirection == ResizeDirection.TopRight || resizeDirection == ResizeDirection.BottomRight)
+                {
+                    newBounds.Width += deltaX;
+                }
+                // الأعلى
+                if (resizeDirection == ResizeDirection.Top || resizeDirection == ResizeDirection.TopLeft || resizeDirection == ResizeDirection.TopRight)
+                {
+                    newBounds.Y += deltaY;
+                    newBounds.Height -= deltaY;
+                }
+                // الأسفل
+                if (resizeDirection == ResizeDirection.Bottom || resizeDirection == ResizeDirection.BottomLeft || resizeDirection == ResizeDirection.BottomRight)
+                {
+                    newBounds.Height += deltaY;
+                }
+
+                // التحقق من الحد الأدنى للحجم
+                if (newBounds.Width < minWidth || newBounds.Height < minHeight)
+                {
+                    return; // إلغاء الحركة إذا كانت ستجعل الأداة أصغر من اللازم
+                }
+
+                // التحقق من التصادم مع الأدوات الأخرى
+                bool collisionDetected = false;
+                var otherPanels = new List<Control> { panel1, flowLayoutPanel1, flowLayoutPanel2, guna2DataGridView1, panelDocx };
+                otherPanels.Remove(p); // إزالة الأداة الحالية من قائمة التحقق
+
+                foreach (var other in otherPanels)
+                {
+                    if (newBounds.IntersectsWith(other.Bounds))
+                    {
+                        collisionDetected = true;
+                        break;
+                    }
+                }
+
+                // تطبيق التغييرات فقط في حالة عدم وجود تصادم
+                if (!collisionDetected)
+                {
+                    p.Bounds = newBounds;
+                    // تحديث موقع الفأرة للحركة التالية - هذا مهم جداً
+                    lastMousePosition = e.Location;
+
+                    // استدعاء دالة إعادة الترتيب فقط لـ panel1
+                    if (p == panel1)
+                    {
+                        ReArrangeImages();
+                    }
+                }
+                // في حالة وجود تصادم، لا نحدث lastMousePosition لتجنب الاهتزاز
+            }
+            else // تغيير شكل المؤشر
+            {
+                bool onLeftEdge = e.X <= resizeBorderWidth;
+                bool onRightEdge = e.X >= p.ClientSize.Width - resizeBorderWidth;
+                bool onTopEdge = e.Y <= resizeBorderWidth;
+                bool onBottomEdge = e.Y >= p.ClientSize.Height - resizeBorderWidth;
+
+                if (onTopEdge && onLeftEdge)
+                {
+                    p.Cursor = Cursors.SizeNWSE;
+                    resizeDirection = ResizeDirection.TopLeft;
+                }
+                else if (onTopEdge && onRightEdge)
+                {
+                    p.Cursor = Cursors.SizeNESW;
+                    resizeDirection = ResizeDirection.TopRight;
+                }
+                else if (onBottomEdge && onLeftEdge)
+                {
+                    p.Cursor = Cursors.SizeNESW;
+                    resizeDirection = ResizeDirection.BottomLeft;
+                }
+                else if (onBottomEdge && onRightEdge)
+                {
+                    p.Cursor = Cursors.SizeNWSE;
+                    resizeDirection = ResizeDirection.BottomRight;
+                }
+                else if (onLeftEdge)
+                {
+                    p.Cursor = Cursors.SizeWE;
+                    resizeDirection = ResizeDirection.Left;
+                }
+                else if (onRightEdge)
+                {
+                    p.Cursor = Cursors.SizeWE;
+                    resizeDirection = ResizeDirection.Right;
+                }
+                else if (onTopEdge)
+                {
+                    p.Cursor = Cursors.SizeNS;
+                    resizeDirection = ResizeDirection.Top;
+                }
+                else if (onBottomEdge)
+                {
+                    p.Cursor = Cursors.SizeNS;
+                    resizeDirection = ResizeDirection.Bottom;
+                }
+                else
+                {
+                    p.Cursor = Cursors.Default;
+                    resizeDirection = ResizeDirection.None;
+                }
+            }
+        }
+        private void GenericPanel_MouseDown_ForResize(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left && resizeDirection != ResizeDirection.None)
+            {
+                isResizingPanel = true;
+                lastMousePosition = e.Location; // نحتاج إليها هنا لحساب الفرق
+            }
+        }
+
+        private void GenericPanel_MouseUp_ForResize(object sender, MouseEventArgs e)
+        {
+            isResizingPanel = false;
+        }*/
 
     }
     //*************************************

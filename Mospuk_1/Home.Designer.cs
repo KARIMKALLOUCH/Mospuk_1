@@ -52,12 +52,12 @@
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle19 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle20 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle21 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle25 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle26 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle27 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle22 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle23 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle24 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle25 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle26 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle27 = new System.Windows.Forms.DataGridViewCellStyle();
             this.tabPane1 = new DevExpress.XtraBars.Navigation.TabPane();
             this.tabNavClient = new DevExpress.XtraBars.Navigation.TabNavigationPage();
             this.btnCompanyAdd = new Guna.UI2.WinForms.Guna2Button();
@@ -100,6 +100,7 @@
             this.lblFactureCnt = new DevExpress.XtraEditors.LabelControl();
             this.DGVFacture = new Guna.UI2.WinForms.Guna2DataGridView();
             this.tabNavParametres = new DevExpress.XtraBars.Navigation.TabNavigationPage();
+            this.btnUserAdd = new Guna.UI2.WinForms.Guna2Button();
             this.guna2Button3 = new Guna.UI2.WinForms.Guna2Button();
             this.guna2Button2 = new Guna.UI2.WinForms.Guna2Button();
             this.guna2Button1 = new Guna.UI2.WinForms.Guna2Button();
@@ -183,13 +184,6 @@
             this.guna2Button5 = new Guna.UI2.WinForms.Guna2Button();
             this.guna2Button6 = new Guna.UI2.WinForms.Guna2Button();
             this.guna2DataGridView1 = new Guna.UI2.WinForms.Guna2DataGridView();
-            this.btnGeneral = new Guna.UI2.WinForms.Guna2Button();
-            this.tabNavChange = new DevExpress.XtraBars.Navigation.TabNavigationPage();
-            this.DGVChanges = new Guna.UI2.WinForms.Guna2DataGridView();
-            this.btnAdd = new Guna.UI2.WinForms.Guna2Button();
-            this.lblChangesCnt = new DevExpress.XtraEditors.LabelControl();
-            this.tabNavHistorique = new DevExpress.XtraBars.Navigation.TabNavigationPage();
-            this.btnUserAdd = new Guna.UI2.WinForms.Guna2Button();
             this.navigationPage6 = new DevExpress.XtraBars.Navigation.NavigationPage();
             this.txtsearchuser = new Guna.UI2.WinForms.Guna2TextBox();
             this.guna2Panel4 = new Guna.UI2.WinForms.Guna2Panel();
@@ -210,6 +204,12 @@
             this.btnEditUser = new Guna.UI2.WinForms.Guna2Button();
             this.btnAddUser = new Guna.UI2.WinForms.Guna2Button();
             this.DTGVUser = new Guna.UI2.WinForms.Guna2DataGridView();
+            this.btnGeneral = new Guna.UI2.WinForms.Guna2Button();
+            this.tabNavChange = new DevExpress.XtraBars.Navigation.TabNavigationPage();
+            this.DGVChanges = new Guna.UI2.WinForms.Guna2DataGridView();
+            this.btnAdd = new Guna.UI2.WinForms.Guna2Button();
+            this.lblChangesCnt = new DevExpress.XtraEditors.LabelControl();
+            this.tabNavHistorique = new DevExpress.XtraBars.Navigation.TabNavigationPage();
             ((System.ComponentModel.ISupportInitialize)(this.tabPane1)).BeginInit();
             this.tabPane1.SuspendLayout();
             this.tabNavClient.SuspendLayout();
@@ -252,11 +252,11 @@
             this.navigationPage5.SuspendLayout();
             this.guna2Panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.guna2DataGridView1)).BeginInit();
-            this.tabNavChange.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.DGVChanges)).BeginInit();
             this.navigationPage6.SuspendLayout();
             this.guna2Panel4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.DTGVUser)).BeginInit();
+            this.tabNavChange.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.DGVChanges)).BeginInit();
             this.SuspendLayout();
             // 
             // tabPane1
@@ -937,6 +937,22 @@
             this.tabNavParametres.Size = new System.Drawing.Size(1366, 703);
             this.tabNavParametres.Paint += new System.Windows.Forms.PaintEventHandler(this.tabNavParametres_Paint);
             // 
+            // btnUserAdd
+            // 
+            this.btnUserAdd.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
+            this.btnUserAdd.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
+            this.btnUserAdd.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
+            this.btnUserAdd.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
+            this.btnUserAdd.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.btnUserAdd.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.btnUserAdd.ForeColor = System.Drawing.Color.White;
+            this.btnUserAdd.Location = new System.Drawing.Point(12, 78);
+            this.btnUserAdd.Name = "btnUserAdd";
+            this.btnUserAdd.Size = new System.Drawing.Size(205, 51);
+            this.btnUserAdd.TabIndex = 7;
+            this.btnUserAdd.Text = "Users";
+            this.btnUserAdd.Click += new System.EventHandler(this.btnUserAdd_Click_1);
+            // 
             // guna2Button3
             // 
             this.guna2Button3.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
@@ -1029,6 +1045,7 @@
             // 
             this.navigationPage1.Appearance.BackColor = System.Drawing.SystemColors.Control;
             this.navigationPage1.Appearance.Options.UseBackColor = true;
+            this.navigationPage1.Caption = "navigationPage1";
             this.navigationPage1.Controls.Add(this.btnDirectory);
             this.navigationPage1.Name = "navigationPage1";
             this.navigationPage1.Size = new System.Drawing.Size(1143, 617);
@@ -1054,6 +1071,7 @@
             // 
             // navigationPage2
             // 
+            this.navigationPage2.Caption = "navigationPage2";
             this.navigationPage2.Controls.Add(this.txtsearch);
             this.navigationPage2.Controls.Add(this.guna2Panel1);
             this.navigationPage2.Controls.Add(this.btnEditClient);
@@ -1474,6 +1492,7 @@
             // 
             // navigationPage3
             // 
+            this.navigationPage3.Caption = "navigationPage3";
             this.navigationPage3.Controls.Add(this.txtsearchCompany);
             this.navigationPage3.Controls.Add(this.btnEditCompany);
             this.navigationPage3.Controls.Add(this.btnAddCompany);
@@ -1866,6 +1885,7 @@
             // 
             this.navigationPage4.Appearance.BackColor = System.Drawing.SystemColors.Control;
             this.navigationPage4.Appearance.Options.UseBackColor = true;
+            this.navigationPage4.Caption = "navigationPage4";
             this.navigationPage4.Controls.Add(this.panel7);
             this.navigationPage4.Controls.Add(this.panel6);
             this.navigationPage4.Controls.Add(this.navigationPage5);
@@ -2557,147 +2577,9 @@
             this.guna2DataGridView1.ThemeStyle.RowsStyle.SelectionBackColor = System.Drawing.Color.White;
             this.guna2DataGridView1.ThemeStyle.RowsStyle.SelectionForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(69)))), ((int)(((byte)(94)))));
             // 
-            // btnGeneral
-            // 
-            this.btnGeneral.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
-            this.btnGeneral.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
-            this.btnGeneral.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
-            this.btnGeneral.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
-            this.btnGeneral.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
-            this.btnGeneral.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.btnGeneral.ForeColor = System.Drawing.Color.White;
-            this.btnGeneral.Location = new System.Drawing.Point(12, 12);
-            this.btnGeneral.Name = "btnGeneral";
-            this.btnGeneral.Size = new System.Drawing.Size(205, 51);
-            this.btnGeneral.TabIndex = 1;
-            this.btnGeneral.Text = "General Settings";
-            this.btnGeneral.Click += new System.EventHandler(this.btnUserAdd_Click);
-            // 
-            // tabNavChange
-            // 
-            this.tabNavChange.Caption = "Changement d\'équipe";
-            this.tabNavChange.Controls.Add(this.DGVChanges);
-            this.tabNavChange.Controls.Add(this.btnAdd);
-            this.tabNavChange.Controls.Add(this.lblChangesCnt);
-            this.tabNavChange.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("tabNavChange.ImageOptions.SvgImage")));
-            this.tabNavChange.Name = "tabNavChange";
-            this.tabNavChange.PageText = "Project";
-            this.tabNavChange.PageVisible = false;
-            this.tabNavChange.Size = new System.Drawing.Size(1366, 746);
-            // 
-            // DGVChanges
-            // 
-            this.DGVChanges.AllowUserToAddRows = false;
-            this.DGVChanges.AllowUserToDeleteRows = false;
-            dataGridViewCellStyle25.BackColor = System.Drawing.Color.White;
-            this.DGVChanges.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle25;
-            this.DGVChanges.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.DGVChanges.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            dataGridViewCellStyle26.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle26.BackColor = System.Drawing.Color.MediumSeaGreen;
-            dataGridViewCellStyle26.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle26.ForeColor = System.Drawing.Color.White;
-            dataGridViewCellStyle26.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
-            dataGridViewCellStyle26.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle26.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.DGVChanges.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle26;
-            this.DGVChanges.ColumnHeadersHeight = 25;
-            this.DGVChanges.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
-            this.DGVChanges.ContextMenuStrip = this.CntMenuStrip;
-            dataGridViewCellStyle27.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle27.BackColor = System.Drawing.Color.White;
-            dataGridViewCellStyle27.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle27.ForeColor = System.Drawing.SystemColors.ControlText;
-            dataGridViewCellStyle27.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(231)))), ((int)(((byte)(229)))), ((int)(((byte)(255)))));
-            dataGridViewCellStyle27.SelectionForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(69)))), ((int)(((byte)(94)))));
-            dataGridViewCellStyle27.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.DGVChanges.DefaultCellStyle = dataGridViewCellStyle27;
-            this.DGVChanges.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(231)))), ((int)(((byte)(229)))), ((int)(((byte)(255)))));
-            this.DGVChanges.Location = new System.Drawing.Point(3, 73);
-            this.DGVChanges.Name = "DGVChanges";
-            this.DGVChanges.ReadOnly = true;
-            this.DGVChanges.RowHeadersVisible = false;
-            this.DGVChanges.RowTemplate.DefaultCellStyle.BackColor = System.Drawing.Color.White;
-            this.DGVChanges.RowTemplate.DefaultCellStyle.SelectionBackColor = System.Drawing.Color.White;
-            this.DGVChanges.RowTemplate.Height = 27;
-            this.DGVChanges.Size = new System.Drawing.Size(1360, 564);
-            this.DGVChanges.TabIndex = 165;
-            this.DGVChanges.ThemeStyle.AlternatingRowsStyle.BackColor = System.Drawing.Color.White;
-            this.DGVChanges.ThemeStyle.AlternatingRowsStyle.Font = null;
-            this.DGVChanges.ThemeStyle.AlternatingRowsStyle.ForeColor = System.Drawing.Color.Empty;
-            this.DGVChanges.ThemeStyle.AlternatingRowsStyle.SelectionBackColor = System.Drawing.Color.Empty;
-            this.DGVChanges.ThemeStyle.AlternatingRowsStyle.SelectionForeColor = System.Drawing.Color.Empty;
-            this.DGVChanges.ThemeStyle.BackColor = System.Drawing.Color.White;
-            this.DGVChanges.ThemeStyle.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(231)))), ((int)(((byte)(229)))), ((int)(((byte)(255)))));
-            this.DGVChanges.ThemeStyle.HeaderStyle.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(100)))), ((int)(((byte)(88)))), ((int)(((byte)(255)))));
-            this.DGVChanges.ThemeStyle.HeaderStyle.BorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.None;
-            this.DGVChanges.ThemeStyle.HeaderStyle.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.DGVChanges.ThemeStyle.HeaderStyle.ForeColor = System.Drawing.Color.White;
-            this.DGVChanges.ThemeStyle.HeaderStyle.HeaightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
-            this.DGVChanges.ThemeStyle.HeaderStyle.Height = 25;
-            this.DGVChanges.ThemeStyle.ReadOnly = true;
-            this.DGVChanges.ThemeStyle.RowsStyle.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
-            this.DGVChanges.ThemeStyle.RowsStyle.BorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.SingleHorizontal;
-            this.DGVChanges.ThemeStyle.RowsStyle.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.DGVChanges.ThemeStyle.RowsStyle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(69)))), ((int)(((byte)(94)))));
-            this.DGVChanges.ThemeStyle.RowsStyle.Height = 27;
-            this.DGVChanges.ThemeStyle.RowsStyle.SelectionBackColor = System.Drawing.Color.White;
-            this.DGVChanges.ThemeStyle.RowsStyle.SelectionForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(69)))), ((int)(((byte)(94)))));
-            // 
-            // btnAdd
-            // 
-            this.btnAdd.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
-            this.btnAdd.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
-            this.btnAdd.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
-            this.btnAdd.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
-            this.btnAdd.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
-            this.btnAdd.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.btnAdd.ForeColor = System.Drawing.Color.White;
-            this.btnAdd.Image = ((System.Drawing.Image)(resources.GetObject("btnAdd.Image")));
-            this.btnAdd.Location = new System.Drawing.Point(3, 14);
-            this.btnAdd.Name = "btnAdd";
-            this.btnAdd.Size = new System.Drawing.Size(140, 38);
-            this.btnAdd.TabIndex = 21;
-            this.btnAdd.Text = "Add";
-            this.btnAdd.Click += new System.EventHandler(this.btnAdd_Click);
-            // 
-            // lblChangesCnt
-            // 
-            this.lblChangesCnt.Location = new System.Drawing.Point(7, 54);
-            this.lblChangesCnt.Name = "lblChangesCnt";
-            this.lblChangesCnt.Size = new System.Drawing.Size(58, 13);
-            this.lblChangesCnt.TabIndex = 11;
-            this.lblChangesCnt.Text = "Projects: XX";
-            // 
-            // tabNavHistorique
-            // 
-            this.tabNavHistorique.Caption = "Historique";
-            this.tabNavHistorique.ImageOptions.Image = ((System.Drawing.Image)(resources.GetObject("tabNavHistorique.ImageOptions.Image")));
-            this.tabNavHistorique.Name = "tabNavHistorique";
-            this.tabNavHistorique.PageText = "Historique";
-            this.tabNavHistorique.PageVisible = false;
-            this.tabNavHistorique.Size = new System.Drawing.Size(1366, 746);
-            // 
-            // btnUserAdd
-            // 
-            this.btnUserAdd.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
-            this.btnUserAdd.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
-            this.btnUserAdd.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
-            this.btnUserAdd.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
-            this.btnUserAdd.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
-            this.btnUserAdd.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.btnUserAdd.ForeColor = System.Drawing.Color.White;
-            this.btnUserAdd.Location = new System.Drawing.Point(12, 78);
-            this.btnUserAdd.Name = "btnUserAdd";
-            this.btnUserAdd.Size = new System.Drawing.Size(205, 51);
-            this.btnUserAdd.TabIndex = 7;
-            this.btnUserAdd.Text = "Users";
-            this.btnUserAdd.Click += new System.EventHandler(this.btnUserAdd_Click_1);
-            // 
             // navigationPage6
             // 
+            this.navigationPage6.Caption = "navigationPage6";
             this.navigationPage6.Controls.Add(this.txtsearchuser);
             this.navigationPage6.Controls.Add(this.guna2Panel4);
             this.navigationPage6.Controls.Add(this.btnEditUser);
@@ -3086,6 +2968,128 @@
             this.DTGVUser.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.DTGVUser_CellContentClick);
             this.DTGVUser.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.DTGVUser_CellDoubleClick);
             // 
+            // btnGeneral
+            // 
+            this.btnGeneral.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
+            this.btnGeneral.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
+            this.btnGeneral.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
+            this.btnGeneral.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
+            this.btnGeneral.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.btnGeneral.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.btnGeneral.ForeColor = System.Drawing.Color.White;
+            this.btnGeneral.Location = new System.Drawing.Point(12, 12);
+            this.btnGeneral.Name = "btnGeneral";
+            this.btnGeneral.Size = new System.Drawing.Size(205, 51);
+            this.btnGeneral.TabIndex = 1;
+            this.btnGeneral.Text = "General Settings";
+            this.btnGeneral.Click += new System.EventHandler(this.btnUserAdd_Click);
+            // 
+            // tabNavChange
+            // 
+            this.tabNavChange.Caption = "Changement d\'équipe";
+            this.tabNavChange.Controls.Add(this.DGVChanges);
+            this.tabNavChange.Controls.Add(this.btnAdd);
+            this.tabNavChange.Controls.Add(this.lblChangesCnt);
+            this.tabNavChange.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("tabNavChange.ImageOptions.SvgImage")));
+            this.tabNavChange.Name = "tabNavChange";
+            this.tabNavChange.PageText = "Project";
+            this.tabNavChange.Size = new System.Drawing.Size(1366, 703);
+            // 
+            // DGVChanges
+            // 
+            this.DGVChanges.AllowUserToAddRows = false;
+            this.DGVChanges.AllowUserToDeleteRows = false;
+            dataGridViewCellStyle25.BackColor = System.Drawing.Color.White;
+            this.DGVChanges.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle25;
+            this.DGVChanges.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.DGVChanges.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            dataGridViewCellStyle26.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle26.BackColor = System.Drawing.Color.MediumSeaGreen;
+            dataGridViewCellStyle26.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle26.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle26.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            dataGridViewCellStyle26.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle26.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.DGVChanges.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle26;
+            this.DGVChanges.ColumnHeadersHeight = 25;
+            this.DGVChanges.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
+            this.DGVChanges.ContextMenuStrip = this.CntMenuStrip;
+            dataGridViewCellStyle27.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle27.BackColor = System.Drawing.Color.White;
+            dataGridViewCellStyle27.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle27.ForeColor = System.Drawing.SystemColors.ControlText;
+            dataGridViewCellStyle27.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(231)))), ((int)(((byte)(229)))), ((int)(((byte)(255)))));
+            dataGridViewCellStyle27.SelectionForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(69)))), ((int)(((byte)(94)))));
+            dataGridViewCellStyle27.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.DGVChanges.DefaultCellStyle = dataGridViewCellStyle27;
+            this.DGVChanges.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(231)))), ((int)(((byte)(229)))), ((int)(((byte)(255)))));
+            this.DGVChanges.Location = new System.Drawing.Point(3, 73);
+            this.DGVChanges.Name = "DGVChanges";
+            this.DGVChanges.ReadOnly = true;
+            this.DGVChanges.RowHeadersVisible = false;
+            this.DGVChanges.RowTemplate.DefaultCellStyle.BackColor = System.Drawing.Color.White;
+            this.DGVChanges.RowTemplate.DefaultCellStyle.SelectionBackColor = System.Drawing.Color.White;
+            this.DGVChanges.RowTemplate.Height = 27;
+            this.DGVChanges.Size = new System.Drawing.Size(1360, 521);
+            this.DGVChanges.TabIndex = 165;
+            this.DGVChanges.ThemeStyle.AlternatingRowsStyle.BackColor = System.Drawing.Color.White;
+            this.DGVChanges.ThemeStyle.AlternatingRowsStyle.Font = null;
+            this.DGVChanges.ThemeStyle.AlternatingRowsStyle.ForeColor = System.Drawing.Color.Empty;
+            this.DGVChanges.ThemeStyle.AlternatingRowsStyle.SelectionBackColor = System.Drawing.Color.Empty;
+            this.DGVChanges.ThemeStyle.AlternatingRowsStyle.SelectionForeColor = System.Drawing.Color.Empty;
+            this.DGVChanges.ThemeStyle.BackColor = System.Drawing.Color.White;
+            this.DGVChanges.ThemeStyle.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(231)))), ((int)(((byte)(229)))), ((int)(((byte)(255)))));
+            this.DGVChanges.ThemeStyle.HeaderStyle.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(100)))), ((int)(((byte)(88)))), ((int)(((byte)(255)))));
+            this.DGVChanges.ThemeStyle.HeaderStyle.BorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.None;
+            this.DGVChanges.ThemeStyle.HeaderStyle.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.DGVChanges.ThemeStyle.HeaderStyle.ForeColor = System.Drawing.Color.White;
+            this.DGVChanges.ThemeStyle.HeaderStyle.HeaightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
+            this.DGVChanges.ThemeStyle.HeaderStyle.Height = 25;
+            this.DGVChanges.ThemeStyle.ReadOnly = true;
+            this.DGVChanges.ThemeStyle.RowsStyle.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.DGVChanges.ThemeStyle.RowsStyle.BorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.SingleHorizontal;
+            this.DGVChanges.ThemeStyle.RowsStyle.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.DGVChanges.ThemeStyle.RowsStyle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(69)))), ((int)(((byte)(94)))));
+            this.DGVChanges.ThemeStyle.RowsStyle.Height = 27;
+            this.DGVChanges.ThemeStyle.RowsStyle.SelectionBackColor = System.Drawing.Color.White;
+            this.DGVChanges.ThemeStyle.RowsStyle.SelectionForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(69)))), ((int)(((byte)(94)))));
+            // 
+            // btnAdd
+            // 
+            this.btnAdd.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
+            this.btnAdd.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
+            this.btnAdd.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
+            this.btnAdd.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
+            this.btnAdd.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.btnAdd.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.btnAdd.ForeColor = System.Drawing.Color.White;
+            this.btnAdd.Image = ((System.Drawing.Image)(resources.GetObject("btnAdd.Image")));
+            this.btnAdd.Location = new System.Drawing.Point(3, 14);
+            this.btnAdd.Name = "btnAdd";
+            this.btnAdd.Size = new System.Drawing.Size(140, 38);
+            this.btnAdd.TabIndex = 21;
+            this.btnAdd.Text = "Add";
+            this.btnAdd.Click += new System.EventHandler(this.btnAdd_Click);
+            // 
+            // lblChangesCnt
+            // 
+            this.lblChangesCnt.Location = new System.Drawing.Point(7, 54);
+            this.lblChangesCnt.Name = "lblChangesCnt";
+            this.lblChangesCnt.Size = new System.Drawing.Size(58, 13);
+            this.lblChangesCnt.TabIndex = 11;
+            this.lblChangesCnt.Text = "Projects: XX";
+            // 
+            // tabNavHistorique
+            // 
+            this.tabNavHistorique.Caption = "Historique";
+            this.tabNavHistorique.ImageOptions.Image = ((System.Drawing.Image)(resources.GetObject("tabNavHistorique.ImageOptions.Image")));
+            this.tabNavHistorique.Name = "tabNavHistorique";
+            this.tabNavHistorique.PageText = "Historique";
+            this.tabNavHistorique.PageVisible = false;
+            this.tabNavHistorique.Size = new System.Drawing.Size(1366, 746);
+            // 
             // Home
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -3153,13 +3157,13 @@
             this.guna2Panel3.ResumeLayout(false);
             this.guna2Panel3.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.guna2DataGridView1)).EndInit();
-            this.tabNavChange.ResumeLayout(false);
-            this.tabNavChange.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.DGVChanges)).EndInit();
             this.navigationPage6.ResumeLayout(false);
             this.guna2Panel4.ResumeLayout(false);
             this.guna2Panel4.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.DTGVUser)).EndInit();
+            this.tabNavChange.ResumeLayout(false);
+            this.tabNavChange.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.DGVChanges)).EndInit();
             this.ResumeLayout(false);
 
         }

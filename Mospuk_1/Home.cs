@@ -26,8 +26,8 @@ namespace Mospuk_1
             InitializeComponent();
             db = database;  // ← هنا تحفظ المتغير لتستخدمه لاحقاً
 
-          //  LoadProjectsToDGV();
-            navigationFrame1.TransitionAnimationProperties.FrameCount = 1;
+            LoadProjectsToDGV();
+            navigationFrame1.TransitionAnimationProperties.FrameCount = 2;
           //  LoadClientsToDGV();
        //     LoadCompaniesToDGV();
           //  LoadDocumentTypesToDGV();
@@ -41,16 +41,16 @@ namespace Mospuk_1
         }
         private void btnAdd_Click(object sender, EventArgs e)
         {
-          //  AddFile addproject = new AddFile(db);
-       //     addproject.FormClosed += (s, args) => LoadProjectsToDGV(); // تحديث عند إغلاق النموذج
-        //    addproject.Show();
+            AddFile addproject = new AddFile(db);
+           addproject.FormClosed += (s, args) => LoadProjectsToDGV(); // تحديث عند إغلاق النموذج
+           addproject.Show();
         }
-    /*  private void LoadProjectsToDGV()
+        private void LoadProjectsToDGV()
         {
             string query = "SELECT folder_name FROM projects ORDER BY id DESC"; // تعرض آخر Project في الأعلى
             DataTable dt = db.ExecuteQuery(query, null);
             DGVChanges.DataSource = dt;
-        }*/
+        }
 
         private void btnCompanyAdd_Click(object sender, EventArgs e)
         {
