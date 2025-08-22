@@ -132,6 +132,8 @@ namespace Mospuk_1
         {
             try
             {
+                guna2DataGridView1.Rows.Clear();
+
                 _insertionLinePen.Dispose();
                 ResetDragState(); // إضافة هذا السطر
 
@@ -1075,10 +1077,11 @@ namespace Mospuk_1
                     int projectId = Convert.ToInt32(lastIdResult);
 
                     // استدعاء دالة الحفظ واستقبال النتيجة وقائمة المسارات
-                    var (allImagesSaved, savedSourcePaths) = SaveProjectImages(projectId, folderName, deliveryDateStr, receptionDateStr, projectOrderStr, receptionTimeStr, companyClient, translationType, documentType, selectedUser);
-
+                    var (allImagesSaved, savedSourcePaths, savedFileNames) = SaveProjectImages(projectId, folderName, deliveryDateStr, receptionDateStr, projectOrderStr, receptionTimeStr, companyClient, translationType, documentType, selectedUser);
                     if (allImagesSaved)
                     {
+                        PopulateDataGridViewWithFiles(savedFileNames);
+
                         // 1. تنظيف الواجهة الرسومية
                         CleanUpSavedProject();
                         numProjectOrder.Value = 0;
@@ -1116,17 +1119,20 @@ namespace Mospuk_1
                 this.Enabled = true;
             }
         }
-        private (bool success, List<string> savedSourcePaths) SaveProjectImages(int projectId, string folderName, string deliveryDateStr, string receptionDateStr, string projectOrderStr, string receptionTimeStr, string companyClient, string translationType, string documentType,string selectedUser)
+        // <<-- تعديل 1: تغيير نوع الإرجاع للدالة لإضافة قائمة أسماء الملفات المحفوظة -->>
+        private (bool success, List<string> savedSourcePaths, List<string> savedFileNames) SaveProjectImages(int projectId, string folderName, string deliveryDateStr, string receptionDateStr, string projectOrderStr, string receptionTimeStr, string companyClient, string translationType, string documentType, string selectedUser)
         {
             bool allSaved = true;
             int imageCounter = 1;
-            var savedSourcePaths = new List<string>(); // قائمة لتخزين مسارات الملفات التي تم حفظها
+            var savedSourcePaths = new List<string>();
+            var savedFileNames = new List<string>(); // <<-- إضافة: قائمة جديدة لأسماء الملفات النهائية
 
             string projectFolder = db.GetSavedPathById("save");
             if (string.IsNullOrEmpty(projectFolder))
             {
                 MessageBox.Show("Please set a save directory first.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return (false, savedSourcePaths);
+                // <<-- تعديل 2: تحديث جملة الإرجاع -->>
+                return (false, savedSourcePaths, savedFileNames);
             }
 
             if (!Directory.Exists(projectFolder))
@@ -1158,7 +1164,6 @@ namespace Mospuk_1
                             else
                             {
                                 imageName += $"-------------------------------------------------------------{selectedUser}";
-
                             }
                         }
 
@@ -1195,7 +1200,8 @@ namespace Mospuk_1
                         if (db.ExecuteNonQuery(insertImageQuery, imageParameters))
                         {
                             imageCounter++;
-                            savedSourcePaths.Add(originalPath); // إضافة المسار المصدر للقائمة عند النجاح
+                            savedSourcePaths.Add(originalPath);
+                            savedFileNames.Add(fullItemName); // <<-- إضافة: حفظ اسم الملف النهائي
                         }
                         else
                         {
@@ -1222,7 +1228,6 @@ namespace Mospuk_1
                     string imageName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_Apostille";
                     string fullImageName = imageName + extension;
                     string imagePath = Path.Combine(projectFolder, fullImageName);
-                    // السطر الجديد:
                     System.Drawing.Imaging.ImageFormat format = GetImageFormat(originalPath);
                     imageApostille.Image.Save(imagePath, format);
                     File.SetCreationTime(imagePath, DateTime.Now);
@@ -1240,7 +1245,8 @@ namespace Mospuk_1
                     if (db.ExecuteNonQuery(insertImageQuery, imageParameters))
                     {
                         imageCounter++;
-                        savedSourcePaths.Add(originalPath); // إضافة المسار المصدر للقائمة
+                        savedSourcePaths.Add(originalPath);
+                        savedFileNames.Add(fullImageName); // <<-- إضافة: حفظ اسم الملف النهائي
                     }
                     else
                     {
@@ -1300,7 +1306,8 @@ namespace Mospuk_1
                         if (db.ExecuteNonQuery(insertImageQuery, imageParameters))
                         {
                             imageCounter++;
-                            savedSourcePaths.Add(originalPath); // إضافة المسار المصدر للقائمة
+                            savedSourcePaths.Add(originalPath);
+                            savedFileNames.Add(fullItemName); // <<-- إضافة: حفظ اسم الملف النهائي
                         }
                         else
                         {
@@ -1318,13 +1325,13 @@ namespace Mospuk_1
 
             // 4. حفظ ملفات Word المرفوعة (OCR)
             int ocrFileNumber = imageCounter;
-            bool hasOcrFiles = false; // متغير لتتبع وجود ملفات OCR
+            bool hasOcrFiles = false;
 
             foreach (Control control in panelDocx.Controls)
             {
                 if (control is Label lbl && lbl.Tag != null)
                 {
-                    hasOcrFiles = true; // تم العثور على ملف OCR
+                    hasOcrFiles = true;
                     try
                     {
                         string originalPath = lbl.Tag.ToString();
@@ -1350,7 +1357,8 @@ namespace Mospuk_1
                             if (db.ExecuteNonQuery(insertWordQuery, wordParameters))
                             {
                                 ocrFileNumber++;
-                                savedSourcePaths.Add(originalPath); // إضافة المسار المصدر للقائمة
+                                savedSourcePaths.Add(originalPath);
+                                savedFileNames.Add(fullWordFileName); // <<-- إضافة: حفظ اسم الملف النهائي
                             }
                             else
                             {
@@ -1372,7 +1380,6 @@ namespace Mospuk_1
                 }
             }
 
-            // الأجزاء التالية تنشئ ملفات فارغة، لذا ليس لديها "مسار مصدر" ليتم حذفه
             if (!hasOcrFiles)
             {
                 ocrFileNumber++;
@@ -1401,6 +1408,7 @@ namespace Mospuk_1
                 if (db.ExecuteNonQuery(insertGoogleDriverQuery, googleDriverParams))
                 {
                     imageCounter++;
+                    savedFileNames.Add(googleDriverFileName); // <<-- إضافة: حفظ اسم الملف النهائي
                 }
                 else
                 {
@@ -1436,6 +1444,7 @@ namespace Mospuk_1
                 if (db.ExecuteNonQuery(insertTraduccionQuery, traduccionParams))
                 {
                     imageCounter++;
+                    savedFileNames.Add(traduccionFileName); // <<-- إضافة: حفظ اسم الملف النهائي
                 }
                 else
                 {
@@ -1471,6 +1480,7 @@ namespace Mospuk_1
                 if (db.ExecuteNonQuery(insertInformeQuery, informeParams))
                 {
                     imageCounter++;
+                    savedFileNames.Add(informeFileName); // <<-- إضافة: حفظ اسم الملف النهائي
                 }
                 else
                 {
@@ -1506,6 +1516,7 @@ namespace Mospuk_1
                 if (db.ExecuteNonQuery(insertTraduccionRevisadaQuery, traduccionRevisadaParams))
                 {
                     imageCounter++;
+                    savedFileNames.Add(traduccionRevisadaFileName); // <<-- إضافة: حفظ اسم الملف النهائي
                 }
                 else
                 {
@@ -1519,7 +1530,8 @@ namespace Mospuk_1
                 MessageBox.Show($"❌ Error creating Traducción revisada file {imageCounter}: {ex.Message}");
             }
 
-            return (allSaved, savedSourcePaths);
+            // <<-- تعديل 3: تحديث جملة الإرجاع النهائية -->>
+            return (allSaved, savedSourcePaths, savedFileNames);
         }
         private void RemoveImageFromPanel1(string filePath)
         {
@@ -4212,157 +4224,169 @@ namespace Mospuk_1
                 }
             }
         }
-
-        // ====================================================================
-        // ==> دوال عامة للتحكم في تغيير حجم أي لوحة (Panel)
-        // ====================================================================
-
-
-    /*    private void GenericPanel_MouseMove_ForResize(object sender, MouseEventArgs e)
+        private void PopulateDataGridViewWithFiles(List<string> fileNames)
         {
-            Control p = sender as Control;
-            if (p == null) return;
-
-            if (isResizingPanel)
+            if (this.InvokeRequired)
             {
-                // حساب الفرق مباشرة من الموقع الحالي والموقع المحفوظ
-                int deltaX = e.X - lastMousePosition.X;
-                int deltaY = e.Y - lastMousePosition.Y;
-
-                // حساب الأبعاد الجديدة المحتملة
-                Rectangle newBounds = p.Bounds;
-                int minWidth = 150;
-                int minHeight = 150;
-
-                // حفظ الأبعاد الأصلية للمقارنة
-                Rectangle originalBounds = p.Bounds;
-
-                // تطبيق التغييرات على المستطيل المؤقت (newBounds)
-                // اليسار
-                if (resizeDirection == ResizeDirection.Left || resizeDirection == ResizeDirection.TopLeft || resizeDirection == ResizeDirection.BottomLeft)
-                {
-                    newBounds.X += deltaX;
-                    newBounds.Width -= deltaX;
-                }
-                // اليمين
-                if (resizeDirection == ResizeDirection.Right || resizeDirection == ResizeDirection.TopRight || resizeDirection == ResizeDirection.BottomRight)
-                {
-                    newBounds.Width += deltaX;
-                }
-                // الأعلى
-                if (resizeDirection == ResizeDirection.Top || resizeDirection == ResizeDirection.TopLeft || resizeDirection == ResizeDirection.TopRight)
-                {
-                    newBounds.Y += deltaY;
-                    newBounds.Height -= deltaY;
-                }
-                // الأسفل
-                if (resizeDirection == ResizeDirection.Bottom || resizeDirection == ResizeDirection.BottomLeft || resizeDirection == ResizeDirection.BottomRight)
-                {
-                    newBounds.Height += deltaY;
-                }
-
-                // التحقق من الحد الأدنى للحجم
-                if (newBounds.Width < minWidth || newBounds.Height < minHeight)
-                {
-                    return; // إلغاء الحركة إذا كانت ستجعل الأداة أصغر من اللازم
-                }
-
-                // التحقق من التصادم مع الأدوات الأخرى
-                bool collisionDetected = false;
-                var otherPanels = new List<Control> { panel1, flowLayoutPanel1, flowLayoutPanel2, guna2DataGridView1, panelDocx };
-                otherPanels.Remove(p); // إزالة الأداة الحالية من قائمة التحقق
-
-                foreach (var other in otherPanels)
-                {
-                    if (newBounds.IntersectsWith(other.Bounds))
-                    {
-                        collisionDetected = true;
-                        break;
-                    }
-                }
-
-                // تطبيق التغييرات فقط في حالة عدم وجود تصادم
-                if (!collisionDetected)
-                {
-                    p.Bounds = newBounds;
-                    // تحديث موقع الفأرة للحركة التالية - هذا مهم جداً
-                    lastMousePosition = e.Location;
-
-                    // استدعاء دالة إعادة الترتيب فقط لـ panel1
-                    if (p == panel1)
-                    {
-                        ReArrangeImages();
-                    }
-                }
-                // في حالة وجود تصادم، لا نحدث lastMousePosition لتجنب الاهتزاز
+                this.Invoke(new Action(() => PopulateDataGridViewWithFiles(fileNames)));
+                return;
             }
-            else // تغيير شكل المؤشر
-            {
-                bool onLeftEdge = e.X <= resizeBorderWidth;
-                bool onRightEdge = e.X >= p.ClientSize.Width - resizeBorderWidth;
-                bool onTopEdge = e.Y <= resizeBorderWidth;
-                bool onBottomEdge = e.Y >= p.ClientSize.Height - resizeBorderWidth;
 
-                if (onTopEdge && onLeftEdge)
+            if (fileNames != null && fileNames.Any())
+            {
+                foreach (string fileName in fileNames)
                 {
-                    p.Cursor = Cursors.SizeNWSE;
-                    resizeDirection = ResizeDirection.TopLeft;
-                }
-                else if (onTopEdge && onRightEdge)
-                {
-                    p.Cursor = Cursors.SizeNESW;
-                    resizeDirection = ResizeDirection.TopRight;
-                }
-                else if (onBottomEdge && onLeftEdge)
-                {
-                    p.Cursor = Cursors.SizeNESW;
-                    resizeDirection = ResizeDirection.BottomLeft;
-                }
-                else if (onBottomEdge && onRightEdge)
-                {
-                    p.Cursor = Cursors.SizeNWSE;
-                    resizeDirection = ResizeDirection.BottomRight;
-                }
-                else if (onLeftEdge)
-                {
-                    p.Cursor = Cursors.SizeWE;
-                    resizeDirection = ResizeDirection.Left;
-                }
-                else if (onRightEdge)
-                {
-                    p.Cursor = Cursors.SizeWE;
-                    resizeDirection = ResizeDirection.Right;
-                }
-                else if (onTopEdge)
-                {
-                    p.Cursor = Cursors.SizeNS;
-                    resizeDirection = ResizeDirection.Top;
-                }
-                else if (onBottomEdge)
-                {
-                    p.Cursor = Cursors.SizeNS;
-                    resizeDirection = ResizeDirection.Bottom;
-                }
-                else
-                {
-                    p.Cursor = Cursors.Default;
-                    resizeDirection = ResizeDirection.None;
+                    guna2DataGridView1.Rows.Add(fileName);
                 }
             }
         }
-        private void GenericPanel_MouseDown_ForResize(object sender, MouseEventArgs e)
-        {
-            if (e.Button == MouseButtons.Left && resizeDirection != ResizeDirection.None)
-            {
-                isResizingPanel = true;
-                lastMousePosition = e.Location; // نحتاج إليها هنا لحساب الفرق
-            }
-        }
 
-        private void GenericPanel_MouseUp_ForResize(object sender, MouseEventArgs e)
-        {
-            isResizingPanel = false;
-        }*/
+
+        /*    private void GenericPanel_MouseMove_ForResize(object sender, MouseEventArgs e)
+            {
+                Control p = sender as Control;
+                if (p == null) return;
+
+                if (isResizingPanel)
+                {
+                    // حساب الفرق مباشرة من الموقع الحالي والموقع المحفوظ
+                    int deltaX = e.X - lastMousePosition.X;
+                    int deltaY = e.Y - lastMousePosition.Y;
+
+                    // حساب الأبعاد الجديدة المحتملة
+                    Rectangle newBounds = p.Bounds;
+                    int minWidth = 150;
+                    int minHeight = 150;
+
+                    // حفظ الأبعاد الأصلية للمقارنة
+                    Rectangle originalBounds = p.Bounds;
+
+                    // تطبيق التغييرات على المستطيل المؤقت (newBounds)
+                    // اليسار
+                    if (resizeDirection == ResizeDirection.Left || resizeDirection == ResizeDirection.TopLeft || resizeDirection == ResizeDirection.BottomLeft)
+                    {
+                        newBounds.X += deltaX;
+                        newBounds.Width -= deltaX;
+                    }
+                    // اليمين
+                    if (resizeDirection == ResizeDirection.Right || resizeDirection == ResizeDirection.TopRight || resizeDirection == ResizeDirection.BottomRight)
+                    {
+                        newBounds.Width += deltaX;
+                    }
+                    // الأعلى
+                    if (resizeDirection == ResizeDirection.Top || resizeDirection == ResizeDirection.TopLeft || resizeDirection == ResizeDirection.TopRight)
+                    {
+                        newBounds.Y += deltaY;
+                        newBounds.Height -= deltaY;
+                    }
+                    // الأسفل
+                    if (resizeDirection == ResizeDirection.Bottom || resizeDirection == ResizeDirection.BottomLeft || resizeDirection == ResizeDirection.BottomRight)
+                    {
+                        newBounds.Height += deltaY;
+                    }
+
+                    // التحقق من الحد الأدنى للحجم
+                    if (newBounds.Width < minWidth || newBounds.Height < minHeight)
+                    {
+                        return; // إلغاء الحركة إذا كانت ستجعل الأداة أصغر من اللازم
+                    }
+
+                    // التحقق من التصادم مع الأدوات الأخرى
+                    bool collisionDetected = false;
+                    var otherPanels = new List<Control> { panel1, flowLayoutPanel1, flowLayoutPanel2, guna2DataGridView1, panelDocx };
+                    otherPanels.Remove(p); // إزالة الأداة الحالية من قائمة التحقق
+
+                    foreach (var other in otherPanels)
+                    {
+                        if (newBounds.IntersectsWith(other.Bounds))
+                        {
+                            collisionDetected = true;
+                            break;
+                        }
+                    }
+
+                    // تطبيق التغييرات فقط في حالة عدم وجود تصادم
+                    if (!collisionDetected)
+                    {
+                        p.Bounds = newBounds;
+                        // تحديث موقع الفأرة للحركة التالية - هذا مهم جداً
+                        lastMousePosition = e.Location;
+
+                        // استدعاء دالة إعادة الترتيب فقط لـ panel1
+                        if (p == panel1)
+                        {
+                            ReArrangeImages();
+                        }
+                    }
+                    // في حالة وجود تصادم، لا نحدث lastMousePosition لتجنب الاهتزاز
+                }
+                else // تغيير شكل المؤشر
+                {
+                    bool onLeftEdge = e.X <= resizeBorderWidth;
+                    bool onRightEdge = e.X >= p.ClientSize.Width - resizeBorderWidth;
+                    bool onTopEdge = e.Y <= resizeBorderWidth;
+                    bool onBottomEdge = e.Y >= p.ClientSize.Height - resizeBorderWidth;
+
+                    if (onTopEdge && onLeftEdge)
+                    {
+                        p.Cursor = Cursors.SizeNWSE;
+                        resizeDirection = ResizeDirection.TopLeft;
+                    }
+                    else if (onTopEdge && onRightEdge)
+                    {
+                        p.Cursor = Cursors.SizeNESW;
+                        resizeDirection = ResizeDirection.TopRight;
+                    }
+                    else if (onBottomEdge && onLeftEdge)
+                    {
+                        p.Cursor = Cursors.SizeNESW;
+                        resizeDirection = ResizeDirection.BottomLeft;
+                    }
+                    else if (onBottomEdge && onRightEdge)
+                    {
+                        p.Cursor = Cursors.SizeNWSE;
+                        resizeDirection = ResizeDirection.BottomRight;
+                    }
+                    else if (onLeftEdge)
+                    {
+                        p.Cursor = Cursors.SizeWE;
+                        resizeDirection = ResizeDirection.Left;
+                    }
+                    else if (onRightEdge)
+                    {
+                        p.Cursor = Cursors.SizeWE;
+                        resizeDirection = ResizeDirection.Right;
+                    }
+                    else if (onTopEdge)
+                    {
+                        p.Cursor = Cursors.SizeNS;
+                        resizeDirection = ResizeDirection.Top;
+                    }
+                    else if (onBottomEdge)
+                    {
+                        p.Cursor = Cursors.SizeNS;
+                        resizeDirection = ResizeDirection.Bottom;
+                    }
+                    else
+                    {
+                        p.Cursor = Cursors.Default;
+                        resizeDirection = ResizeDirection.None;
+                    }
+                }
+            }
+            private void GenericPanel_MouseDown_ForResize(object sender, MouseEventArgs e)
+            {
+                if (e.Button == MouseButtons.Left && resizeDirection != ResizeDirection.None)
+                {
+                    isResizingPanel = true;
+                    lastMousePosition = e.Location; // نحتاج إليها هنا لحساب الفرق
+                }
+            }
+
+            private void GenericPanel_MouseUp_ForResize(object sender, MouseEventArgs e)
+            {
+                isResizingPanel = false;
+            }*/
 
     }
     //*************************************
