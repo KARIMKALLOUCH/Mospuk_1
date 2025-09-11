@@ -1,4 +1,4 @@
-﻿using SharpCompress.Archives;
+using SharpCompress.Archives;
 using SharpCompress.Common;
 using System;
 using System.Collections.Generic;
@@ -7,6 +7,10 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using PdfiumViewer; // تأكد من أن هذا الـ using موجود إذا كنت تستخدم PdfiumViewer في هذا الكلاس
+using System.Data.SQLite;
+using System.Diagnostics;
+using Org.BouncyCastle.Asn1.Cmp; // تأكد من أن هذا الـ using موجود إذا كنت تستخدم Org.BouncyCastle في هذا الكلاس
 
 namespace Mospuk_1
 {
@@ -21,7 +25,6 @@ namespace Mospuk_1
         private readonly FlowLayoutPanel _flowLayoutPanel1;
         private readonly FlowLayoutPanel _flowLayoutPanel2;
         private readonly PictureBox _imageApostille;
-        private readonly DataLoaderAddfille _dataLoader; // <--- هذا هو الإضافة الجديدة
 
         // State variables for drag/drop and selection
         private Rectangle selectionRectangle;
@@ -123,11 +126,11 @@ namespace Mospuk_1
                         string extension = Path.GetExtension(path).ToLower();
                         if (extension == ".rar")
                         {
-                            _dataLoader.ExtractRAR(path, outputFolder); // تم استدعاء الدالة من _dataLoader
+                            _addFileForm.ExtractRAR(path, outputFolder);
                         }
                         else if (extension == ".zip")
                         {
-                            _dataLoader.ExtractZIP(path, outputFolder); // تم استدعاء الدالة من _dataLoader
+                            _addFileForm.ExtractZIP(path, outputFolder);
                         }
                         else
                         {

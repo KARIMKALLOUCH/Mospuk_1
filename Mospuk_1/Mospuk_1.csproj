@@ -354,6 +354,8 @@
     <Compile Include="CustomFileDialog.Designer.cs">
       <DependentUpon>CustomFileDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="DataLoaderAddfille.cs" />
+    <Compile Include="DragDropHandler.cs" />
     <Compile Include="EncryptionHelper.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
@@ -367,6 +369,7 @@
     <Compile Include="Home.Designer.cs">
       <DependentUpon>Home.cs</DependentUpon>
     </Compile>
+    <Compile Include="KeyboardActionHandler.cs" />
     <Compile Include="Login.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -381,6 +384,7 @@
       <DependentUpon>OrcTest.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
+    <Compile Include="ProjectImageSaver.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SaveDirectory.cs">
       <SubType>Form</SubType>
@@ -395,6 +399,7 @@
       <DependentUpon>SettingsForm.cs</DependentUpon>
     </Compile>
     <Compile Include="SQLiteDatabase.cs" />
+    <Compile Include="WorkspaceCleaner.cs" />
     <EmbeddedResource Include="AddCompany.resx">
       <DependentUpon>AddCompany.cs</DependentUpon>
     </EmbeddedResource>
