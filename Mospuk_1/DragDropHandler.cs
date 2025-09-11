@@ -1,0 +1,1706 @@
+﻿using SharpCompress.Archives;
+using SharpCompress.Common;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Windows.Forms;
+using PdfiumViewer; // تأكد من أن هذا الـ using موجود إذا كنت تستخدم PdfiumViewer في هذا الكلاس
+using System.Data.SQLite;
+using System.Diagnostics;
+using Org.BouncyCastle.Asn1.Cmp; // تأكد من أن هذا الـ using موجود إذا كنت تستخدم Org.BouncyCastle في هذا الكلاس
+
+namespace Mospuk_1
+{
+    /// <summary>
+    ///  هذا الكلاس الجديد يحتوي على كل منطق السحب والإفلات والاختيار
+    /// </summary>
+    public class DragDropHandler
+    {
+        // References to the form and its controls
+        private readonly AddFile _addFileForm;
+        private readonly Panel _panel1;
+        private readonly FlowLayoutPanel _flowLayoutPanel1;
+        private readonly FlowLayoutPanel _flowLayoutPanel2;
+        private readonly PictureBox _imageApostille;
+
+        // State variables for drag/drop and selection
+        private Rectangle selectionRectangle;
+        private Point selectionStartPoint;
+        private bool isSelecting = false;
+        private FlowLayoutPanel dragSourcePanel = null;
+        public List<PictureBox> selectedPictureBoxesFlow1 = new List<PictureBox>();
+        private DateTime lastClickTime = DateTime.MinValue;
+        public List<PictureBox> selectedPictureBoxesFlow2 = new List<PictureBox>();
+        private Point dragStartPoint;
+        private bool isDragging = false;
+        public List<PictureBox> selectedPictureBoxes = new List<PictureBox>();
+        private int _insertionIndex = -1;
+        private readonly Pen _insertionLinePen = new Pen(Color.DodgerBlue, 2);
+        private PictureBox draggedPictureBox = null;
+        private FlowLayoutPanel _currentDragOverPanel = null;
+        private bool _isDragOverExternalPanel = false;
+        public List<AddFile.KeyboardDragItem> _keyboardDragItems = new List<AddFile.KeyboardDragItem>();
+
+        public DragDropHandler(AddFile addFileForm, Panel panel1, FlowLayoutPanel flowLayoutPanel1, FlowLayoutPanel flowLayoutPanel2, PictureBox imageApostille)
+        {
+            _addFileForm = addFileForm;
+            _panel1 = panel1;
+            _flowLayoutPanel1 = flowLayoutPanel1;
+            _flowLayoutPanel2 = flowLayoutPanel2;
+            _imageApostille = imageApostille;
+        }
+
+        public void Initialize()
+        {
+            // Attach all necessary event handlers
+            _panel1.AllowDrop = true;
+            _panel1.DragEnter += panel1_DragEnter;
+            _panel1.DragDrop += panel1_DragDrop;
+            _panel1.MouseDown += panel1_MouseDown_ForSelection;
+            _panel1.MouseMove += panel1_MouseMove_ForSelection;
+            _panel1.MouseUp += panel1_MouseUp_ForSelection;
+            _panel1.Paint += panel1_Paint_SelectionRectangle;
+            _panel1.MouseDown += panel1_MouseDown;
+
+            SetupFlowLayoutPanel(_flowLayoutPanel1);
+            SetupFlowLayoutPanel(_flowLayoutPanel2);
+
+            _imageApostille.AllowDrop = true;
+            _imageApostille.DragEnter += ImageApostille_DragEnter;
+            _imageApostille.DragDrop += ImageApostille_DragDrop;
+            _imageApostille.DragOver += ImageApostille_DragOver;
+            _imageApostille.MouseDown += imageApostille_MouseDown;
+            _imageApostille.MouseMove += imageApostille_MouseMove;
+            _imageApostille.MouseUp += imageApostille_MouseUp;
+            _imageApostille.Click += imageApostille_Click;
+            _imageApostille.Paint += PictureBox_Paint_Selection;
+        }
+
+        public void panel1_DragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                e.Effect = DragDropEffects.Copy;
+                return;
+            }
+
+            if (e.Data.GetDataPresent("DragSource") && e.Data.GetData("DragSource").ToString() == "panel1")
+            {
+                e.Effect = DragDropEffects.None; // عرض أيقونة المنع
+                return;
+            }
+
+            if (e.Data.GetDataPresent("ReturnToPanel1") ||
+                e.Data.GetDataPresent("MultiDragFlow1") ||
+                e.Data.GetDataPresent("MultiDragFlow2") ||
+                e.Data.GetDataPresent("MultiPanelDrag") ||
+                e.Data.GetDataPresent("FromImageApostille"))
+            {
+                e.Effect = DragDropEffects.Move; // السماح بالإفلات من المصادر الأخرى
+            }
+            else
+            {
+                e.Effect = DragDropEffects.None;
+            }
+        }
+
+        public void panel1_DragDrop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                string[] filePaths = (string[])e.Data.GetData(DataFormats.FileDrop);
+
+                string outputFolder = Path.Combine(Application.StartupPath, "ExtractedFiles");
+                if (!Directory.Exists(outputFolder))
+                {
+                    Directory.CreateDirectory(outputFolder);
+                }
+
+                foreach (string path in filePaths)
+                {
+                    try
+                    {
+                        string extension = Path.GetExtension(path).ToLower();
+                        if (extension == ".rar")
+                        {
+                            _addFileForm.ExtractRAR(path, outputFolder);
+                        }
+                        else if (extension == ".zip")
+                        {
+                            _addFileForm.ExtractZIP(path, outputFolder);
+                        }
+                        else
+                        {
+                            File.Copy(path, Path.Combine(outputFolder, Path.GetFileName(path)), true);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error processing file '{Path.GetFileName(path)}':\n{ex.Message}",
+                                        "Drag & Drop Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+
+                _addFileForm.DisplayFiles(outputFolder);
+                return;
+            }
+
+            if (e.Data.GetDataPresent("MultiPanelDrag"))
+            {
+                var draggedItems = (List<AddFile.PictureBoxDragInfo>)e.Data.GetData("MultiPanelDrag");
+
+                foreach (var item in draggedItems)
+                {
+                    if (item.PictureBox?.Tag != null && item.PictureBox.Image != null)
+                    {
+                        _addFileForm.AddImageBackToPanel1(item.PictureBox.Tag.ToString());
+                    }
+                }
+
+                // تنظيف المصادر
+                foreach (var item in draggedItems)
+                {
+                    CleanupSourcePictureBox(item.PictureBox, item.SourceType);
+                }
+
+                ClearAllSelections();
+                return;
+            }
+
+            if (e.Data.GetDataPresent("MultiDragFlow1"))
+            {
+                PictureBox[] selectedPictureBoxes = (PictureBox[])e.Data.GetData("MultiDragFlow1");
+                foreach (PictureBox sourcePb in selectedPictureBoxes)
+                {
+                    if (sourcePb?.Tag != null && sourcePb.Image != null)
+                    {
+                        _addFileForm.AddImageBackToPanel1(sourcePb.Tag.ToString());
+                    }
+                }
+                foreach (PictureBox sourcePb in selectedPictureBoxes)
+                {
+                    CleanupSourcePictureBox(sourcePb, "flowLayoutPanel1");
+                }
+                ClearSelectionForPanel(_flowLayoutPanel1);
+                return;
+            }
+
+            if (e.Data.GetDataPresent("MultiDragFlow2"))
+            {
+                PictureBox[] selectedPictureBoxes = (PictureBox[])e.Data.GetData("MultiDragFlow2");
+                foreach (PictureBox sourcePb in selectedPictureBoxes)
+                {
+                    if (sourcePb?.Tag != null && sourcePb.Image != null)
+                    {
+                        _addFileForm.AddImageBackToPanel1(sourcePb.Tag.ToString());
+                    }
+                }
+                foreach (PictureBox sourcePb in selectedPictureBoxes)
+                {
+                    CleanupSourcePictureBox(sourcePb, "flowLayoutPanel2");
+                }
+                ClearSelectionForPanel(_flowLayoutPanel2);
+                return;
+            }
+
+            if (e.Data.GetDataPresent("FromImageApostille"))
+            {
+                PictureBox sourcePb = (PictureBox)e.Data.GetData("ReturnToPanel1");
+                if (sourcePb?.Tag != null && sourcePb.Image != null)
+                {
+                    Point dropPoint = _panel1.PointToClient(new Point(e.X, e.Y));
+                    PictureBox targetPb = _panel1.GetChildAtPoint(dropPoint) as PictureBox;
+
+                    if (targetPb != null && targetPb != sourcePb)
+                    {
+                        SwapImagesBetweenControls(sourcePb, targetPb);
+                    }
+                    else
+                    {
+                        _addFileForm.AddImageBackToPanel1(sourcePb.Tag.ToString());
+                        CleanupSourcePictureBox(sourcePb, "imageApostille");
+                    }
+                }
+                return;
+            }
+
+            if (e.Data.GetDataPresent("ReturnToPanel1"))
+            {
+                PictureBox sourcePb = (PictureBox)e.Data.GetData("ReturnToPanel1");
+                if (sourcePb?.Tag != null)
+                {
+                    Point dropPoint = _panel1.PointToClient(new Point(e.X, e.Y));
+                    PictureBox targetPb = _panel1.GetChildAtPoint(dropPoint) as PictureBox;
+
+                    if (targetPb != null && targetPb != sourcePb)
+                    {
+                        SwapImagesBetweenControls(sourcePb, targetPb);
+                    }
+                    else
+                    {
+                        _addFileForm.AddImageBackToPanel1(sourcePb.Tag.ToString());
+                        string sourceType = DetermineSourceType(sourcePb);
+                        CleanupSourcePictureBox(sourcePb, sourceType);
+                    }
+                }
+            }
+        }
+
+        public void Pb_Click_Panel1(object sender, EventArgs e)
+        {
+            PictureBox pb = sender as PictureBox;
+            if (pb == null) return;
+
+            if ((DateTime.Now - lastClickTime).TotalMilliseconds < SystemInformation.DoubleClickTime)
+            {
+                return;
+            }
+            lastClickTime = DateTime.Now;
+
+            if (Control.ModifierKeys == Keys.Control)
+            {
+                if (selectedPictureBoxes.Contains(pb))
+                {
+                    selectedPictureBoxes.Remove(pb);
+                }
+                else
+                {
+                    selectedPictureBoxes.Add(pb);
+                }
+                pb.Invalidate();
+            }
+            else if (Control.ModifierKeys == Keys.Shift && selectedPictureBoxes.Count > 0)
+            {
+                var allPictures = _panel1.Controls.OfType<PictureBox>()
+                    .OrderBy(p => p.Location.Y)
+                    .ThenBy(p => p.Location.X)
+                    .ToList();
+
+                int currentIndex = allPictures.IndexOf(pb);
+                int lastSelectedIndex = allPictures.IndexOf(selectedPictureBoxes.Last());
+
+                if (currentIndex != -1 && lastSelectedIndex != -1)
+                {
+                    int start = Math.Min(currentIndex, lastSelectedIndex);
+                    int end = Math.Max(currentIndex, lastSelectedIndex);
+                    for (int i = start; i <= end; i++)
+                    {
+                        PictureBox picture = allPictures[i];
+                        if (!selectedPictureBoxes.Contains(picture))
+                        {
+                            selectedPictureBoxes.Add(picture);
+                            picture.Invalidate();
+                        }
+                    }
+                }
+            }
+            else
+            {
+                ClearAllSelections();
+                selectedPictureBoxes.Add(pb);
+                pb.Invalidate();
+            }
+
+            _panel1.Focus();
+        }
+
+        private void ClearSelection()
+        {
+            var picturesToClear = new List<PictureBox>(selectedPictureBoxes);
+            foreach (var pb in picturesToClear)
+            {
+                pb.Invalidate();
+            }
+            selectedPictureBoxes.Clear();
+        }
+
+        public void Pb_MouseDown_Panel1(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                dragStartPoint = e.Location;
+                isDragging = false;
+            }
+        }
+
+        public void Pb_MouseMove_Panel1(object sender, MouseEventArgs e)
+        {
+            PictureBox pb = sender as PictureBox;
+            if (e.Button == MouseButtons.Left && pb != null)
+            {
+                if (!isDragging)
+                {
+                    Size dragSize = SystemInformation.DragSize;
+                    Rectangle dragRect = new Rectangle(
+                        dragStartPoint.X - dragSize.Width / 2,
+                        dragStartPoint.Y - dragSize.Height / 2,
+                        dragSize.Width,
+                        dragSize.Height);
+
+                    if (!dragRect.Contains(e.Location))
+                    {
+                        isDragging = true;
+                        DataObject dataObject = new DataObject();
+                        List<string> filePaths = new List<string>();
+
+                        if (selectedPictureBoxes.Count > 1 && selectedPictureBoxes.Contains(pb))
+                        {
+                            foreach (var selectedPb in selectedPictureBoxes)
+                            {
+                                if (selectedPb.Tag != null)
+                                    filePaths.Add(selectedPb.Tag.ToString());
+                            }
+                        }
+                        else
+                        {
+                            if (pb.Tag != null)
+                                filePaths.Add(pb.Tag.ToString());
+                        }
+
+                        if (filePaths.Count > 0)
+                        {
+                            string dataToTransfer = string.Join("|", filePaths);
+                            dataObject.SetData(DataFormats.StringFormat, dataToTransfer);
+                            dataObject.SetData("ReturnToPanel1", pb);
+                            dataObject.SetData("DragSource", "panel1");
+                            pb.DoDragDrop(dataObject, DragDropEffects.Move);
+                        }
+                    }
+                }
+            }
+        }
+
+        public void Pb_MouseUp_Panel1(object sender, MouseEventArgs e)
+        {
+            isDragging = false;
+        }
+
+        private PictureBox FindPictureBoxInFlowPanel(FlowLayoutPanel panel, string filePath)
+        {
+            return panel.Controls.OfType<PictureBox>().FirstOrDefault(pb => pb.Tag != null && pb.Tag.ToString() == filePath);
+        }
+
+        private void SwapImagesBetweenControls(PictureBox control1, PictureBox control2)
+        {
+            try
+            {
+                Image image1 = control1.Image;
+                object tag1 = control1.Tag;
+                Image image2 = control2.Image;
+                object tag2 = control2.Tag;
+
+                control1.Image = image2;
+                control1.Tag = tag2;
+                control2.Image = image1;
+                control2.Tag = tag1;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error swapping images: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void imageApostille_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                dragStartPoint = e.Location;
+                isDragging = false;
+            }
+        }
+
+        private void imageApostille_MouseMove(object sender, MouseEventArgs e)
+        {
+            PictureBox pb = sender as PictureBox;
+            if (e.Button == MouseButtons.Left && pb != null && pb.Image != null)
+            {
+                if (!isDragging)
+                {
+                    Size dragSize = SystemInformation.DragSize;
+                    Rectangle dragRect = new Rectangle(dragStartPoint, dragSize);
+                    if (!dragRect.Contains(e.Location))
+                    {
+                        isDragging = true;
+                        DataObject data = new DataObject();
+                        List<AddFile.PictureBoxDragInfo> multiPanelItems = new List<AddFile.PictureBoxDragInfo>();
+
+                        if (pb.Tag != null)
+                        {
+                            multiPanelItems.Add(new AddFile.PictureBoxDragInfo { PictureBox = pb, SourceType = "imageApostille", FilePath = pb.Tag.ToString() });
+                        }
+
+                        foreach (var selectedPb in selectedPictureBoxesFlow1)
+                        {
+                            if (selectedPb.Image != null && selectedPb.Tag != null)
+                            {
+                                multiPanelItems.Add(new AddFile.PictureBoxDragInfo { PictureBox = selectedPb, SourceType = "flowLayoutPanel1", FilePath = selectedPb.Tag.ToString() });
+                            }
+                        }
+
+                        foreach (var selectedPb in selectedPictureBoxesFlow2)
+                        {
+                            if (selectedPb.Image != null && selectedPb.Tag != null)
+                            {
+                                multiPanelItems.Add(new AddFile.PictureBoxDragInfo { PictureBox = selectedPb, SourceType = "flowLayoutPanel2", FilePath = selectedPb.Tag.ToString() });
+                            }
+                        }
+
+                        if (multiPanelItems.Count > 1)
+                        {
+                            data.SetData("MultiPanelDrag", multiPanelItems);
+                            var filePaths = multiPanelItems.Select(item => item.FilePath).Where(fp => fp != null);
+                            data.SetData(DataFormats.StringFormat, string.Join("|", filePaths));
+                        }
+                        else
+                        {
+                            data.SetData("ReturnToPanel1", pb);
+                            if (pb.Tag != null)
+                            {
+                                data.SetData(DataFormats.StringFormat, pb.Tag.ToString());
+                            }
+                            data.SetData("FromImageApostille", true);
+                        }
+
+                        pb.DoDragDrop(data, DragDropEffects.Move);
+                    }
+                }
+            }
+        }
+
+        private void imageApostille_MouseUp(object sender, MouseEventArgs e)
+        {
+            isDragging = false;
+        }
+
+        private void ImageApostille_DragEnter(object sender, DragEventArgs e)
+        {
+            try
+            {
+                if (e.Data.GetDataPresent(DataFormats.StringFormat))
+                {
+                    string data = (string)e.Data.GetData(DataFormats.StringFormat);
+                    if (!string.IsNullOrEmpty(data) && data.Contains("|"))
+                    {
+                        e.Effect = DragDropEffects.None;
+                        return;
+                    }
+                }
+
+                if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                {
+                    string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                    if (files != null && files.Length > 1)
+                    {
+                        e.Effect = DragDropEffects.None;
+                        return;
+                    }
+                }
+
+                if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                {
+                    string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                    if (files != null && files.Length > 0)
+                    {
+                        string ext = Path.GetExtension(files[0]).ToLower();
+                        if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".gif")
+                        {
+                            e.Effect = DragDropEffects.Copy;
+                            return;
+                        }
+                    }
+                }
+                else if (e.Data.GetDataPresent(DataFormats.StringFormat))
+                {
+                    string data = (string)e.Data.GetData(DataFormats.StringFormat);
+                    if (!string.IsNullOrEmpty(data))
+                    {
+                        string firstFile = data.Split('|')[0];
+                        if (File.Exists(firstFile))
+                        {
+                            string ext = Path.GetExtension(firstFile).ToLower();
+                            if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".gif")
+                            {
+                                e.Effect = DragDropEffects.Move;
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                e.Effect = DragDropEffects.None;
+            }
+            catch (Exception ex)
+            {
+                e.Effect = DragDropEffects.None;
+                MessageBox.Show($"Error in DragEnter: {ex.Message}");
+            }
+        }
+
+        private void ImageApostille_DragOver(object sender, DragEventArgs e)
+        {
+            ImageApostille_DragEnter(sender, e);
+        }
+
+        private void imageApostille_Click(object sender, EventArgs e)
+        {
+            PictureBox pb = sender as PictureBox;
+            if (pb?.Image == null) return;
+
+            if ((DateTime.Now - lastClickTime).TotalMilliseconds < SystemInformation.DoubleClickTime)
+            {
+                return;
+            }
+            lastClickTime = DateTime.Now;
+
+            if (Control.ModifierKeys == Keys.Control)
+            {
+                if (selectedPictureBoxes.Contains(pb))
+                {
+                    selectedPictureBoxes.Remove(pb);
+                }
+                else
+                {
+                    selectedPictureBoxes.Add(pb);
+                }
+            }
+            else
+            {
+                bool onlyThisIsSelected = selectedPictureBoxes.Count == 1 && selectedPictureBoxes.Contains(pb);
+                if (!onlyThisIsSelected)
+                {
+                    ClearAllSelections();
+                    selectedPictureBoxes.Add(pb);
+                }
+            }
+            pb.Invalidate();
+        }
+
+        private void ImageApostille_DragDrop(object sender, DragEventArgs e)
+        {
+            PictureBox targetPic = sender as PictureBox;
+            if (targetPic == null) return;
+
+            string filePath = null;
+            PictureBox sourcePictureBox = null;
+
+            try
+            {
+                bool isInternalDrag = e.Data.GetDataPresent(DataFormats.StringFormat);
+
+                if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                {
+                    string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                    if (files != null && files.Length > 0) filePath = files[0];
+                }
+                else if (isInternalDrag)
+                {
+                    string data = (string)e.Data.GetData(DataFormats.StringFormat);
+                    if (!string.IsNullOrEmpty(data))
+                    {
+                        filePath = data.Split('|')[0];
+                        sourcePictureBox = FindPictureBoxInFlowPanel(_flowLayoutPanel1, filePath)
+                                        ?? FindPictureBoxInFlowPanel(_flowLayoutPanel2, filePath);
+                        if (sourcePictureBox == null)
+                        {
+                            foreach (Control c in _panel1.Controls)
+                            {
+                                if (c is PictureBox pb && pb.Tag?.ToString() == filePath)
+                                {
+                                    sourcePictureBox = pb;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) return;
+
+                string ext = Path.GetExtension(filePath).ToLower();
+                if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".gif")
+                {
+                    if (sourcePictureBox != null && targetPic.Image != null)
+                    {
+                        SwapImagesBetweenControls(sourcePictureBox, targetPic);
+                    }
+                    else
+                    {
+                        using (var imgTemp = Image.FromFile(filePath))
+                        {
+                            targetPic.Image?.Dispose();
+                            targetPic.Image = new Bitmap(imgTemp);
+                            targetPic.Tag = filePath;
+                        }
+                        if (isInternalDrag)
+                        {
+                            _addFileForm.RemoveImageFromPanel1(filePath);
+                            RemoveImageFromFlowLayoutPanel(_flowLayoutPanel1, filePath);
+                            RemoveImageFromFlowLayoutPanel(_flowLayoutPanel2, filePath);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("An error occurred while loading the image:\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void panel1_MouseDown_ForSelection(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                Control clickedControl = _panel1.GetChildAtPoint(e.Location);
+                if (clickedControl != null && clickedControl is PictureBox)
+                {
+                    isSelecting = false;
+                    return;
+                }
+
+                isSelecting = true;
+                selectionStartPoint = e.Location;
+                if (Control.ModifierKeys != Keys.Control)
+                {
+                    ClearSelection();
+                }
+                _panel1.Invalidate();
+            }
+        }
+
+        private void panel1_MouseMove_ForSelection(object sender, MouseEventArgs e)
+        {
+            if (isSelecting)
+            {
+                int x = Math.Min(selectionStartPoint.X, e.X);
+                int y = Math.Min(selectionStartPoint.Y, e.Y);
+                int width = Math.Abs(selectionStartPoint.X - e.X);
+                int height = Math.Abs(selectionStartPoint.Y - e.Y);
+                selectionRectangle = new Rectangle(x, y, width, height);
+                _panel1.Invalidate();
+            }
+        }
+
+        private void panel1_MouseUp_ForSelection(object sender, MouseEventArgs e)
+        {
+            if (isSelecting)
+            {
+                isSelecting = false;
+                foreach (Control control in _panel1.Controls)
+                {
+                    if (control is PictureBox pb)
+                    {
+                        if (selectionRectangle.Width > 2 && selectionRectangle.Height > 2 && selectionRectangle.IntersectsWith(pb.Bounds))
+                        {
+                            if (!selectedPictureBoxes.Contains(pb))
+                            {
+                                selectedPictureBoxes.Add(pb);
+                                pb.Invalidate();
+                            }
+                        }
+                    }
+                }
+                selectionRectangle = Rectangle.Empty;
+                _panel1.Invalidate();
+            }
+        }
+
+        private void panel1_Paint_SelectionRectangle(object sender, PaintEventArgs e)
+        {
+            if (isSelecting && selectionRectangle != Rectangle.Empty)
+            {
+                using (Brush brush = new SolidBrush(Color.FromArgb(70, 0, 120, 215)))
+                {
+                    e.Graphics.FillRectangle(brush, selectionRectangle);
+                }
+                using (Pen pen = new Pen(Color.DodgerBlue, 1))
+                {
+                    e.Graphics.DrawRectangle(pen, selectionRectangle);
+                }
+            }
+        }
+
+        public void ClearAllSelections()
+        {
+            var tempSelected = new List<PictureBox>(selectedPictureBoxes);
+            var tempSelectedFlow1 = new List<PictureBox>(selectedPictureBoxesFlow1);
+            var tempSelectedFlow2 = new List<PictureBox>(selectedPictureBoxesFlow2);
+            selectedPictureBoxes.Clear();
+            selectedPictureBoxesFlow1.Clear();
+            selectedPictureBoxesFlow2.Clear();
+            foreach (var pb in tempSelected) pb.Invalidate();
+            foreach (var pb in tempSelectedFlow1) pb.Invalidate();
+            foreach (var pb in tempSelectedFlow2) pb.Invalidate();
+        }
+
+        private void panel1_MouseDown(object sender, MouseEventArgs e)
+        {
+            _panel1.Focus();
+        }
+
+        private List<PictureBox> GetSelectionListForPanel(FlowLayoutPanel panel)
+        {
+            if (panel == _flowLayoutPanel1) return selectedPictureBoxesFlow1;
+            if (panel == _flowLayoutPanel2) return selectedPictureBoxesFlow2;
+            return new List<PictureBox>();
+        }
+
+        private string GetMultiDragKeyForPanel(FlowLayoutPanel panel)
+        {
+            return (panel == _flowLayoutPanel1) ? "MultiDragFlow1" : "MultiDragFlow2";
+        }
+
+        private string GetReorderKeyForPanel(FlowLayoutPanel panel)
+        {
+            return (panel == _flowLayoutPanel1) ? "FlowPanelReorder" : "FlowPanel2Reorder";
+        }
+
+        private void SetupFlowLayoutPanel(FlowLayoutPanel panel)
+        {
+            panel.AllowDrop = true;
+            panel.DragEnter += Generic_FlowLayoutPanel_DragEnter;
+            panel.DragDrop += Generic_FlowLayoutPanel_DragDrop;
+            panel.DragOver += Generic_FlowLayoutPanel_DragOver;
+            panel.DragLeave += Generic_FlowLayoutPanel_DragLeave;
+            panel.MouseDown += Generic_FlowLayoutPanel_MouseDown_ForSelection;
+            panel.MouseMove += Generic_FlowLayoutPanel_MouseMove_ForSelection;
+            panel.MouseUp += Generic_FlowLayoutPanel_MouseUp_ForSelection;
+            panel.Paint += Generic_FlowLayoutPanel_Paint_SelectionRectangle;
+        }
+
+        private PictureBox CreateNewPictureBoxForPanel(FlowLayoutPanel panel)
+        {
+            var pic = new Guna.UI2.WinForms.Guna2PictureBox
+            {
+                Name = $"_{panel.Name}_{panel.Controls.Count + 1}",
+                Width = 130,
+                Height = 157,
+                BorderStyle = BorderStyle.None,
+                SizeMode = PictureBoxSizeMode.Zoom, // <--- هذا هو التغيير: تم تغيير StretchImage إلى Zoom
+                BackColor = Color.Transparent,
+                Margin = new Padding(5),
+                AllowDrop = true
+            };
+
+            pic.DragEnter += Generic_Pic_DragEnter_FlowPanel;
+            pic.DragDrop += Generic_Pic_DragDrop_FlowPanel;
+            pic.MouseDown += Generic_Pic_MouseDown_FlowPanel;
+            pic.MouseMove += Generic_Pic_MouseMove_FlowPanel;
+            pic.MouseUp += Generic_Pic_MouseUp_FlowPanel;
+            pic.Click += Generic_Pic_Click_FlowPanel;
+            pic.DoubleClick += _addFileForm.OpenImage_DoubleClick; // Call form's method
+            pic.Paint += PictureBox_Paint_Selection;
+
+            return pic;
+        }
+
+        private PictureBox FindEmptyPictureBoxInPanel(FlowLayoutPanel panel)
+        {
+            return panel.Controls.OfType<PictureBox>().FirstOrDefault(pb => pb.Image == null);
+        }
+
+        private int CalculateInsertionIndexForPanel(FlowLayoutPanel panel, Point clientPoint)
+        {
+            var pictureBoxes = panel.Controls.OfType<PictureBox>().Where(p => p.Visible).ToList();
+            if (!pictureBoxes.Any()) return 0;
+
+            for (int i = 0; i < pictureBoxes.Count; i++)
+            {
+                var pb = pictureBoxes[i];
+                if (pb == draggedPictureBox) continue;
+                Rectangle bounds = pb.Bounds;
+                if (clientPoint.Y >= bounds.Top && clientPoint.Y <= bounds.Bottom)
+                {
+                    if (clientPoint.X < bounds.Left + (bounds.Width / 2))
+                    {
+                        return panel.Controls.GetChildIndex(pb);
+                    }
+                }
+            }
+
+            PictureBox lastControlInRow = null;
+            foreach (var pb in pictureBoxes.OfType<PictureBox>().Reverse())
+            {
+                if (pb == draggedPictureBox) continue;
+                Rectangle bounds = pb.Bounds;
+                if (clientPoint.Y >= bounds.Top && clientPoint.Y <= bounds.Bottom)
+                {
+                    lastControlInRow = pb;
+                    break;
+                }
+            }
+
+            if (lastControlInRow != null)
+            {
+                return panel.Controls.GetChildIndex(lastControlInRow) + 1;
+            }
+            return panel.Controls.Count;
+        }
+
+        private void Generic_Pic_Click_FlowPanel(object sender, EventArgs e)
+        {
+            PictureBox pb = sender as PictureBox;
+            if (pb?.Image == null) return;
+            FlowLayoutPanel parentPanel = pb.Parent as FlowLayoutPanel;
+            if (parentPanel == null) return;
+
+            var selectionList = GetSelectionListForPanel(parentPanel);
+            if ((DateTime.Now - lastClickTime).TotalMilliseconds < SystemInformation.DoubleClickTime) return;
+            lastClickTime = DateTime.Now;
+
+            if (Control.ModifierKeys == Keys.Control)
+            {
+                if (selectionList.Contains(pb)) selectionList.Remove(pb);
+                else selectionList.Add(pb);
+            }
+            else if (Control.ModifierKeys == Keys.Shift && selectionList.Any())
+            {
+                var allPictures = parentPanel.Controls.OfType<PictureBox>().ToList();
+                int currentIndex = allPictures.IndexOf(pb);
+                int lastSelectedIndex = allPictures.IndexOf(selectionList.Last());
+                if (currentIndex != -1 && lastSelectedIndex != -1)
+                {
+                    int start = Math.Min(currentIndex, lastSelectedIndex);
+                    int end = Math.Max(currentIndex, lastSelectedIndex);
+                    for (int i = start; i <= end; i++)
+                    {
+                        if (!selectionList.Contains(allPictures[i]))
+                            selectionList.Add(allPictures[i]);
+                    }
+                }
+            }
+            else
+            {
+                ClearAllSelections();
+                selectionList.Add(pb);
+            }
+            parentPanel.Controls.OfType<PictureBox>().ToList().ForEach(p => p.Invalidate());
+            parentPanel.Focus();
+        }
+
+        private void Generic_Pic_MouseDown_FlowPanel(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                dragStartPoint = e.Location;
+                isDragging = false;
+                draggedPictureBox = sender as PictureBox;
+                dragSourcePanel = draggedPictureBox?.Parent as FlowLayoutPanel;
+            }
+        }
+
+        private void Generic_Pic_MouseMove_FlowPanel(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left && draggedPictureBox?.Image != null && !isDragging)
+            {
+                Size dragSize = SystemInformation.DragSize;
+                if (Math.Abs(e.X - dragStartPoint.X) > dragSize.Width || Math.Abs(e.Y - dragStartPoint.Y) > dragSize.Height)
+                {
+                    isDragging = true;
+                    DataObject dataObject = new DataObject();
+                    List<AddFile.PictureBoxDragInfo> multiPanelItems = new List<AddFile.PictureBoxDragInfo>();
+
+                    foreach (var pb in selectedPictureBoxesFlow1)
+                    {
+                        if (pb.Image != null && pb.Tag != null)
+                        {
+                            multiPanelItems.Add(new AddFile.PictureBoxDragInfo { PictureBox = pb, SourceType = "flowLayoutPanel1", FilePath = pb.Tag.ToString() });
+                        }
+                    }
+
+                    foreach (var pb in selectedPictureBoxesFlow2)
+                    {
+                        if (pb.Image != null && pb.Tag != null)
+                        {
+                            multiPanelItems.Add(new AddFile.PictureBoxDragInfo { PictureBox = pb, SourceType = "flowLayoutPanel2", FilePath = pb.Tag.ToString() });
+                        }
+                    }
+
+                    if (_imageApostille?.Image != null && selectedPictureBoxes.Contains(_imageApostille))
+                    {
+                        multiPanelItems.Add(new AddFile.PictureBoxDragInfo { PictureBox = _imageApostille, SourceType = "imageApostille", FilePath = _imageApostille.Tag?.ToString() });
+                    }
+
+                    if (multiPanelItems.Count > 1)
+                    {
+                        dataObject.SetData("MultiPanelDrag", multiPanelItems);
+                        var filePaths = multiPanelItems.Select(item => item.FilePath).Where(fp => fp != null);
+                        dataObject.SetData(DataFormats.StringFormat, string.Join("|", filePaths));
+                    }
+                    else
+                    {
+                        var selectionList = GetSelectionListForPanel(dragSourcePanel);
+                        string multiDragKey = GetMultiDragKeyForPanel(dragSourcePanel);
+                        string reorderKey = GetReorderKeyForPanel(dragSourcePanel);
+
+                        var itemsToDrag = new List<PictureBox>();
+                        if (selectionList.Count > 1 && selectionList.Contains(draggedPictureBox))
+                        {
+                            itemsToDrag.AddRange(selectionList);
+                            dataObject.SetData(multiDragKey, selectionList.ToArray());
+                        }
+                        else
+                        {
+                            itemsToDrag.Add(draggedPictureBox);
+                        }
+
+                        var filePaths = itemsToDrag.Select(p => p.Tag?.ToString()).Where(t => t != null);
+                        if (filePaths.Any())
+                        {
+                            dataObject.SetData(DataFormats.StringFormat, string.Join("|", filePaths));
+                        }
+
+                        dataObject.SetData(reorderKey, draggedPictureBox);
+                        dataObject.SetData("ReturnToPanel1", draggedPictureBox);
+                        dataObject.SetData("DragSource", dragSourcePanel?.Name ?? "unknown");
+                    }
+                    draggedPictureBox.DoDragDrop(dataObject, DragDropEffects.Move);
+                }
+            }
+        }
+
+        private void Generic_Pic_MouseUp_FlowPanel(object sender, MouseEventArgs e)
+        {
+            isDragging = false;
+            draggedPictureBox = null;
+            if (_insertionIndex != -1)
+            {
+                _insertionIndex = -1;
+                dragSourcePanel?.Invalidate();
+            }
+            dragSourcePanel = null;
+        }
+
+        private void Generic_Pic_DragEnter_FlowPanel(object sender, DragEventArgs e)
+        {
+            PictureBox targetPic = sender as PictureBox;
+            FlowLayoutPanel targetPanel = targetPic?.Parent as FlowLayoutPanel;
+            string dragSource = e.Data.GetDataPresent("DragSource") ? e.Data.GetData("DragSource").ToString() : string.Empty;
+
+            if (dragSource == targetPanel?.Name)
+            {
+                string reorderKey = GetReorderKeyForPanel(targetPanel);
+                if (e.Data.GetDataPresent(reorderKey))
+                {
+                    e.Effect = DragDropEffects.Move;
+                }
+                else
+                {
+                    e.Effect = DragDropEffects.None;
+                }
+            }
+            else if (e.Data.GetDataPresent(DataFormats.StringFormat) ||
+                     e.Data.GetDataPresent(DataFormats.FileDrop) ||
+                     e.Data.GetDataPresent("ReturnToPanel1"))
+            {
+                e.Effect = DragDropEffects.Move;
+            }
+            else
+            {
+                e.Effect = DragDropEffects.None;
+            }
+        }
+
+        private void Generic_Pic_DragDrop_FlowPanel(object sender, DragEventArgs e)
+        {
+            PictureBox targetPic = sender as PictureBox;
+            if (targetPic == null) return;
+            FlowLayoutPanel targetPanel = targetPic.Parent as FlowLayoutPanel;
+            if (targetPanel == null) return;
+
+            try
+            {
+                if (e.Data.GetDataPresent("ReturnToPanel1"))
+                {
+                    var sourcePic = (PictureBox)e.Data.GetData("ReturnToPanel1");
+                    if (sourcePic == null || sourcePic == targetPic) return;
+
+                    if (targetPic.Image != null)
+                    {
+                        SwapImagesBetweenControls(sourcePic, targetPic);
+                    }
+                    else
+                    {
+                        if (sourcePic.Tag != null && sourcePic.Image != null)
+                        {
+                            targetPic.Image = sourcePic.Image;
+                            targetPic.Tag = sourcePic.Tag;
+                            sourcePic.Image = null;
+                            CleanupSourcePictureBox(sourcePic, DetermineSourceType(sourcePic));
+                        }
+                    }
+                }
+                else if (e.Data.GetDataPresent(DataFormats.StringFormat) && e.Data.GetDataPresent("DragSource") && e.Data.GetData("DragSource").ToString() == "panel1")
+                {
+                    string data = (string)e.Data.GetData(DataFormats.StringFormat);
+                    if (!string.IsNullOrEmpty(data))
+                    {
+                        string[] filePaths = data.Split('|');
+                        if (filePaths.Length > 1)
+                        {
+                            foreach (string filePath in filePaths)
+                            {
+                                if (File.Exists(filePath))
+                                {
+                                    PictureBox newTargetPic = FindEmptyPictureBoxInPanel(targetPanel) ?? CreateNewPictureBoxForPanel(targetPanel);
+                                    if (newTargetPic.Parent == null) targetPanel.Controls.Add(newTargetPic);
+                                    _addFileForm.SetPictureBoxContent(newTargetPic, filePath);
+                                    _addFileForm.RemoveImageFromPanel1(filePath);
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                {
+                    string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                    if (files != null && files.Length > 0 && File.Exists(files[0]))
+                    {
+                        string ext = Path.GetExtension(files[0]).ToLower();
+                        if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".gif")
+                        {
+                            using (var imgTemp = Image.FromFile(files[0]))
+                            {
+                                targetPic.Image?.Dispose();
+                                targetPic.Image = new Bitmap(imgTemp);
+                                targetPic.Tag = files[0];
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error during drag drop: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void Generic_FlowLayoutPanel_DragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.StringFormat) ||
+                e.Data.GetDataPresent(DataFormats.FileDrop) ||
+                e.Data.GetDataPresent("ReturnToPanel1") ||
+                e.Data.GetDataPresent("MultiDragFlow1") ||
+                e.Data.GetDataPresent("MultiDragFlow2") ||
+                e.Data.GetDataPresent("MultiPanelDrag"))
+            {
+                e.Effect = DragDropEffects.Move;
+            }
+            else
+            {
+                e.Effect = DragDropEffects.None;
+            }
+        }
+
+        private void Generic_FlowLayoutPanel_DragOver(object sender, DragEventArgs e)
+        {
+            FlowLayoutPanel panel = sender as FlowLayoutPanel;
+            if (panel == null) return;
+            _currentDragOverPanel = panel;
+            string reorderKey = GetReorderKeyForPanel(panel);
+            bool isInternalReorder = e.Data.GetDataPresent(reorderKey) && dragSourcePanel == panel;
+            bool isExternalDrag = e.Data.GetDataPresent("ReturnToPanel1") ||
+                                 e.Data.GetDataPresent("MultiDragFlow1") ||
+                                 e.Data.GetDataPresent("MultiDragFlow2") ||
+                                 e.Data.GetDataPresent("MultiPanelDrag") ||
+                                 e.Data.GetDataPresent(DataFormats.FileDrop) ||
+                                 (e.Data.GetDataPresent("DragSource") && e.Data.GetData("DragSource").ToString() != panel.Name);
+
+            if (isInternalReorder || isExternalDrag)
+            {
+                e.Effect = DragDropEffects.Move;
+                Point clientPoint = panel.PointToClient(new Point(e.X, e.Y));
+                int newIndex = CalculateInsertionIndexForPanel(panel, clientPoint);
+                _isDragOverExternalPanel = !isInternalReorder;
+                if (newIndex != _insertionIndex)
+                {
+                    _insertionIndex = newIndex;
+                    panel.Invalidate();
+                }
+            }
+            else
+            {
+                if (_insertionIndex != -1)
+                {
+                    _insertionIndex = -1;
+                    _isDragOverExternalPanel = false;
+                    panel.Invalidate();
+                }
+                e.Effect = DragDropEffects.None;
+            }
+        }
+
+        private void Generic_FlowLayoutPanel_DragLeave(object sender, EventArgs e)
+        {
+            FlowLayoutPanel panel = sender as FlowLayoutPanel;
+            if (panel == _currentDragOverPanel)
+            {
+                if (_insertionIndex != -1)
+                {
+                    _insertionIndex = -1;
+                    _isDragOverExternalPanel = false;
+                    panel?.Invalidate();
+                }
+                _currentDragOverPanel = null;
+            }
+        }
+
+        private void Generic_FlowLayoutPanel_DragDrop(object sender, DragEventArgs e)
+        {
+            FlowLayoutPanel panel = sender as FlowLayoutPanel;
+            if (panel == null) return;
+
+            try
+            {
+                int targetIndex = _insertionIndex != -1 ? _insertionIndex : panel.Controls.Count;
+
+                if (e.Data.GetDataPresent("MultiPanelDrag"))
+                {
+                    var draggedItems = (List<AddFile.PictureBoxDragInfo>)e.Data.GetData("MultiPanelDrag");
+                    for (int i = 0; i < draggedItems.Count; i++)
+                    {
+                        var item = draggedItems[i];
+                        if (item.PictureBox?.Tag != null)
+                        {
+                            PictureBox targetPic = CreateNewPictureBoxForPanel(panel);
+                            _addFileForm.SetPictureBoxContent(targetPic, item.PictureBox.Tag.ToString());
+                            panel.Controls.Add(targetPic);
+                            if (targetIndex + i < panel.Controls.Count)
+                            {
+                                panel.Controls.SetChildIndex(targetPic, targetIndex + i);
+                            }
+                        }
+                    }
+                    foreach (var item in draggedItems)
+                    {
+                        CleanupSourcePictureBox(item.PictureBox, item.SourceType);
+                    }
+                    ClearAllSelections();
+                    return;
+                }
+
+                string reorderKey = GetReorderKeyForPanel(panel);
+
+                if (e.Data.GetDataPresent(reorderKey) && dragSourcePanel == panel)
+                {
+                    string multiDragKey = GetMultiDragKeyForPanel(panel);
+                    List<PictureBox> picturesToMove;
+                    if (e.Data.GetDataPresent(multiDragKey))
+                    {
+                        picturesToMove = ((PictureBox[])e.Data.GetData(multiDragKey)).ToList();
+                    }
+                    else
+                    {
+                        picturesToMove = new List<PictureBox> { (PictureBox)e.Data.GetData(reorderKey) };
+                    }
+
+                    if (targetIndex != -1 && picturesToMove.Any())
+                    {
+                        var allControls = panel.Controls.OfType<PictureBox>().ToList();
+                        var movedControlsIndices = picturesToMove.Select(p => allControls.IndexOf(p)).OrderBy(i => i).ToList();
+                        int adjustedTargetIndex = targetIndex;
+                        foreach (int index in movedControlsIndices)
+                        {
+                            if (index < targetIndex)
+                            {
+                                adjustedTargetIndex--;
+                            }
+                        }
+                        adjustedTargetIndex = Math.Max(0, Math.Min(adjustedTargetIndex, allControls.Count - picturesToMove.Count));
+                        foreach (var pic in picturesToMove.OrderByDescending(p => allControls.IndexOf(p)))
+                        {
+                            panel.Controls.Remove(pic);
+                        }
+                        for (int i = 0; i < picturesToMove.Count; i++)
+                        {
+                            panel.Controls.Add(picturesToMove[i]);
+                            int finalIndex = Math.Min(adjustedTargetIndex + i, panel.Controls.Count - 1);
+                            panel.Controls.SetChildIndex(picturesToMove[i], finalIndex);
+                        }
+                    }
+                }
+                else if (e.Data.GetDataPresent(DataFormats.StringFormat) && e.Data.GetDataPresent("DragSource") && e.Data.GetData("DragSource").ToString() == "panel1")
+                {
+                    string data = (string)e.Data.GetData(DataFormats.StringFormat);
+                    if (!string.IsNullOrEmpty(data))
+                    {
+                        string[] filePaths = data.Split('|');
+                        var newPictureBoxes = new List<PictureBox>();
+                        foreach (string filePath in filePaths)
+                        {
+                            if (File.Exists(filePath))
+                            {
+                                PictureBox targetPic = CreateNewPictureBoxForPanel(panel);
+                                _addFileForm.SetPictureBoxContent(targetPic, filePath);
+                                newPictureBoxes.Add(targetPic);
+                            }
+                        }
+                        for (int i = 0; i < newPictureBoxes.Count; i++)
+                        {
+                            panel.Controls.Add(newPictureBoxes[i]);
+                            if (targetIndex + i < panel.Controls.Count)
+                            {
+                                panel.Controls.SetChildIndex(newPictureBoxes[i], targetIndex + i);
+                            }
+                        }
+                        foreach (string filePath in filePaths)
+                        {
+                            _addFileForm.RemoveImageFromPanel1(filePath);
+                        }
+                    }
+                }
+                else if (e.Data.GetDataPresent("MultiDragFlow1") || e.Data.GetDataPresent("MultiDragFlow2"))
+                {
+                    PictureBox[] draggedPictures = null;
+                    FlowLayoutPanel sourcePanel = null;
+                    if (e.Data.GetDataPresent("MultiDragFlow1"))
+                    {
+                        draggedPictures = (PictureBox[])e.Data.GetData("MultiDragFlow1");
+                        sourcePanel = _flowLayoutPanel1;
+                    }
+                    else if (e.Data.GetDataPresent("MultiDragFlow2"))
+                    {
+                        draggedPictures = (PictureBox[])e.Data.GetData("MultiDragFlow2");
+                        sourcePanel = _flowLayoutPanel2;
+                    }
+
+                    if (draggedPictures != null && draggedPictures.Length > 0)
+                    {
+                        var imageDataList = new List<(Image image, object tag)>();
+                        foreach (var draggedPic in draggedPictures)
+                        {
+                            if (draggedPic.Image != null && draggedPic.Tag != null)
+                            {
+                                Image imageCopy = new Bitmap(draggedPic.Image);
+                                imageDataList.Add((imageCopy, draggedPic.Tag));
+                            }
+                        }
+                        var sourceSelectionList = GetSelectionListForPanel(sourcePanel);
+                        foreach (var draggedPic in draggedPictures.ToList())
+                        {
+                            sourceSelectionList.Remove(draggedPic);
+                            sourcePanel.Controls.Remove(draggedPic);
+                            draggedPic.Image?.Dispose();
+                            draggedPic.Dispose();
+                        }
+                        var newPictureBoxes = new List<PictureBox>();
+                        foreach (var (image, tag) in imageDataList)
+                        {
+                            PictureBox targetPic = CreateNewPictureBoxForPanel(panel);
+                            targetPic.Image?.Dispose();
+                            targetPic.Image = image;
+                            targetPic.Tag = tag;
+                            newPictureBoxes.Add(targetPic);
+                        }
+                        for (int i = 0; i < newPictureBoxes.Count; i++)
+                        {
+                            panel.Controls.Add(newPictureBoxes[i]);
+                            if (targetIndex + i < panel.Controls.Count)
+                            {
+                                panel.Controls.SetChildIndex(newPictureBoxes[i], targetIndex + i);
+                            }
+                        }
+                        ClearAllSelections();
+                    }
+                }
+                else if (e.Data.GetDataPresent("ReturnToPanel1"))
+                {
+                    var sourceCtrl = (PictureBox)e.Data.GetData("ReturnToPanel1");
+                    if (sourceCtrl?.Tag != null)
+                    {
+                        string filePath = sourceCtrl.Tag.ToString();
+                        PictureBox targetPic = CreateNewPictureBoxForPanel(panel);
+                        _addFileForm.SetPictureBoxContent(targetPic, filePath);
+                        panel.Controls.Add(targetPic);
+                        if (targetIndex < panel.Controls.Count)
+                        {
+                            panel.Controls.SetChildIndex(targetPic, targetIndex);
+                        }
+                        string sourceType = DetermineSourceType(sourceCtrl);
+                        CleanupSourcePictureBox(sourceCtrl, sourceType);
+                    }
+                }
+                else if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                {
+                    string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                    var newPictureBoxes = new List<PictureBox>();
+                    foreach (string filePath in files)
+                    {
+                        if (File.Exists(filePath))
+                        {
+                            PictureBox targetPic = CreateNewPictureBoxForPanel(panel);
+                            _addFileForm.SetPictureBoxContent(targetPic, filePath);
+                            if (targetPic.Image != null)
+                            {
+                                newPictureBoxes.Add(targetPic);
+                            }
+                            else
+                            {
+                                targetPic.Dispose();
+                            }
+                        }
+                    }
+                    for (int i = 0; i < newPictureBoxes.Count; i++)
+                    {
+                        panel.Controls.Add(newPictureBoxes[i]);
+                        if (targetIndex + i < panel.Controls.Count)
+                        {
+                            panel.Controls.SetChildIndex(newPictureBoxes[i], targetIndex + i);
+                        }
+                    }
+                }
+                ClearAllSelections();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error in drag drop operation: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                _insertionIndex = -1;
+                _isDragOverExternalPanel = false;
+                _currentDragOverPanel = null;
+                panel.Invalidate();
+                isDragging = false;
+                draggedPictureBox = null;
+                dragSourcePanel = null;
+            }
+        }
+
+        private void Generic_FlowLayoutPanel_MouseDown_ForSelection(object sender, MouseEventArgs e)
+        {
+            FlowLayoutPanel panel = sender as FlowLayoutPanel;
+            if (panel == null || e.Button != MouseButtons.Left) return;
+
+            if (panel.GetChildAtPoint(e.Location) is PictureBox)
+            {
+                isSelecting = false;
+                return;
+            }
+
+            isSelecting = true;
+            selectionStartPoint = e.Location;
+            if (Control.ModifierKeys != Keys.Control)
+            {
+                ClearSelectionForPanel(panel);
+            }
+            panel.Invalidate();
+        }
+
+        private void Generic_FlowLayoutPanel_MouseMove_ForSelection(object sender, MouseEventArgs e)
+        {
+            if (isSelecting)
+            {
+                int x = Math.Min(selectionStartPoint.X, e.X);
+                int y = Math.Min(selectionStartPoint.Y, e.Y);
+                selectionRectangle = new Rectangle(x, y, Math.Abs(selectionStartPoint.X - e.X), Math.Abs(selectionStartPoint.Y - e.Y));
+                (sender as FlowLayoutPanel)?.Invalidate();
+            }
+        }
+
+        private void Generic_FlowLayoutPanel_MouseUp_ForSelection(object sender, MouseEventArgs e)
+        {
+            FlowLayoutPanel panel = sender as FlowLayoutPanel;
+            if (panel == null || !isSelecting) return;
+
+            isSelecting = false;
+            var selectionList = GetSelectionListForPanel(panel);
+            foreach (PictureBox pb in panel.Controls.OfType<PictureBox>())
+            {
+                if (selectionRectangle.IntersectsWith(pb.Bounds) && !selectionList.Contains(pb))
+                {
+                    selectionList.Add(pb);
+                    pb.Invalidate();
+                }
+            }
+            selectionRectangle = Rectangle.Empty;
+            panel.Invalidate();
+        }
+
+        private void Generic_FlowLayoutPanel_Paint_SelectionRectangle(object sender, PaintEventArgs e)
+        {
+            FlowLayoutPanel panel = sender as FlowLayoutPanel;
+            if (panel == null) return;
+
+            if (isSelecting && selectionRectangle.Width > 1 && selectionRectangle.Height > 1)
+            {
+                using (Brush brush = new SolidBrush(Color.FromArgb(70, 0, 120, 215)))
+                using (Pen pen = new Pen(Color.DodgerBlue, 1))
+                {
+                    e.Graphics.FillRectangle(brush, selectionRectangle);
+                    e.Graphics.DrawRectangle(pen, selectionRectangle);
+                }
+            }
+
+            if (_insertionIndex != -1 && panel == _currentDragOverPanel)
+            {
+                Point lineStart, lineEnd;
+                int margin = 3;
+
+                if (_insertionIndex < panel.Controls.Count)
+                {
+                    Control target = panel.Controls[_insertionIndex];
+                    lineStart = new Point(target.Left - margin, target.Top);
+                    lineEnd = new Point(target.Left - margin, target.Bottom);
+                }
+                else if (panel.Controls.Count > 0)
+                {
+                    Control last = panel.Controls[panel.Controls.Count - 1];
+                    lineStart = new Point(last.Right + margin, last.Top);
+                    lineEnd = new Point(last.Right + margin, last.Bottom);
+                }
+                else
+                {
+                    lineStart = new Point(panel.Padding.Left, panel.Padding.Top);
+                    lineEnd = new Point(panel.Padding.Left, panel.ClientSize.Height - panel.Padding.Bottom);
+                }
+
+                using (Pen insertionPen = new Pen(_isDragOverExternalPanel ? Color.Green : Color.DodgerBlue, 2))
+                {
+                    e.Graphics.DrawLine(insertionPen, lineStart, lineEnd);
+                }
+            }
+        }
+
+        private void ClearSelectionForPanel(FlowLayoutPanel panel)
+        {
+            var selectionList = GetSelectionListForPanel(panel);
+            if (!selectionList.Any()) return;
+            var picturesToClear = new List<PictureBox>(selectionList);
+            selectionList.Clear();
+            foreach (var pb in picturesToClear) pb.Invalidate();
+        }
+
+        private void RemoveImageFromFlowLayoutPanel(FlowLayoutPanel panel, string filePath)
+        {
+            PictureBox pbToRemove = panel.Controls.OfType<PictureBox>()
+                .FirstOrDefault(pb => pb.Tag?.ToString() == filePath);
+            if (pbToRemove != null)
+            {
+                var selectionList = GetSelectionListForPanel(panel);
+                selectionList.Remove(pbToRemove);
+                panel.Controls.Remove(pbToRemove);
+                pbToRemove.Image?.Dispose();
+                pbToRemove.Dispose();
+            }
+        }
+
+        private string DetermineSourceType(PictureBox pb)
+        {
+            if (pb.Name == "imageApostille") return "imageApostille";
+            if (pb.Parent == _flowLayoutPanel1) return "flowLayoutPanel1";
+            if (pb.Parent == _flowLayoutPanel2) return "flowLayoutPanel2";
+            return "panel1";
+        }
+
+        private void CleanupSourcePictureBox(PictureBox pb, string sourceType)
+        {
+            if (pb == null) return;
+            switch (sourceType)
+            {
+                case "imageApostille":
+                    pb.Image?.Dispose();
+                    pb.Image = null;
+                    pb.Tag = null;
+                    break;
+                case "flowLayoutPanel1":
+                    if (pb.Parent != null)
+                    {
+                        selectedPictureBoxesFlow1.Remove(pb);
+                        pb.Parent.Controls.Remove(pb);
+                    }
+                    pb.Image?.Dispose();
+                    pb.Dispose();
+                    break;
+                case "flowLayoutPanel2":
+                    if (pb.Parent != null)
+                    {
+                        selectedPictureBoxesFlow2.Remove(pb);
+                        pb.Parent.Controls.Remove(pb);
+                    }
+                    pb.Image?.Dispose();
+                    pb.Dispose();
+                    break;
+                case "panel1":
+                    if (pb.Parent != null)
+                    {
+                        selectedPictureBoxes.Remove(pb);
+                        pb.Parent.Controls.Remove(pb);
+                        _addFileForm.ReArrangeImages();
+                    }
+                    pb.Image?.Dispose();
+                    pb.Dispose();
+                    break;
+                default:
+                    if (pb.Parent != null) pb.Parent.Controls.Remove(pb);
+                    pb.Image?.Dispose();
+                    pb.Dispose();
+                    break;
+            }
+        }
+
+        public void ResetDragState()
+        {
+            _insertionIndex = -1;
+            _isDragOverExternalPanel = false;
+            _currentDragOverPanel = null;
+            isDragging = false;
+            draggedPictureBox = null;
+            dragSourcePanel = null;
+            _panel1?.Invalidate();
+            _flowLayoutPanel1?.Invalidate();
+            _flowLayoutPanel2?.Invalidate();
+        }
+
+        public void HandleKeyboardDragStart()
+        {
+            _keyboardDragItems.Clear();
+            var allSelected = new List<PictureBox>();
+            allSelected.AddRange(selectedPictureBoxes.Where(pb => pb.Name != "imageApostille"));
+            allSelected.AddRange(selectedPictureBoxesFlow1);
+            allSelected.AddRange(selectedPictureBoxesFlow2);
+
+            if (_imageApostille != null && selectedPictureBoxes.Contains(_imageApostille))
+            {
+                if (!allSelected.Contains(_imageApostille))
+                {
+                    allSelected.Add(_imageApostille);
+                }
+            }
+
+            if (!allSelected.Any()) return;
+
+            foreach (var pb in allSelected)
+            {
+                if (pb?.Tag != null && pb.Image != null)
+                {
+                    _keyboardDragItems.Add(new AddFile.KeyboardDragItem { FilePath = pb.Tag.ToString(), SourceControl = pb });
+                }
+            }
+        }
+
+        public void HandleKeyboardDrop()
+        {
+            if (!_keyboardDragItems.Any()) return;
+
+            Control targetControl = _addFileForm.ActiveControl;
+            bool isValidTarget = (targetControl == _panel1) || (targetControl == _flowLayoutPanel1) || (targetControl == _flowLayoutPanel2) || (targetControl == _imageApostille);
+
+            if (!isValidTarget)
+            {
+                MessageBox.Show("Please click on a panel to select a destination before pasting.", "No Destination Selected", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            if (targetControl == _imageApostille)
+            {
+                var itemToCheck = _keyboardDragItems.FirstOrDefault();
+                if (itemToCheck != null)
+                {
+                    string ext = Path.GetExtension(itemToCheck.FilePath).ToLower();
+                    if (ext == ".doc" || ext == ".docx")
+                    {
+                        MessageBox.Show("Cannot paste a Word document into the Apostille slot.", "Invalid Operation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                }
+                if (_imageApostille.Image != null) return;
+                if (_keyboardDragItems.Count != 1)
+                {
+                    MessageBox.Show("You can only paste a single image into the Apostille slot.", "Invalid Operation", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+                var itemToDrop = _keyboardDragItems[0];
+                if (itemToDrop.SourceControl == null || itemToDrop.SourceControl.IsDisposed) return;
+
+                using (var imgTemp = Image.FromFile(itemToDrop.FilePath))
+                {
+                    _imageApostille.Image = new Bitmap(imgTemp);
+                }
+                _imageApostille.Tag = itemToDrop.FilePath;
+                string sourceType = DetermineSourceType(itemToDrop.SourceControl);
+                CleanupSourcePictureBox(itemToDrop.SourceControl, sourceType);
+                if (sourceType == "panel1")
+                {
+                    _addFileForm.ReArrangeImages();
+                }
+                _keyboardDragItems.Clear();
+                ClearAllSelections();
+                return;
+            }
+
+            if (!(targetControl is FlowLayoutPanel) && targetControl != _panel1) return;
+
+            bool wasPanel1Modified = false;
+            foreach (var item in _keyboardDragItems)
+            {
+                if (item.SourceControl == null || item.SourceControl.IsDisposed) continue;
+                if (targetControl is FlowLayoutPanel flowTarget)
+                {
+                    PictureBox targetPic = CreateNewPictureBoxForPanel(flowTarget);
+                    _addFileForm.SetPictureBoxContent(targetPic, item.FilePath);
+                    flowTarget.Controls.Add(targetPic);
+                }
+                else if (targetControl == _panel1)
+                {
+                    _addFileForm.AddImageBackToPanel1(item.FilePath);
+                }
+                string sourceType = DetermineSourceType(item.SourceControl);
+                if (sourceType == "panel1")
+                {
+                    wasPanel1Modified = true;
+                }
+                CleanupSourcePictureBox(item.SourceControl, sourceType);
+            }
+            if (wasPanel1Modified)
+            {
+                _addFileForm.ReArrangeImages();
+            }
+            _keyboardDragItems.Clear();
+            ClearAllSelections();
+        }
+
+        public void PictureBox_Paint_Selection(object sender, PaintEventArgs e)
+        {
+            var pb = sender as PictureBox;
+            if (pb == null) return;
+
+            bool isSelected = selectedPictureBoxes.Contains(pb) || selectedPictureBoxesFlow1.Contains(pb) || selectedPictureBoxesFlow2.Contains(pb);
+            if (isSelected)
+            {
+                Color overlayColor = Color.FromArgb(100, SystemColors.Highlight);
+                using (Brush overlayBrush = new SolidBrush(overlayColor))
+                {
+                    e.Graphics.FillRectangle(overlayBrush, pb.ClientRectangle);
+                }
+            }
+
+            string filePath = pb.Tag as string;
+            if (string.IsNullOrEmpty(filePath)) return;
+            string fileName = System.IO.Path.GetFileName(filePath);
+            if (string.IsNullOrEmpty(fileName)) return;
+
+            int captionHeight = 18;
+            var captionRect = new Rectangle(0, pb.Height - captionHeight, pb.Width, captionHeight);
+            Color captionBg = Color.FromArgb(180, 15, 141, 80);
+            using (var bg = new SolidBrush(captionBg))
+                e.Graphics.FillRectangle(bg, captionRect);
+
+            using (var font = new Font("Segoe UI", 8f, FontStyle.Bold))
+            using (var textBrush = new SolidBrush(Color.White))
+            {
+                var textRect = new RectangleF(3, pb.Height - captionHeight + 1, pb.Width - 6, captionHeight - 2);
+                var sf = new StringFormat
+                {
+                    Trimming = StringTrimming.EllipsisCharacter,
+                    FormatFlags = StringFormatFlags.NoWrap,
+                    Alignment = StringAlignment.Near,
+                    LineAlignment = StringAlignment.Center
+                };
+                e.Graphics.DrawString(fileName, font, textBrush, textRect, sf);
+            }
+        }
+    }
+}
