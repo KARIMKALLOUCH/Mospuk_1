@@ -399,6 +399,7 @@
       <DependentUpon>SettingsForm.cs</DependentUpon>
     </Compile>
     <Compile Include="SQLiteDatabase.cs" />
+    <Compile Include="StagedProjectImageSaver.cs" />
     <Compile Include="WorkspaceCleaner.cs" />
     <EmbeddedResource Include="AddCompany.resx">
       <DependentUpon>AddCompany.cs</DependentUpon>

@@ -19,6 +19,7 @@ namespace Mospuk_1
         private DataLoaderAddfille _dataLoader; // **إضافة كائن لتحميل البيانات**
         private WorkspaceCleaner _workspaceCleaner; // **الكائن الجديد لتنظيف مساحة العمل**
         private KeyboardActionHandler _keyboardActionHandler; // **إضافة الكائن الجديد**
+        private List<StagedProject> _stagedProjects = new List<StagedProject>();
 
         SQLiteDatabase db;
 
@@ -69,6 +70,19 @@ namespace Mospuk_1
         private void AddFile_FormClosing(object sender, FormClosingEventArgs e)
         {
             _workspaceCleaner.AddFile_FormClosing();
+            // تنظيف جميع المجلدات المؤقتة
+            try
+            {
+                string tempFolder = Path.Combine(Application.StartupPath, "ExtractedFiles");
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+            }
+            catch (Exception ex)
+            {
+                // يمكنك تسجيل الخطأ إذا لزم الأمر
+            }
 
         }
         private void AddFile_KeyDown(object sender, KeyEventArgs e)
@@ -100,37 +114,54 @@ namespace Mospuk_1
 
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                string outputFolder = Path.Combine(Application.StartupPath, "ExtractedFiles");
-                if (!Directory.Exists(outputFolder))
-                {
-                    Directory.CreateDirectory(outputFolder);
-                }
+                // إنشاء مجلد مؤقت فريد لهذه العملية
+                string uniqueOutputFolder = Path.Combine(Application.StartupPath, "ExtractedFiles", Guid.NewGuid().ToString());
+                Directory.CreateDirectory(uniqueOutputFolder);
 
                 foreach (string path in ofd.FileNames)
                 {
                     string extension = Path.GetExtension(path).ToLower();
                     if (extension == ".rar")
                     {
-                        _dataLoader.ExtractRAR(path, outputFolder); // تم استدعاء الدالة من _dataLoader
+                        _dataLoader.ExtractRAR(path, uniqueOutputFolder);
                     }
                     else if (extension == ".zip")
                     {
-                        _dataLoader.ExtractZIP(path, outputFolder); // تم استدعاء الدالة من _dataLoader
+                        _dataLoader.ExtractZIP(path, uniqueOutputFolder);
                     }
                     else
                     {
-                        File.Copy(path, Path.Combine(outputFolder, Path.GetFileName(path)), true);
+                        File.Copy(path, Path.Combine(uniqueOutputFolder, Path.GetFileName(path)), true);
                     }
                 }
-                DisplayFiles(outputFolder);
+
+                DisplayFilesFromTempFolder(uniqueOutputFolder);
             }
         }
         public void DisplayFiles(string directory)
         {
+            // إنشاء مجلد مؤقت فريد لكل عملية رفع
+            string uniqueTempFolder = Path.Combine(Application.StartupPath, "ExtractedFiles", Guid.NewGuid().ToString());
+            Directory.CreateDirectory(uniqueTempFolder);
+
+            // نسخ الملفات المستخرجة إلى المجلد المؤقت الجديد
+            foreach (string file in Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories))
+            {
+                string destFile = Path.Combine(uniqueTempFolder, Path.GetFileName(file));
+                File.Copy(file, destFile, true);
+            }
+
+            // الآن استخدم المجلد المؤقت الجديد للعرض
+            DisplayFilesFromTempFolder(uniqueTempFolder);
+        }
+        private void DisplayFilesFromTempFolder(string tempDirectory)
+        {
             var allPictureBoxes = panel1.Controls.OfType<PictureBox>()
                 .Concat(flowLayoutPanel1.Controls.OfType<PictureBox>())
                 .Concat(flowLayoutPanel2.Controls.OfType<PictureBox>());
+
             var existingFilePaths = new HashSet<string>(allPictureBoxes.Where(pb => pb != null && pb.Tag != null).Select(pb => pb.Tag.ToString()));
+
             PictureBox imageApostille = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
             if (imageApostille != null && imageApostille.Tag != null)
             {
@@ -145,10 +176,12 @@ namespace Mospuk_1
             int x = padding + (count % itemsPerRow) * (maxWidth + padding);
             int y = padding + (count / itemsPerRow) * (maxHeight + padding);
 
-            string[] allFilesInDirectory = Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories);
+            string[] allFilesInDirectory = Directory.GetFiles(tempDirectory, "*.*", SearchOption.AllDirectories);
+
             foreach (string file in allFilesInDirectory)
             {
                 if (existingFilePaths.Contains(file)) continue;
+
                 string ext = Path.GetExtension(file).ToLower();
                 PictureBox pb = new PictureBox
                 {
@@ -157,7 +190,7 @@ namespace Mospuk_1
                     SizeMode = PictureBoxSizeMode.Zoom,
                     BorderStyle = BorderStyle.None,
                     BackColor = Color.Transparent,
-                    Tag = file,
+                    Tag = file, // سيحتوي الآن على المسار المؤقت الفريد
                     Location = new Point(x, y)
                 };
 
@@ -200,6 +233,7 @@ namespace Mospuk_1
                     y += maxHeight + padding;
                 }
             }
+        
         }
         public void ReArrangeImages()
         {
@@ -221,13 +255,12 @@ namespace Mospuk_1
         }
         private void savebtn_Click(object sender, EventArgs e)
         {
-            lblStatus.Text = "Saving, please wait...";
-            lblStatus.Visible = true;
-            this.Enabled = false;
-            Application.DoEvents();
+            this.ActiveControl = null;
 
+            // This is now the "Staging" button
             try
             {
+                // Validate inputs (same validation as before)
                 if (cmbUser.SelectedItem == null)
                 {
                     MessageBox.Show("Please select a user.", "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -285,18 +318,31 @@ namespace Mospuk_1
                 int deliveryDays = ((KeyValuePair<string, int>)Delivery_Date.SelectedItem).Value;
                 DateTime deliveryDate = receptionDate.AddDays(deliveryDays);
 
-                // تحديد project_order
+                // Generate project order
                 int newOrder;
                 if (numProjectOrder.Value > 0)
                 {
                     int manualOrder = (int)numProjectOrder.Value;
 
+                    // Check if order already exists in staged projects
+                    bool orderExistsInStaged = _stagedProjects.Any(sp =>
+                        sp.ReceptionDate.Date == receptionDate.Date && sp.ProjectOrder == manualOrder);
+
+                    if (orderExistsInStaged)
+                    {
+                        MessageBox.Show($"Project order {manualOrder} already exists in staged projects for date {receptionDate:yyyy-MM-dd}. Please choose a different number.",
+                            "Duplicate Order", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        numProjectOrder.Focus();
+                        return;
+                    }
+
+                    // Check database
                     string checkOrderQuery = "SELECT COUNT(*) FROM projects WHERE reception_date = @date AND project_order = @order";
                     object existsResult = db.ExecuteScalar(checkOrderQuery, new List<SQLiteParameter>
-            {
-                new SQLiteParameter("@date", receptionDate.ToString("yyyy-MM-dd")),
-                new SQLiteParameter("@order", manualOrder)
-            });
+                {
+                    new SQLiteParameter("@date", receptionDate.ToString("yyyy-MM-dd")),
+                    new SQLiteParameter("@order", manualOrder)
+                });
 
                     int existingCount = Convert.ToInt32(existsResult);
                     if (existingCount > 0)
@@ -311,18 +357,44 @@ namespace Mospuk_1
                 }
                 else
                 {
+                    // Get highest order from database
                     string orderQuery = "SELECT IFNULL(MAX(project_order), 0) FROM projects WHERE reception_date = @date";
                     object result = db.ExecuteScalar(orderQuery, new List<SQLiteParameter>
-            {
-                new SQLiteParameter("@date", receptionDate.ToString("yyyy-MM-dd"))
-            });
+                {
+                    new SQLiteParameter("@date", receptionDate.ToString("yyyy-MM-dd"))
+                });
                     int lastOrder = (result == null || result == DBNull.Value) ? 0 : Convert.ToInt32(result);
-                    newOrder = lastOrder + 1;
+
+                    // Also check staged projects for same date
+                    int maxStagedOrder = _stagedProjects
+                        .Where(sp => sp.ReceptionDate.Date == receptionDate.Date)
+                        .Select(sp => sp.ProjectOrder)
+                        .DefaultIfEmpty(0)
+                        .Max();
+
+                    newOrder = Math.Max(lastOrder, maxStagedOrder) + 1;
                 }
 
                 string selectedUser = cmbUser.Text;
                 string documentType = selectedDocTypePair.Value;
                 string translationType = selectedTranslationPair.Value;
+
+                // Create staged project
+                var stagedProject = new StagedProject
+                {
+                    CompanyClient = companyClient,
+                    ReceptionDate = receptionDate,
+                    ReceptionTime = receptionTime,
+                    DeliveryDays = deliveryDays,
+                    DeliveryDate = deliveryDate,
+                    ProjectOrder = newOrder,
+                    Note = txtnotes.Text,
+                    DocumentType = documentType,
+                    TranslationType = translationType,
+                    SelectedUser = selectedUser
+                };
+
+                // Generate folder name and filenames
                 string hoursSpent = "24";
                 string deliveryDateStr = deliveryDate.ToString("yyyyMMdd");
                 string receptionDateStr = receptionDate.ToString("yyMMdd");
@@ -352,80 +424,28 @@ namespace Mospuk_1
                     folderName += $"--------------------------{selectedUser}";
                 }
 
-                string insertQuery = @"INSERT INTO projects (company_client, reception_date, reception_time, delivery_days, delivery_date, hours_spent, project_order, folder_name, note, document_type, translation_type, registration_date, last_update_date) 
-                              VALUES (@company_client, @reception_date, @reception_time, @delivery_days, @delivery_date, @hours_spent, @project_order, @folder_name, @note, @document_type, @translation_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
+                stagedProject.FolderName = folderName;
 
-                List<SQLiteParameter> parameters = new List<SQLiteParameter>
-        {
-            new SQLiteParameter("@company_client", companyClient),
-            new SQLiteParameter("@reception_date", receptionDate.ToString("yyyy-MM-dd")),
-            new SQLiteParameter("@reception_time", receptionTime),
-            new SQLiteParameter("@delivery_days", deliveryDays),
-            new SQLiteParameter("@delivery_date", deliveryDate.ToString("yyyy-MM-dd")),
-            new SQLiteParameter("@hours_spent", 24),
-            new SQLiteParameter("@project_order", newOrder),
-            new SQLiteParameter("@folder_name", folderName),
-            new SQLiteParameter("@note", string.IsNullOrWhiteSpace(txtnotes.Text) ? DBNull.Value : (object)txtnotes.Text),
-            new SQLiteParameter("@document_type", documentType),
-            new SQLiteParameter("@translation_type", translationType)
-        };
+                // Generate all filenames and store control copies
+                GenerateFilenamesForStagedProject(stagedProject, deliveryDateStr, receptionDateStr,
+                    projectOrderStr, receptionTimeStr, companyClient, translationType, documentType, selectedUser);
 
-                bool success = db.ExecuteNonQuery(insertQuery, parameters);
+                // Add to staged projects list
+                _stagedProjects.Add(stagedProject);
 
-                if (success)
-                {
-                    string getLastIdQuery = "SELECT last_insert_rowid()";
-                    object lastIdResult = db.ExecuteScalar(getLastIdQuery, null);
-                    int projectId = Convert.ToInt32(lastIdResult);
+                // Display filenames in DataGridView
+                PopulateDataGridViewWithFiles(stagedProject.GeneratedFileNames);
 
-                    // استدعاء دالة الحفظ من الكلاس الجديد
-                    var imageSaver = new ProjectImageSaver(db, this);
-                    var (allImagesSaved, savedSourcePaths, savedFileNames) = imageSaver.SaveProjectImages(
-                        projectId, folderName, deliveryDateStr, receptionDateStr,
-                        projectOrderStr, receptionTimeStr, companyClient, translationType,
-                        documentType, selectedUser);
+                // Clear the form for next project
+                ClearFormForNextProject();
 
-                    if (allImagesSaved)
-                    {
-                        PopulateDataGridViewWithFiles(savedFileNames);
+                MessageBox.Show($"Project staged successfully! Generated {stagedProject.GeneratedFileNames.Count} filenames.",
+                    "Project Staged", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                        // تنظيف الواجهة الرسومية
-                        _workspaceCleaner.CleanUpSavedProject();
-                        numProjectOrder.Value = 0;
-
-                        // حذف الملفات المصدر من المجلد المؤقت
-                        foreach (string path in savedSourcePaths)
-                        {
-                            try
-                            {
-                                if (File.Exists(path))
-                                {
-                                    File.Delete(path);
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                // يمكنك تسجيل الخطأ هنا إذا أردت
-                            }
-                        }
-
-                        this.ActiveControl = null;
-                    }
-                    else
-                    {
-                        MessageBox.Show("⚠️ Project saved but some images failed to save.");
-                        this.ActiveControl = null;
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("❌ Error inserting project.");
-                }
             }
-            finally
+            catch (Exception ex)
             {
-                lblStatus.Visible = false;
-                this.Enabled = true;
+                MessageBox.Show($"Error staging project: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
         public void RemoveImageFromPanel1(string filePath)
@@ -501,6 +521,8 @@ namespace Mospuk_1
         }
         private void btnAddWord_Click(object sender, EventArgs e)
         {
+            this.ActiveControl = null;
+
             if (panelDocx.Controls.Count >= 1)
             {
                 MessageBox.Show("You can only add one OCR Word file.\nPlease remove the existing file if you wish to add a different one.", "Limit Reached", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -901,6 +923,284 @@ namespace Mospuk_1
                 }
             }
         }
+
+        private void btnsaveall_Click(object sender, EventArgs e)
+        {
+
+            this.ActiveControl = null;
+            // This is now the "Final Save" button
+            if (!_stagedProjects.Any())
+            {
+                MessageBox.Show("No staged projects to save.", "No Staged Projects", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            lblStatus.Text = "Saving all staged projects, please wait...";
+            lblStatus.Visible = true;
+            this.Enabled = false;
+            Application.DoEvents();
+
+            try
+            {
+                int successCount = 0;
+                int totalCount = _stagedProjects.Count;
+
+                foreach (var stagedProject in _stagedProjects)
+                {
+                    try
+                    {
+                        if (SaveStagedProject(stagedProject))
+                        {
+                            successCount++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error saving project {stagedProject.FolderName}: {ex.Message}", "Save Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+
+                // Clear staged projects and DataGridView
+                _stagedProjects.Clear();
+                guna2DataGridView1.Rows.Clear();
+
+                MessageBox.Show($"Saved {successCount} of {totalCount} projects successfully.", "Save Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            finally
+            {
+                lblStatus.Visible = false;
+                this.Enabled = true;
+            }
+        }
+        private void GenerateFilenamesForStagedProject(StagedProject stagedProject, string deliveryDateStr,
+        string receptionDateStr, string projectOrderStr, string receptionTimeStr, string companyClient,
+        string translationType, string documentType, string selectedUser)
+        {
+            int imageCounter = 1;
+
+            // Store copies of controls for later processing
+            foreach (Control control in flowLayoutPanel1.Controls)
+            {
+                if (control is PictureBox pb && pb.Tag != null)
+                {
+                    // Create a copy of the PictureBox
+                    PictureBox pbCopy = new PictureBox
+                    {
+                        Tag = pb.Tag,
+                        Image = pb.Image?.Clone() as Image
+                    };
+                    stagedProject.MainImages.Add(pbCopy);
+
+                    // Generate filename
+                    string originalPath = pb.Tag.ToString();
+                    string extension = Path.GetExtension(originalPath).ToLower();
+                    string imageName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}";
+
+                    if (imageCounter == 1)
+                    {
+                        imageName = AddNoteToFileName(imageName, stagedProject.Note, selectedUser);
+                    }
+
+                    string fullItemName = imageName + extension;
+                    stagedProject.GeneratedFileNames.Add(fullItemName);
+                    imageCounter++;
+                }
+            }
+
+            // Handle Apostille image
+            PictureBox imageApostille = this.Controls.Find("imageApostille", true).FirstOrDefault() as PictureBox;
+            if (imageApostille != null && imageApostille.Image != null && imageApostille.Tag != null)
+            {
+                // Create copy
+                PictureBox apostilleCopy = new PictureBox
+                {
+                    Tag = imageApostille.Tag,
+                    Image = imageApostille.Image?.Clone() as Image
+                };
+                stagedProject.ApostilleImage = apostilleCopy;
+
+                string originalPath = imageApostille.Tag.ToString();
+                string extension = Path.GetExtension(originalPath).ToLower();
+                string imageName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_Apostilla";
+                string fullImageName = imageName + extension;
+                stagedProject.GeneratedFileNames.Add(fullImageName);
+                imageCounter++;
+            }
+
+            // Handle attachments
+            string attachmentType = "A";
+            foreach (Control control in flowLayoutPanel2.Controls)
+            {
+                if (control is PictureBox pb && pb.Tag != null)
+                {
+                    // Create copy
+                    PictureBox pbCopy = new PictureBox
+                    {
+                        Tag = pb.Tag,
+                        Image = pb.Image?.Clone() as Image
+                    };
+                    stagedProject.Attachments.Add(pbCopy);
+
+                    string originalPath = pb.Tag.ToString();
+                    string extension = Path.GetExtension(originalPath).ToLower();
+                    string imageName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_{attachmentType}";
+                    string fullItemName = imageName + extension;
+                    stagedProject.GeneratedFileNames.Add(fullItemName);
+                    imageCounter++;
+                }
+            }
+
+            // Handle OCR files
+            int ocrFileNumber = imageCounter;
+            bool hasOcrFiles = false;
+            foreach (Control control in panelDocx.Controls)
+            {
+                if (control is Label lbl && lbl.Tag != null)
+                {
+                    hasOcrFiles = true;
+                    // Create copy
+                    Label lblCopy = new Label
+                    {
+                        Tag = lbl.Tag,
+                        Text = lbl.Text
+                    };
+                    stagedProject.OcrFiles.Add(lblCopy);
+
+                    string originalPath = lbl.Tag.ToString();
+                    string extension = Path.GetExtension(originalPath);
+                    string wordFileName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{ocrFileNumber}_OCR";
+                    string fullWordFileName = wordFileName + extension;
+                    stagedProject.GeneratedFileNames.Add(fullWordFileName);
+                    ocrFileNumber++;
+                }
+            }
+
+            if (!hasOcrFiles) ocrFileNumber++;
+
+            // Generate empty Word files
+            string[] emptyFileNames = {
+            "Google Drive.docx",
+            "Traducción Preliminar.docx",
+            "Informe revisión.docx",
+            "Traducción revisada.docx"
+        };
+
+            for (int i = 0; i < emptyFileNames.Length; i++)
+            {
+                string fileName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{ocrFileNumber}_{emptyFileNames[i]}";
+                stagedProject.GeneratedFileNames.Add(fileName);
+                ocrFileNumber++;
+            }
+        }
+
+        private void ClearFormForNextProject()
+        {
+            // Clear all form fields
+            Reception_Date.Value = DateTime.Now;
+            Time.Text = DateTime.Now.ToString("HH:mm");
+            Delivery_Date.SelectedIndex = 0;
+            txtnotes.Clear();
+            comboDocumentType.SelectedIndex = -1;
+            comboTranslation.SelectedIndex = -1;
+            numProjectOrder.Value = 0;
+
+            // Clear all images and files
+            _workspaceCleaner.CleanUpSavedProject();
+        }
+        private bool SaveStagedProject(StagedProject stagedProject)
+        {
+            // Insert project into database
+            string insertQuery = @"INSERT INTO projects (company_client, reception_date, reception_time, delivery_days, delivery_date, hours_spent, project_order, folder_name, note, document_type, translation_type, registration_date, last_update_date) 
+                              VALUES (@company_client, @reception_date, @reception_time, @delivery_days, @delivery_date, @hours_spent, @project_order, @folder_name, @note, @document_type, @translation_type, CURRENT_DATE, CURRENT_TIMESTAMP)";
+
+            List<SQLiteParameter> parameters = new List<SQLiteParameter>
+        {
+            new SQLiteParameter("@company_client", stagedProject.CompanyClient),
+            new SQLiteParameter("@reception_date", stagedProject.ReceptionDate.ToString("yyyy-MM-dd")),
+            new SQLiteParameter("@reception_time", stagedProject.ReceptionTime),
+            new SQLiteParameter("@delivery_days", stagedProject.DeliveryDays),
+            new SQLiteParameter("@delivery_date", stagedProject.DeliveryDate.ToString("yyyy-MM-dd")),
+            new SQLiteParameter("@hours_spent", 24),
+            new SQLiteParameter("@project_order", stagedProject.ProjectOrder),
+            new SQLiteParameter("@folder_name", stagedProject.FolderName),
+            new SQLiteParameter("@note", string.IsNullOrWhiteSpace(stagedProject.Note) ? DBNull.Value : (object)stagedProject.Note),
+            new SQLiteParameter("@document_type", stagedProject.DocumentType),
+            new SQLiteParameter("@translation_type", stagedProject.TranslationType)
+        };
+
+            bool success = db.ExecuteNonQuery(insertQuery, parameters);
+
+            if (success)
+            {
+                string getLastIdQuery = "SELECT last_insert_rowid()";
+                object lastIdResult = db.ExecuteScalar(getLastIdQuery, null);
+                int projectId = Convert.ToInt32(lastIdResult);
+
+                // Save files using the staged project data
+                return SaveStagedProjectFiles(projectId, stagedProject);
+            }
+
+            return false;
+        }
+
+        private bool SaveStagedProjectFiles(int projectId, StagedProject stagedProject)
+        {
+            string projectFolder = db.GetSavedPathById("save");
+            if (string.IsNullOrEmpty(projectFolder) || !Directory.Exists(projectFolder))
+            {
+                Directory.CreateDirectory(projectFolder);
+            }
+
+            // Use similar logic to ProjectImageSaver but with staged data
+            var imageSaver = new StagedProjectImageSaver(db, stagedProject);
+            return imageSaver.SaveAllStagedFiles(projectId, projectFolder);
+        }
+
+        private string AddNoteToFileName(string baseName, string note, string selectedUser)
+        {
+            if (!string.IsNullOrWhiteSpace(note))
+            {
+                string rawNote = note.Trim();
+                string sanitizedNote = new string(rawNote.Where(c => char.IsLetterOrDigit(c) || c == ' ' || c == '+' || c == '-').ToArray()).Replace(" ", "_");
+                if (sanitizedNote.Length > 30)
+                    sanitizedNote = sanitizedNote.Substring(0, 30);
+                return baseName + $"------------------------{sanitizedNote}----------------------{selectedUser}";
+            }
+            else
+            {
+                return baseName + $"-------------------------------------------------------------{selectedUser}";
+            }
+        }
+
     }    //*************************************
+    public class StagedProject
+    {
+        public string CompanyClient { get; set; }
+        public DateTime ReceptionDate { get; set; }
+        public string ReceptionTime { get; set; }
+        public int DeliveryDays { get; set; }
+        public DateTime DeliveryDate { get; set; }
+        public int ProjectOrder { get; set; }
+        public string FolderName { get; set; }
+        public string Note { get; set; }
+        public string DocumentType { get; set; }
+        public string TranslationType { get; set; }
+        public string SelectedUser { get; set; }
+        public List<string> GeneratedFileNames { get; set; }
+
+        // Store actual control data for later processing
+        public List<PictureBox> MainImages { get; set; }
+        public PictureBox ApostilleImage { get; set; }
+        public List<PictureBox> Attachments { get; set; }
+        public List<Label> OcrFiles { get; set; }
+
+        public StagedProject()
+        {
+            GeneratedFileNames = new List<string>();
+            MainImages = new List<PictureBox>();
+            Attachments = new List<PictureBox>();
+            OcrFiles = new List<Label>();
+        }
+    }
 
 }

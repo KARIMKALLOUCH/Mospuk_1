@@ -149,7 +149,7 @@ namespace Mospuk_1
                 {
                     string originalPath = imageApostille.Tag.ToString();
                     string extension = Path.GetExtension(originalPath).ToLower();
-                    string imageName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_Apostille";
+                    string imageName = $"{deliveryDateStr}24_{receptionDateStr}{projectOrderStr}_{receptionTimeStr}_{companyClient}_{translationType}_{documentType}_{imageCounter}_Apostilla";
                     string fullImageName = imageName + extension;
                     string imagePath = Path.Combine(projectFolder, fullImageName);
 
