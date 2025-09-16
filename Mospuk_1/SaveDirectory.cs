@@ -14,6 +14,7 @@ namespace Mospuk_1
         private const string SAVE_PATH = "save";
         private const string ARCHIVE_PATH = "archive";
         private const string DOWNLOADS_PATH = "downloads";
+        private const string DOCUMENTS_PATH = "documents"; // إضافة ثابت جديد للمستندات
 
         public SaveDirectory(SQLiteDatabase database)
         {
@@ -26,6 +27,7 @@ namespace Mospuk_1
             LoadPathSetting(SAVE_PATH);
             LoadPathSetting(ARCHIVE_PATH);
             LoadPathSetting(DOWNLOADS_PATH);
+            LoadPathSetting(DOCUMENTS_PATH);
         }
 
         private void btnsaveDirectory_Click(object sender, EventArgs e)
@@ -79,6 +81,49 @@ namespace Mospuk_1
             }
         }
 
+        private void btnDocument_Click(object sender, EventArgs e)
+        {
+            using (var folderDialog = new FolderBrowserDialog())
+            {
+                folderDialog.Description = "اختر مجلد المستندات الافتراضي";
+                if (!string.IsNullOrEmpty(edittextDocument.Text))
+                    folderDialog.SelectedPath = edittextDocument.Text;
+
+                if (folderDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string selectedPath = folderDialog.SelectedPath;
+                    edittextDocument.Text = selectedPath;
+                    SavePathSetting(DOCUMENTS_PATH, selectedPath);
+                }
+            }
+        }
+        private void savedocument_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(edittextDocument.Text))
+            {
+                MessageBox.Show("يرجى اختيار مجلد المستندات أولاً", "تحذير",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                // التحقق من وجود المجلد وإنشاؤه إذا لم يكن موجوداً
+                if (!Directory.Exists(edittextDocument.Text))
+                {
+                    Directory.CreateDirectory(edittextDocument.Text);
+                }
+
+                SavePathSetting(DOCUMENTS_PATH, edittextDocument.Text);
+                MessageBox.Show("تم حفظ مسار المستندات بنجاح", "نجاح",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"حدث خطأ أثناء حفظ مسار المستندات: {ex.Message}",
+                    "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
         private void LoadPathSetting(string pathType)
         {
             try
@@ -103,6 +148,9 @@ namespace Mospuk_1
                             break;
                         case DOWNLOADS_PATH:
                             edittextDownloads.Text = result.ToString();
+                            break;
+                        case DOCUMENTS_PATH: // حالة جديدة للمستندات
+                            edittextDocument.Text = result.ToString();
                             break;
                     }
                 }
@@ -148,5 +196,6 @@ namespace Mospuk_1
                     "خطأ في قاعدة البيانات", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
     }
 }

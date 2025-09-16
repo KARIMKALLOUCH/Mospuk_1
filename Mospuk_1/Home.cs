@@ -86,10 +86,63 @@ namespace Mospuk_1
             webView.CoreWebView2.Settings.AreDevToolsEnabled = true;
             webView.CoreWebView2.Settings.IsStatusBarEnabled = false;
 
+            // إضافة معالج للرسائل من JavaScript
+            webView.CoreWebView2.WebMessageReceived += WebView_WebMessageReceived;
+
             // حمّل الصفحة
             LoadHtmlContent_WV2();
         }
 
+        private void WebView_WebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
+        {
+            try
+            {
+                // تحليل الرسالة الواردة من JavaScript
+                var json = e.WebMessageAsJson;
+                dynamic message = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
+
+                if (message.action == "downloadDocx")
+                {
+                    string base64Data = message.data;
+                    string fileName = message.filename;
+
+                    // جلب مسار الحفظ من قاعدة البيانات
+                    string targetDirectory = db.GetSavedPathById("documents"); // استخدام "documents" بدلاً من "archive"
+
+                    // التحقق من وجود المسار
+                    if (string.IsNullOrEmpty(targetDirectory))
+                    {
+                        this.Invoke((MethodInvoker)delegate {
+                            MessageBox.Show("Please set the documents folder first from path settings.", "Error",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        });
+                        return;
+                    }
+
+                    // التأكد من وجود المجلد
+                    if (!Directory.Exists(targetDirectory))
+                    {
+                        Directory.CreateDirectory(targetDirectory);
+                    }
+
+                    // المسار الكامل للملف
+                    string filePath = Path.Combine(targetDirectory, fileName);
+
+                    // تحويل base64 إلى بايتات وحفظ الملف
+                    byte[] fileBytes = Convert.FromBase64String(base64Data);
+                    File.WriteAllBytes(filePath, fileBytes);
+
+                  
+                }
+            }
+            catch (Exception ex)
+            {
+                this.Invoke((MethodInvoker)delegate {
+                    MessageBox.Show($"خطأ في حفظ الملف: {ex.Message}", "خطأ",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                });
+            }
+        }
         private void btnAdd_Click(object sender, EventArgs e)
         {
             AddFile addproject = new AddFile(db);
