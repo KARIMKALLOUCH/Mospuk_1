@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 using System.Data.SQLite; // تمت الإضافة
+using Microsoft.Web.WebView2.WinForms;
+using Microsoft.Web.WebView2.Core;
 
 namespace Mospuk_1
 {
@@ -18,6 +20,7 @@ namespace Mospuk_1
         private int selectedClientId = -1;
         private int selectedCompanyId = -1;
         private int selectedUserId = -1;
+        private WebView2 webView;
 
 
         // تم تغيير نوع المتغير في الـ Constructor
@@ -25,7 +28,8 @@ namespace Mospuk_1
         {
             InitializeComponent();
             db = database;  // ← هنا تحفظ المتغير لتستخدمه لاحقاً
-
+                            // تهيئة WebView
+            InitializeWebView2(); // ← بدلاً من InitializeWebView
             LoadProjectsToDGV();
             navigationFrame1.TransitionAnimationProperties.FrameCount = 2;
           //  LoadClientsToDGV();
@@ -33,12 +37,59 @@ namespace Mospuk_1
           //  LoadDocumentTypesToDGV();
          //   LoadLanguagePairsToDGV();
         }
+        private void LoadHtmlContent_WV2()
+        {
+            try
+            {
+                string htmlFilePath = Path.Combine(Application.StartupPath, "report.html");
+                if (!File.Exists(htmlFilePath))
+                    htmlFilePath = Path.Combine(Directory.GetCurrentDirectory(), "report.html");
+
+                if (File.Exists(htmlFilePath))
+                {
+                    // إمّا من ملف
+                    webView.Source = new Uri(htmlFilePath);
+                    // أو كسلسلة:
+                    // webView.NavigateToString(File.ReadAllText(htmlFilePath));
+                }
+                else
+                {
+                    webView.NavigateToString("<h1>report.html غير موجود</h1>");
+                }
+            }
+            catch (Exception ex)
+            {
+                webView?.NavigateToString($"<h1>خطأ</h1><p>{System.Net.WebUtility.HtmlEncode(ex.Message)}</p>");
+            }
+        }
 
         private void btnLogout_Click(object sender, EventArgs e)
         {
 
 
         }
+        private async void InitializeWebView2()
+        {
+            webView = new WebView2();
+            paneldoc.Controls.Add(webView);
+            webView.Dock = DockStyle.Fill;
+
+            // مجلد بيانات للمحرك
+            string userData = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Mospuk_WebView2");
+
+            var env = await CoreWebView2Environment.CreateAsync(userDataFolder: userData);
+            await webView.EnsureCoreWebView2Async(env);
+
+            // إعدادات مفيدة
+            webView.CoreWebView2.Settings.AreDevToolsEnabled = true;
+            webView.CoreWebView2.Settings.IsStatusBarEnabled = false;
+
+            // حمّل الصفحة
+            LoadHtmlContent_WV2();
+        }
+
         private void btnAdd_Click(object sender, EventArgs e)
         {
             AddFile addproject = new AddFile(db);
@@ -1297,6 +1348,10 @@ namespace Mospuk_1
                     }
                 }
             }
+        }
+        private void paneldoc_Paint(object sender, PaintEventArgs e)
+        {
+
         }
     }
 }
