@@ -9,7 +9,10 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-
+// *** تمت إضافة هذه الـ using statements ***
+using Microsoft.Web.WebView2.Core;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 namespace Mospuk_1
 {
 
@@ -21,6 +24,7 @@ namespace Mospuk_1
         private WorkspaceCleaner _workspaceCleaner; // **الكائن الجديد لتنظيف مساحة العمل**
         private KeyboardActionHandler _keyboardActionHandler; // **إضافة الكائن الجديد**
         private ProjectStagingHandler _projectStagingHandler;
+                private string _currentPdfTempFolder; // لتخزين مسار المجلد المؤقت لعملية تحويل PDF الحالية
 
         SQLiteDatabase db;
         private PanelResizer _panel1Resizer;
@@ -85,6 +89,82 @@ namespace Mospuk_1
             _flowLayoutPanel2Resizer.Attach();
             _dataGridViewResizer = new PanelResizer(guna2DataGridView1); // <--- إضافة هذا السطر
             _dataGridViewResizer.Attach(); // <--- إضافة هذا السطر
+            InitializeWebViewAsync(); // استدعاء دالة تهيئة WebView2
+
+        }
+        private async void InitializeWebViewAsync()
+        {
+            try
+            {
+                // تأكد من أن CoreWebView2 مهيأ قبل استخدامه
+                await webViewPdfConverter.EnsureCoreWebView2Async(null);
+
+                // اشترك في حدث استقبال الرسائل من JavaScript
+                webViewPdfConverter.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
+
+                // قم بتحميل صفحة HTML المحلية التي أضفتها للمشروع
+                string htmlPath = Path.Combine(Application.StartupPath, "PDF_Converter.html");
+                if (File.Exists(htmlPath))
+                {
+                    // استخدم المسار المطلق للملف
+                    webViewPdfConverter.CoreWebView2.Navigate(new Uri(htmlPath).AbsoluteUri);
+                }
+                else
+                {
+                    MessageBox.Show("PDF Converter HTML file not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to initialize WebView2: {ex.Message}", "WebView2 Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        private void CoreWebView2_WebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
+        {
+            try
+            {
+                // اقرأ الرسالة القادمة كـ JSON
+                var message = JsonDocument.Parse(e.WebMessageAsJson);
+                var root = message.RootElement;
+                string type = root.GetProperty("type").GetString();
+
+                if (type == "page")
+                {
+                    string filename = root.GetProperty("filename").GetString();
+                    string dataUrl = root.GetProperty("dataUrl").GetString();
+
+                    // افصل بيانات Base64 عن البادئة "data:image/png;base64,"
+                    var match = Regex.Match(dataUrl, @"data:image/(?<type>.+?);base64,(?<data>.+)");
+                    if (match.Success)
+                    {
+                        string base64Data = match.Groups["data"].Value;
+                        byte[] imageBytes = Convert.FromBase64String(base64Data);
+
+                        // احفظ الصورة في المجلد المؤقت الذي تم إنشاؤه لعملية الـ PDF هذه
+                        string outputPath = Path.Combine(_currentPdfTempFolder, filename);
+                        File.WriteAllBytes(outputPath, imageBytes);
+                    }
+                }
+                else if (type == "done")
+                {
+                    // اكتمل التحويل، الآن قم بعرض الملفات من المجلد المؤقت
+                    // يجب استخدام Invoke للتأكد من أن التحديث يتم على UI thread
+                    this.Invoke((MethodInvoker)delegate
+                    {
+                        DisplayFilesFromTempFolder(_currentPdfTempFolder);
+                        _currentPdfTempFolder = null; // أعد تعيين المتغير ليكون جاهزًا للعملية التالية
+                    });
+                }
+                else if (type == "error")
+                {
+                    string errorMessage = root.GetProperty("message").GetString();
+                    MessageBox.Show($"An error occurred during PDF conversion:\n{errorMessage}", "PDF Conversion Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error processing message from WebView2: {ex.Message}", "Message Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void AddFile_FormClosing(object sender, FormClosingEventArgs e)
@@ -177,34 +257,90 @@ namespace Mospuk_1
             }
 
             OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Filter = "All Supported Files|*.rar;*.zip;*.jpg;*.jpeg;*.png;*.pdf;*.docx;*.xlsx|RAR Files|*.rar|ZIP Files|*.zip|Images|*.jpg;*.jpeg;*.png|PDF Files|*.pdf|All Files|*.*";
+            ofd.Filter = "All Supported Files|*.rar;*.zip;*.jpg;*.jpeg;*.png;*.pdf;*.docx;*.xlsx|PDF Files|*.pdf|RAR/ZIP|*.rar;*.zip|Images|*.jpg;*.jpeg;*.png|All Files|*.*";
             ofd.Multiselect = true;
             ofd.InitialDirectory = downloadsPath;
 
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                // إنشاء مجلد مؤقت فريد لهذه العملية
-                string uniqueOutputFolder = Path.Combine(Application.StartupPath, "ExtractedFiles", Guid.NewGuid().ToString());
-                Directory.CreateDirectory(uniqueOutputFolder);
+                // 1. إنشاء مجلد واحد لتجميع كل الملفات العادية (غير PDF) التي سيتم عرضها في النهاية
+                string finalDisplayFolder = Path.Combine(Application.StartupPath, "ExtractedFiles", Guid.NewGuid().ToString());
+                Directory.CreateDirectory(finalDisplayFolder);
+                bool hasRegularFilesToShow = false;
 
+                // 2. معالجة كل ملف تم اختياره
                 foreach (string path in ofd.FileNames)
                 {
-                    string extension = Path.GetExtension(path).ToLower();
-                    if (extension == ".rar")
-                    {
-                        _dataLoader.ExtractRAR(path, uniqueOutputFolder);
-                    }
-                    else if (extension == ".zip")
-                    {
-                        _dataLoader.ExtractZIP(path, uniqueOutputFolder);
-                    }
-                    else
-                    {
-                        File.Copy(path, Path.Combine(uniqueOutputFolder, Path.GetFileName(path)), true);
-                    }
+                    ProcessPath(path, finalDisplayFolder);
                 }
 
-                DisplayFilesFromTempFolder(uniqueOutputFolder);
+                // 3. التحقق مما إذا كان هناك أي ملفات عادية تم تجميعها
+                if (Directory.GetFiles(finalDisplayFolder).Length > 0)
+                {
+                    hasRegularFilesToShow = true;
+                }
+
+                // 4. عرض الملفات العادية التي تم تجميعها، إن وجدت
+                if (hasRegularFilesToShow)
+                {
+                    DisplayFilesFromTempFolder(finalDisplayFolder);
+                }
+            }
+        }
+        private void ProcessPath(string path, string destinationForRegularFiles)
+        {
+            string extension = Path.GetExtension(path).ToLower();
+
+            if (extension == ".pdf")
+            {
+                // إذا كان الملف PDF، قم بتحويله
+                ConvertPdfToImagesAsync(path);
+            }
+            else if (extension == ".rar" || extension == ".zip")
+            {
+                // إذا كان ملفًا مضغوطًا، قم بفكه ومعالجة محتوياته
+                string extractFolder = Path.Combine(Application.StartupPath, "ExtractedFiles", Guid.NewGuid().ToString());
+                Directory.CreateDirectory(extractFolder);
+
+                if (extension == ".rar") _dataLoader.ExtractRAR(path, extractFolder);
+                else _dataLoader.ExtractZIP(path, extractFolder);
+
+                // **الأهم:** قم بمعالجة كل ملف تم استخراجه بشكل متكرر
+                foreach (string extractedFile in Directory.GetFiles(extractFolder, "*", SearchOption.AllDirectories))
+                {
+                    ProcessPath(extractedFile, destinationForRegularFiles);
+                }
+            }
+            else
+            {
+                // إذا كان أي ملف آخر (صورة، وورد، إلخ)، انسخه إلى مجلد العرض النهائي
+                try
+                {
+                    File.Copy(path, Path.Combine(destinationForRegularFiles, Path.GetFileName(path)), true);
+                }
+                catch (Exception ex)
+                {
+                    // تجاهل الأخطاء البسيطة مثل وجود الملف بالفعل أو التعامل مع ملفات مؤقتة
+                    Console.WriteLine($"Could not copy file {Path.GetFileName(path)}: {ex.Message}");
+                }
+            }
+        }
+
+        private void ConvertPdfToImagesAsync(string pdfPath)
+        {
+            string pdfOutputFolder = Path.Combine(Application.StartupPath, "ExtractedFiles", Guid.NewGuid().ToString());
+            Directory.CreateDirectory(pdfOutputFolder);
+            _currentPdfTempFolder = pdfOutputFolder; // حدد المجلد الحالي الذي سيتعامل معه معالج الرسائل
+            byte[] pdfBytes = File.ReadAllBytes(pdfPath);
+            string base64Pdf = Convert.ToBase64String(pdfBytes);
+            if (webViewPdfConverter != null && webViewPdfConverter.CoreWebView2 != null)
+            {
+                string script = $"startConversionFromCSharp('{base64Pdf}');";
+                webViewPdfConverter.CoreWebView2.ExecuteScriptAsync(script);
+            }
+            else
+            {
+                MessageBox.Show("PDF Converter is not ready. Please try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
         public void DisplayFiles(string directory)

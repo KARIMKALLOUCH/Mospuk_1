@@ -67,9 +67,11 @@
             this.labelControl10 = new DevExpress.XtraEditors.LabelControl();
             this.guna2ComboBox2 = new Guna.UI2.WinForms.Guna2ComboBox();
             this.labelControl11 = new DevExpress.XtraEditors.LabelControl();
+            this.webViewPdfConverter = new Microsoft.Web.WebView2.WinForms.WebView2();
             ((System.ComponentModel.ISupportInitialize)(this.imageApostille)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numProjectOrder)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.guna2DataGridView1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.webViewPdfConverter)).BeginInit();
             this.SuspendLayout();
             // 
             // panel1
@@ -587,12 +589,24 @@
             this.labelControl11.TabIndex = 186;
             this.labelControl11.Text = "Destination Country";
             // 
+            // webViewPdfConverter
+            // 
+            this.webViewPdfConverter.AllowExternalDrop = true;
+            this.webViewPdfConverter.CreationProperties = null;
+            this.webViewPdfConverter.DefaultBackgroundColor = System.Drawing.Color.White;
+            this.webViewPdfConverter.Location = new System.Drawing.Point(0, 0);
+            this.webViewPdfConverter.Name = "webViewPdfConverter";
+            this.webViewPdfConverter.Size = new System.Drawing.Size(0, 0);
+            this.webViewPdfConverter.TabIndex = 187;
+            this.webViewPdfConverter.ZoomFactor = 1D;
+            // 
             // AddFile
             // 
             this.AcceptButton = this.btnUplaod;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1164, 671);
+            this.Controls.Add(this.webViewPdfConverter);
             this.Controls.Add(this.guna2ComboBox2);
             this.Controls.Add(this.labelControl11);
             this.Controls.Add(this.labelControl10);
@@ -636,6 +650,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.imageApostille)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numProjectOrder)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.guna2DataGridView1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.webViewPdfConverter)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -678,5 +693,6 @@
         private DevExpress.XtraEditors.LabelControl labelControl10;
         private Guna.UI2.WinForms.Guna2ComboBox guna2ComboBox2;
         private DevExpress.XtraEditors.LabelControl labelControl11;
+        private Microsoft.Web.WebView2.WinForms.WebView2 webViewPdfConverter;
     }
 }
