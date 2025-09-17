@@ -37,6 +37,8 @@
             this.btnsaveDirectory = new Guna.UI2.WinForms.Guna2Button();
             this.btnDocument = new Guna.UI2.WinForms.Guna2Button();
             this.edittextDocument = new Guna.UI2.WinForms.Guna2TextBox();
+            this.btnTypeDocument = new Guna.UI2.WinForms.Guna2Button();
+            this.edittextTypeDocument = new Guna.UI2.WinForms.Guna2TextBox();
             this.SuspendLayout();
             // 
             // edittextDownloads
@@ -53,7 +55,7 @@
             this.edittextDownloads.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.edittextDownloads.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
             this.edittextDownloads.IconLeftSize = new System.Drawing.Size(15, 15);
-            this.edittextDownloads.Location = new System.Drawing.Point(2, 165);
+            this.edittextDownloads.Location = new System.Drawing.Point(2, 159);
             this.edittextDownloads.Name = "edittextDownloads";
             this.edittextDownloads.PlaceholderText = "";
             this.edittextDownloads.SelectedText = "";
@@ -73,7 +75,7 @@
             this.edittextarchive.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.edittextarchive.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
             this.edittextarchive.IconLeftSize = new System.Drawing.Size(15, 15);
-            this.edittextarchive.Location = new System.Drawing.Point(2, 90);
+            this.edittextarchive.Location = new System.Drawing.Point(2, 93);
             this.edittextarchive.Name = "edittextarchive";
             this.edittextarchive.PlaceholderText = "";
             this.edittextarchive.SelectedText = "";
@@ -113,7 +115,7 @@
             this.btnDownloads.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
             this.btnDownloads.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.btnDownloads.ForeColor = System.Drawing.Color.White;
-            this.btnDownloads.Location = new System.Drawing.Point(374, 167);
+            this.btnDownloads.Location = new System.Drawing.Point(374, 161);
             this.btnDownloads.Name = "btnDownloads";
             this.btnDownloads.Size = new System.Drawing.Size(167, 38);
             this.btnDownloads.TabIndex = 178;
@@ -131,7 +133,7 @@
             this.btnArchive.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
             this.btnArchive.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.btnArchive.ForeColor = System.Drawing.Color.White;
-            this.btnArchive.Location = new System.Drawing.Point(374, 92);
+            this.btnArchive.Location = new System.Drawing.Point(374, 95);
             this.btnArchive.Name = "btnArchive";
             this.btnArchive.Size = new System.Drawing.Size(167, 38);
             this.btnArchive.TabIndex = 176;
@@ -150,7 +152,7 @@
             this.btnsaveDirectory.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
             this.btnsaveDirectory.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.btnsaveDirectory.ForeColor = System.Drawing.Color.White;
-            this.btnsaveDirectory.Location = new System.Drawing.Point(374, 23);
+            this.btnsaveDirectory.Location = new System.Drawing.Point(374, 22);
             this.btnsaveDirectory.Name = "btnsaveDirectory";
             this.btnsaveDirectory.Size = new System.Drawing.Size(167, 41);
             this.btnsaveDirectory.TabIndex = 174;
@@ -169,11 +171,11 @@
             this.btnDocument.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
             this.btnDocument.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.btnDocument.ForeColor = System.Drawing.Color.White;
-            this.btnDocument.Location = new System.Drawing.Point(374, 237);
+            this.btnDocument.Location = new System.Drawing.Point(374, 231);
             this.btnDocument.Name = "btnDocument";
             this.btnDocument.Size = new System.Drawing.Size(167, 38);
             this.btnDocument.TabIndex = 180;
-            this.btnDocument.Text = "Documents";
+            this.btnDocument.Text = "Save Documents";
             this.btnDocument.Click += new System.EventHandler(this.btnDocument_Click);
             // 
             // edittextDocument
@@ -190,18 +192,60 @@
             this.edittextDocument.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.edittextDocument.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
             this.edittextDocument.IconLeftSize = new System.Drawing.Size(15, 15);
-            this.edittextDocument.Location = new System.Drawing.Point(2, 235);
+            this.edittextDocument.Location = new System.Drawing.Point(2, 229);
             this.edittextDocument.Name = "edittextDocument";
             this.edittextDocument.PlaceholderText = "";
             this.edittextDocument.SelectedText = "";
             this.edittextDocument.Size = new System.Drawing.Size(365, 40);
             this.edittextDocument.TabIndex = 179;
             // 
+            // btnTypeDocument
+            // 
+            this.btnTypeDocument.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnTypeDocument.BorderRadius = 5;
+            this.btnTypeDocument.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
+            this.btnTypeDocument.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
+            this.btnTypeDocument.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
+            this.btnTypeDocument.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
+            this.btnTypeDocument.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.btnTypeDocument.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.btnTypeDocument.ForeColor = System.Drawing.Color.White;
+            this.btnTypeDocument.Location = new System.Drawing.Point(374, 293);
+            this.btnTypeDocument.Name = "btnTypeDocument";
+            this.btnTypeDocument.Size = new System.Drawing.Size(167, 38);
+            this.btnTypeDocument.TabIndex = 182;
+            this.btnTypeDocument.Text = "Type Documents";
+            this.btnTypeDocument.Click += new System.EventHandler(this.btnTypeDocument_Click);
+            // 
+            // edittextTypeDocument
+            // 
+            this.edittextTypeDocument.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.edittextTypeDocument.Cursor = System.Windows.Forms.Cursors.IBeam;
+            this.edittextTypeDocument.DefaultText = "";
+            this.edittextTypeDocument.DisabledState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(208)))), ((int)(((byte)(208)))), ((int)(((byte)(208)))));
+            this.edittextTypeDocument.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(226)))), ((int)(((byte)(226)))), ((int)(((byte)(226)))));
+            this.edittextTypeDocument.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.edittextTypeDocument.DisabledState.PlaceholderForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.edittextTypeDocument.FocusedState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.edittextTypeDocument.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.edittextTypeDocument.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(141)))), ((int)(((byte)(80)))));
+            this.edittextTypeDocument.IconLeftSize = new System.Drawing.Size(15, 15);
+            this.edittextTypeDocument.Location = new System.Drawing.Point(2, 292);
+            this.edittextTypeDocument.Name = "edittextTypeDocument";
+            this.edittextTypeDocument.PlaceholderText = "";
+            this.edittextTypeDocument.SelectedText = "";
+            this.edittextTypeDocument.Size = new System.Drawing.Size(365, 40);
+            this.edittextTypeDocument.TabIndex = 181;
+            // 
             // SaveDirectory
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(553, 307);
+            this.ClientSize = new System.Drawing.Size(553, 379);
+            this.Controls.Add(this.btnTypeDocument);
+            this.Controls.Add(this.edittextTypeDocument);
             this.Controls.Add(this.btnDocument);
             this.Controls.Add(this.edittextDocument);
             this.Controls.Add(this.btnDownloads);
@@ -231,5 +275,7 @@
         private Guna.UI2.WinForms.Guna2TextBox edittextsaveDirectory;
         private Guna.UI2.WinForms.Guna2Button btnDocument;
         private Guna.UI2.WinForms.Guna2TextBox edittextDocument;
+        private Guna.UI2.WinForms.Guna2Button btnTypeDocument;
+        private Guna.UI2.WinForms.Guna2TextBox edittextTypeDocument;
     }
 }

@@ -16,6 +16,8 @@ namespace Mospuk_1
         private const string DOWNLOADS_PATH = "downloads";
         private const string DOCUMENTS_PATH = "documents"; // إضافة ثابت جديد للمستندات
 
+        private const string TYPE_DOCUMENT_TEMPLATE_PATH = "type_document_url";
+
         public SaveDirectory(SQLiteDatabase database)
         {
             InitializeComponent();
@@ -28,6 +30,8 @@ namespace Mospuk_1
             LoadPathSetting(ARCHIVE_PATH);
             LoadPathSetting(DOWNLOADS_PATH);
             LoadPathSetting(DOCUMENTS_PATH);
+            LoadPathSetting(TYPE_DOCUMENT_TEMPLATE_PATH);
+
         }
 
         private void btnsaveDirectory_Click(object sender, EventArgs e)
@@ -152,6 +156,9 @@ namespace Mospuk_1
                         case DOCUMENTS_PATH: // حالة جديدة للمستندات
                             edittextDocument.Text = result.ToString();
                             break;
+                        case TYPE_DOCUMENT_TEMPLATE_PATH:
+                            edittextTypeDocument.Text = result.ToString();
+                            break;
                     }
                 }
             }
@@ -197,5 +204,22 @@ namespace Mospuk_1
             }
         }
 
+        private void btnTypeDocument_Click(object sender, EventArgs e)
+        {
+           
+            using (var folderDialog = new FolderBrowserDialog())
+            {
+                folderDialog.Description = "اختر مجلد المستندات الافتراضي";
+                if (!string.IsNullOrEmpty(edittextTypeDocument.Text))
+                    folderDialog.SelectedPath = edittextTypeDocument.Text;
+
+                if (folderDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string selectedPath = folderDialog.SelectedPath;
+                    edittextTypeDocument.Text = selectedPath;
+                    SavePathSetting(TYPE_DOCUMENT_TEMPLATE_PATH, selectedPath);
+                }
+            }
+        }
     }
 }

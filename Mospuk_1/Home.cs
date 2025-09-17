@@ -97,19 +97,17 @@ namespace Mospuk_1
         {
             try
             {
-                // تحليل الرسالة الواردة من JavaScript
                 var json = e.WebMessageAsJson;
                 dynamic message = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
 
-                if (message.action == "downloadDocx")
+                string action = message.action;
+
+                if (action == "downloadDocx")
                 {
                     string base64Data = message.data;
                     string fileName = message.filename;
+                    string targetDirectory = db.GetSavedPathById("documents");
 
-                    // جلب مسار الحفظ من قاعدة البيانات
-                    string targetDirectory = db.GetSavedPathById("documents"); // استخدام "documents" بدلاً من "archive"
-
-                    // التحقق من وجود المسار
                     if (string.IsNullOrEmpty(targetDirectory))
                     {
                         this.Invoke((MethodInvoker)delegate {
@@ -119,28 +117,106 @@ namespace Mospuk_1
                         return;
                     }
 
-                    // التأكد من وجود المجلد
                     if (!Directory.Exists(targetDirectory))
                     {
                         Directory.CreateDirectory(targetDirectory);
                     }
 
-                    // المسار الكامل للملف
                     string filePath = Path.Combine(targetDirectory, fileName);
-
-                    // تحويل base64 إلى بايتات وحفظ الملف
                     byte[] fileBytes = Convert.FromBase64String(base64Data);
                     File.WriteAllBytes(filePath, fileBytes);
-
-                  
+                }
+                // ========= الجزء الجديد المضاف هنا =========
+                else if (action == "getTemplateFile")
+                {
+                    string templateId = message.templateId;
+                    if (templateId == "POA")
+                    {
+                        // استدعاء التابع الذي يتعامل مع هذا الطلب
+                        HandleGetPowerOfAttorneyTemplate();
+                    }
                 }
             }
             catch (Exception ex)
             {
                 this.Invoke((MethodInvoker)delegate {
-                    MessageBox.Show($"خطأ في حفظ الملف: {ex.Message}", "خطأ",
+                    MessageBox.Show($"Error processing message from WebView: {ex.Message}", "Error",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
                 });
+            }
+        }
+
+        private void HandleGetPowerOfAttorneyTemplate()
+        {
+            const string TYPE_DOCUMENT_TEMPLATE_PATH = "type_document_url";
+            string templateDirectoryPath = db.GetSavedPathById(TYPE_DOCUMENT_TEMPLATE_PATH);
+
+            // 2. التحقق من أن المسار ليس فارغًا (هذا الجزء صحيح ومهم)
+            if (string.IsNullOrEmpty(templateDirectoryPath))
+            {
+                var errorResponse = new
+                {
+                    action = "templateFileResponse",
+                    status = "error",
+                    templateId = "POA",
+                    message = "لم يتم تعيين مسار مجلد القالب. يرجى تعيينه من الإعدادات."
+                };
+                string jsonErrorResponse = Newtonsoft.Json.JsonConvert.SerializeObject(errorResponse);
+                webView.CoreWebView2.PostWebMessageAsJson(jsonErrorResponse);
+                return;
+            }
+
+     
+            const string templateFileName = "Attorney.docx";
+            string fullPoaFilePath = Path.Combine(templateDirectoryPath, templateFileName);
+
+            try
+            {
+                if (File.Exists(fullPoaFilePath))
+                {
+                    byte[] fileBytes = File.ReadAllBytes(fullPoaFilePath);
+                    string base64Content = Convert.ToBase64String(fileBytes);
+                    string fileName = Path.GetFileName(fullPoaFilePath);
+
+                    // إرسال رد ناجح مع بيانات الملف إلى JavaScript
+                    var response = new
+                    {
+                        action = "templateFileResponse",
+                        status = "success",
+                        templateId = "POA",
+                        fileName = fileName,
+                        base64Content = base64Content
+                    };
+                    string jsonResponse = Newtonsoft.Json.JsonConvert.SerializeObject(response);
+                    webView.CoreWebView2.PostWebMessageAsJson(jsonResponse);
+                }
+                else
+                {
+                    // إرسال رسالة خطأ إذا لم يتم العثور على الملف في المسار المحدد
+                    var errorResponse = new
+                    {
+                        action = "templateFileResponse",
+                        status = "error",
+                        templateId = "POA",
+                        // عرض المسار الكامل الذي حاول البحث فيه لسهولة تصحيح الخطأ
+                        message = $"لم يتم العثور على ملف القالب في المسار المحدد: {fullPoaFilePath}"
+                    };
+                    string jsonErrorResponse = Newtonsoft.Json.JsonConvert.SerializeObject(errorResponse);
+                    webView.CoreWebView2.PostWebMessageAsJson(jsonErrorResponse);
+                }
+            }
+            catch (Exception ex)
+            {
+                // ... (باقي الكود كما هو) ...
+                var exceptionResponse = new
+                {
+                    action = "templateFileResponse",
+                    status = "error",
+                    templateId = "POA",
+                    message = $"حدث خطأ أثناء قراءة الملف: {ex.Message}"
+                };
+                string jsonExceptionResponse = Newtonsoft.Json.JsonConvert.SerializeObject(exceptionResponse);
+                webView.CoreWebView2.PostWebMessageAsJson(jsonExceptionResponse);
             }
         }
         private void btnAdd_Click(object sender, EventArgs e)
