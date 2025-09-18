@@ -21,7 +21,6 @@ namespace Mospuk_1
         private readonly FlowLayoutPanel _flowLayoutPanel1;
         private readonly FlowLayoutPanel _flowLayoutPanel2;
         private readonly PictureBox _imageApostille;
-        private readonly DataLoaderAddfille _dataLoader; // <--- هذا هو الإضافة الجديدة
 
         // State variables for drag/drop and selection
         private Rectangle selectionRectangle;
@@ -106,45 +105,17 @@ namespace Mospuk_1
 
         public void panel1_DragDrop(object sender, DragEventArgs e)
         {
+            // ------------------ الجزء الجديد والمهم ------------------
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 string[] filePaths = (string[])e.Data.GetData(DataFormats.FileDrop);
-
-                string outputFolder = Path.Combine(Application.StartupPath, "ExtractedFiles");
-                if (!Directory.Exists(outputFolder))
-                {
-                    Directory.CreateDirectory(outputFolder);
-                }
-
-                foreach (string path in filePaths)
-                {
-                    try
-                    {
-                        string extension = Path.GetExtension(path).ToLower();
-                        if (extension == ".rar")
-                        {
-                            _dataLoader.ExtractRAR(path, outputFolder); // تم استدعاء الدالة من _dataLoader
-                        }
-                        else if (extension == ".zip")
-                        {
-                            _dataLoader.ExtractZIP(path, outputFolder); // تم استدعاء الدالة من _dataLoader
-                        }
-                        else
-                        {
-                            File.Copy(path, Path.Combine(outputFolder, Path.GetFileName(path)), true);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Error processing file '{Path.GetFileName(path)}':\n{ex.Message}",
-                                        "Drag & Drop Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-
-                _addFileForm.DisplayFiles(outputFolder);
-                return;
+                // استدعاء الدالة العامة في الفورم الرئيسي لمعالجة الملفات بنفس منطق الزر
+                _addFileForm.ProcessDroppedFiles(filePaths);
+                return; // إنهاء الدالة هنا لأن العملية تمت
             }
+            // --------------------------------------------------------
 
+            // باقي الكود يبقى كما هو للتعامل مع السحب الداخلي بين اللوحات
             if (e.Data.GetDataPresent("MultiPanelDrag"))
             {
                 var draggedItems = (List<AddFile.PictureBoxDragInfo>)e.Data.GetData("MultiPanelDrag");

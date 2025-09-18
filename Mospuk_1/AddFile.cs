@@ -25,6 +25,7 @@ namespace Mospuk_1
         private KeyboardActionHandler _keyboardActionHandler; // **إضافة الكائن الجديد**
         private ProjectStagingHandler _projectStagingHandler;
                 private string _currentPdfTempFolder; // لتخزين مسار المجلد المؤقت لعملية تحويل PDF الحالية
+        private LoadingForm _loadingForm;
 
         SQLiteDatabase db;
         private PanelResizer _panel1Resizer;
@@ -59,6 +60,9 @@ namespace Mospuk_1
             _workspaceCleaner = new WorkspaceCleaner(this, _dragDropHandler);
             _keyboardActionHandler = new KeyboardActionHandler(this, _dragDropHandler);
             _projectStagingHandler = new ProjectStagingHandler(db);
+            _loadingForm = new LoadingForm();
+            _loadingForm.Owner = this;
+            _loadingForm.TopMost = true; // للتأكد من أنه فوق كل شيء
 
             this.KeyPreview = true;
             this.KeyDown += AddFile_KeyDown;
@@ -123,7 +127,6 @@ namespace Mospuk_1
         {
             try
             {
-                // اقرأ الرسالة القادمة كـ JSON
                 var message = JsonDocument.Parse(e.WebMessageAsJson);
                 var root = message.RootElement;
                 string type = root.GetProperty("type").GetString();
@@ -148,9 +151,12 @@ namespace Mospuk_1
                 else if (type == "done")
                 {
                     // اكتمل التحويل، الآن قم بعرض الملفات من المجلد المؤقت
-                    // يجب استخدام Invoke للتأكد من أن التحديث يتم على UI thread
                     this.Invoke((MethodInvoker)delegate
                     {
+                        // --- إخفاء المؤشر أولاً ---
+                        _loadingForm.Hide();
+                        // -----------------------
+
                         DisplayFilesFromTempFolder(_currentPdfTempFolder);
                         _currentPdfTempFolder = null; // أعد تعيين المتغير ليكون جاهزًا للعملية التالية
                     });
@@ -159,11 +165,24 @@ namespace Mospuk_1
                 {
                     string errorMessage = root.GetProperty("message").GetString();
                     MessageBox.Show($"An error occurred during PDF conversion:\n{errorMessage}", "PDF Conversion Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                    // --- إخفاء المؤشر عند حدوث خطأ ---
+                    this.Invoke((MethodInvoker)delegate
+                    {
+                        _loadingForm.Hide();
+                    });
+                    // -----------------------
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error processing message from WebView2: {ex.Message}", "Message Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // --- إخفاء المؤشر عند حدوث استثناء ---
+                this.Invoke((MethodInvoker)delegate
+                {
+                    _loadingForm.Hide();
+                });
+                // -----------------------
             }
         }
 
@@ -328,11 +347,19 @@ namespace Mospuk_1
 
         private void ConvertPdfToImagesAsync(string pdfPath)
         {
+            // --- إظهار مؤشر التحميل ---
+            this.Invoke((MethodInvoker)delegate
+            {
+                _loadingForm.ShowLoading(this);
+            });
+            // -----------------------
+
             string pdfOutputFolder = Path.Combine(Application.StartupPath, "ExtractedFiles", Guid.NewGuid().ToString());
             Directory.CreateDirectory(pdfOutputFolder);
             _currentPdfTempFolder = pdfOutputFolder; // حدد المجلد الحالي الذي سيتعامل معه معالج الرسائل
             byte[] pdfBytes = File.ReadAllBytes(pdfPath);
             string base64Pdf = Convert.ToBase64String(pdfBytes);
+
             if (webViewPdfConverter != null && webViewPdfConverter.CoreWebView2 != null)
             {
                 string script = $"startConversionFromCSharp('{base64Pdf}');";
@@ -341,6 +368,12 @@ namespace Mospuk_1
             else
             {
                 MessageBox.Show("PDF Converter is not ready. Please try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // --- إخفاء المؤشر إذا فشلت العملية ---
+                this.Invoke((MethodInvoker)delegate
+                {
+                    _loadingForm.Hide();
+                });
+                // -----------------------
             }
         }
         public void DisplayFiles(string directory)
@@ -1056,6 +1089,33 @@ namespace Mospuk_1
         private void guna2DataGridView1_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
 
+        }
+        // *** أضف هذه الدالة الجديدة بالكامل في ملف AddFile.cs ***
+        public void ProcessDroppedFiles(string[] filePaths)
+        {
+            // 1. إنشاء مجلد واحد لتجميع كل الملفات العادية (غير PDF) التي سيتم عرضها في النهاية
+            string finalDisplayFolder = Path.Combine(Application.StartupPath, "ExtractedFiles", Guid.NewGuid().ToString());
+            Directory.CreateDirectory(finalDisplayFolder);
+            bool hasRegularFilesToShow = false;
+
+            // 2. معالجة كل ملف تم إلقاؤه
+            foreach (string path in filePaths)
+            {
+                // استدعاء نفس دالة المعالجة التي يستخدمها زر الرفع
+                ProcessPath(path, finalDisplayFolder);
+            }
+
+            // 3. التحقق مما إذا كان هناك أي ملفات عادية تم تجميعها
+            if (Directory.GetFiles(finalDisplayFolder).Length > 0)
+            {
+                hasRegularFilesToShow = true;
+            }
+
+            // 4. عرض الملفات العادية التي تم تجميعها، إن وجدت
+            if (hasRegularFilesToShow)
+            {
+                DisplayFilesFromTempFolder(finalDisplayFolder);
+            }
         }
     }    //*************************************
     public class StagedProject
