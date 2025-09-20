@@ -130,12 +130,13 @@ namespace Mospuk_1
                 else if (action == "getTemplateFile")
                 {
                     string templateId = message.templateId;
+                    bool apostille = false;
+                    try { apostille = (bool)message.apostille; } catch { /* ignore */ }
+
                     if (templateId == "POA")
-                    {
-                        // استدعاء التابع الذي يتعامل مع هذا الطلب
-                        HandleGetPowerOfAttorneyTemplate();
-                    }
+                        HandleGetPowerOfAttorneyTemplate(apostille);
                 }
+
             }
             catch (Exception ex)
             {
@@ -146,12 +147,11 @@ namespace Mospuk_1
             }
         }
 
-        private void HandleGetPowerOfAttorneyTemplate()
+        private void HandleGetPowerOfAttorneyTemplate(bool apostille)
         {
             const string TYPE_DOCUMENT_TEMPLATE_PATH = "type_document_url";
             string templateDirectoryPath = db.GetSavedPathById(TYPE_DOCUMENT_TEMPLATE_PATH);
 
-            // 2. التحقق من أن المسار ليس فارغًا (هذا الجزء صحيح ومهم)
             if (string.IsNullOrEmpty(templateDirectoryPath))
             {
                 var errorResponse = new
@@ -161,13 +161,12 @@ namespace Mospuk_1
                     templateId = "POA",
                     message = "لم يتم تعيين مسار مجلد القالب. يرجى تعيينه من الإعدادات."
                 };
-                string jsonErrorResponse = Newtonsoft.Json.JsonConvert.SerializeObject(errorResponse);
-                webView.CoreWebView2.PostWebMessageAsJson(jsonErrorResponse);
+                webView.CoreWebView2.PostWebMessageAsJson(
+                    Newtonsoft.Json.JsonConvert.SerializeObject(errorResponse));
                 return;
             }
 
-     
-            const string templateFileName = "Attorney.docx";
+            string templateFileName = apostille ? "Penales_Apostile.docx" : "Penales.docx";
             string fullPoaFilePath = Path.Combine(templateDirectoryPath, templateFileName);
 
             try
@@ -176,38 +175,33 @@ namespace Mospuk_1
                 {
                     byte[] fileBytes = File.ReadAllBytes(fullPoaFilePath);
                     string base64Content = Convert.ToBase64String(fileBytes);
-                    string fileName = Path.GetFileName(fullPoaFilePath);
 
-                    // إرسال رد ناجح مع بيانات الملف إلى JavaScript
                     var response = new
                     {
                         action = "templateFileResponse",
                         status = "success",
                         templateId = "POA",
-                        fileName = fileName,
+                        fileName = Path.GetFileName(fullPoaFilePath),
                         base64Content = base64Content
                     };
-                    string jsonResponse = Newtonsoft.Json.JsonConvert.SerializeObject(response);
-                    webView.CoreWebView2.PostWebMessageAsJson(jsonResponse);
+                    webView.CoreWebView2.PostWebMessageAsJson(
+                        Newtonsoft.Json.JsonConvert.SerializeObject(response));
                 }
                 else
                 {
-                    // إرسال رسالة خطأ إذا لم يتم العثور على الملف في المسار المحدد
                     var errorResponse = new
                     {
                         action = "templateFileResponse",
                         status = "error",
                         templateId = "POA",
-                        // عرض المسار الكامل الذي حاول البحث فيه لسهولة تصحيح الخطأ
                         message = $"لم يتم العثور على ملف القالب في المسار المحدد: {fullPoaFilePath}"
                     };
-                    string jsonErrorResponse = Newtonsoft.Json.JsonConvert.SerializeObject(errorResponse);
-                    webView.CoreWebView2.PostWebMessageAsJson(jsonErrorResponse);
+                    webView.CoreWebView2.PostWebMessageAsJson(
+                        Newtonsoft.Json.JsonConvert.SerializeObject(errorResponse));
                 }
             }
             catch (Exception ex)
             {
-                // ... (باقي الكود كما هو) ...
                 var exceptionResponse = new
                 {
                     action = "templateFileResponse",
@@ -215,8 +209,8 @@ namespace Mospuk_1
                     templateId = "POA",
                     message = $"حدث خطأ أثناء قراءة الملف: {ex.Message}"
                 };
-                string jsonExceptionResponse = Newtonsoft.Json.JsonConvert.SerializeObject(exceptionResponse);
-                webView.CoreWebView2.PostWebMessageAsJson(jsonExceptionResponse);
+                webView.CoreWebView2.PostWebMessageAsJson(
+                    Newtonsoft.Json.JsonConvert.SerializeObject(exceptionResponse));
             }
         }
         private void btnAdd_Click(object sender, EventArgs e)
